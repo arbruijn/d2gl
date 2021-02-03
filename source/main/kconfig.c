@@ -3441,7 +3441,7 @@ char GetKeyValue (char key)
    return (kc_keyboard[key].value);
   }
 
-#if !defined(MACINTOSH)
+#if !defined(MACINTOSH) && !defined(NDOS)
 
 
 extern object *obj_find_first_of_type (int);

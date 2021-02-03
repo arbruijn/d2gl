@@ -21,7 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 //#include "segment.h"
 
-#ifdef MACINTOSH
+#ifdef NASM
 extern ubyte Scanline_double;
 #endif
 
@@ -118,7 +118,7 @@ extern int Game_double_buffer;			//double buffering?
 
 #endif
 
-#ifndef MACINTOSH
+#ifndef NASM
 
 #define Scanline_double		0		// PC doesn't do scanline doubling
 

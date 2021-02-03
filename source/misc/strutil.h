@@ -14,7 +14,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _STRUTILS_
 #define _STRUTILS_
 
-extern char *strdup(char *s);
+//extern char *strdup(char *s);
 extern int stricmp(char *str1, char *str2);
 extern int strnicmp(char *str1, char *str2, int n);
 

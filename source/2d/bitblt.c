@@ -33,7 +33,7 @@ extern void gr_vesa_bitmap( grs_bitmap * source, grs_bitmap * dest, int x, int y
 // This code aligns edi so that the destination is aligned to a dword boundry before rep movsd
 void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels );
 
-#ifdef MACINTOSH
+#ifdef NASM
 
 #define THRESHOLD	8
 
@@ -84,7 +84,7 @@ void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels )
 
 void gr_linear_rep_movsdm(ubyte * src, ubyte * dest, int num_pixels );
 
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux gr_linear_rep_movsdm parm [esi] [edi] [ecx] modify exact [ecx esi edi eax] = \
 "nextpixel:"					\
 	"mov	al,[esi]"			\
@@ -97,7 +97,7 @@ void gr_linear_rep_movsdm(ubyte * src, ubyte * dest, int num_pixels );
 	"dec	ecx"					\
 	"jne	nextpixel";
 
-#else		// ifdef MACINTOSH
+#else		// ifdef NASM
 
 void gr_linear_rep_movsdm(ubyte * src, ubyte * dest, int num_pixels )
 {
@@ -110,11 +110,11 @@ void gr_linear_rep_movsdm(ubyte * src, ubyte * dest, int num_pixels )
 	}
 }
 
-#endif		// ifdef MACINTOSH
+#endif		// ifdef NASM
 
 void gr_linear_rep_movsdm_faded(ubyte * src, ubyte * dest, int num_pixels, ubyte fade_value );
 
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux gr_linear_rep_movsdm_faded parm [esi] [edi] [ecx] [ebx] modify exact [ecx esi edi eax ebx] = \
 "  xor eax, eax"	\
 "  mov ah, bl"  \
@@ -150,12 +150,12 @@ void gr_linear_rep_movsdm_faded(ubyte * src, ubyte * dest, int num_pixels, ubyte
 	}
 }
 
-#endif		// ifdef MACINTOSH
+#endif		// ifdef NASM
 
 
 void gr_linear_rep_movsd_2x(ubyte * src, ubyte * dest, int num_dest_pixels );
 
-#ifndef MACINTOSH
+#ifndef NASM
 
 #pragma aux gr_linear_rep_movsd_2x parm [esi] [edi] [ecx] modify exact [ecx esi edi eax ebx] = \
 	"shr	ecx, 1"				\
@@ -177,7 +177,7 @@ void gr_linear_rep_movsd_2x(ubyte * src, ubyte * dest, int num_dest_pixels );
 	"jne	nextpixel"			\
 "done:"
 
-#else		// ifdef MACINTOSH
+#else		// ifdef NASM
 
 void gr_linear_rep_movsd_2x(ubyte *src, ubyte *dest, int num_pixels)
 {
@@ -215,7 +215,7 @@ void gr_linear_rep_movsd_2x(ubyte *src, ubyte *dest, int num_pixels)
 
 void modex_copy_column(ubyte * src, ubyte * dest, int num_pixels, int src_rowsize, int dest_rowsize );
 
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux modex_copy_column parm [esi] [edi] [ecx] [ebx] [edx] modify exact [ecx esi edi] = \
 "nextpixel:"							\
 	"mov	al,[esi]"			\
@@ -238,7 +238,7 @@ void modex_copy_column(ubyte * src, ubyte * dest, int num_pixels, int src_rowsiz
 
 void modex_copy_column_m(ubyte * src, ubyte * dest, int num_pixels, int src_rowsize, int dest_rowsize );
 
-#ifndef MACINTOSH
+#ifndef NASM
 
 #pragma aux modex_copy_column_m parm [esi] [edi] [ecx] [ebx] [edx] modify exact [ecx esi edi] = \
 "nextpixel:"							\
@@ -331,7 +331,7 @@ void gr_ubitmap00m( int x, int y, grs_bitmap *bm )
 //"aligned4:							"	\
 
 void modex_copy_scanline( ubyte * src, ubyte * dest, int npixels );
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux modex_copy_scanline parm [esi] [edi] [ecx] modify exact [ecx esi edi eax ebx edx] = \
 "		mov	ebx, ecx				"	\
 "		and	ebx, 11b				"	\
@@ -372,7 +372,7 @@ void modex_copy_scanline( ubyte * src, ubyte * dest, int npixels )
 
 void modex_copy_scanline_2x( ubyte * src, ubyte * dest, int npixels );
 
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux modex_copy_scanline_2x parm [esi] [edi] [ecx] modify exact [ecx esi edi eax ebx edx] = \
 "		mov	ebx, ecx				"	\
 "		and	ebx, 11b				"	\
@@ -872,27 +872,27 @@ void gr_bm_ubitblt00m(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *
 
 extern void gr_lbitblt( grs_bitmap * source, grs_bitmap * dest, int height, int width );
 
-#ifdef MACINTOSH
+#ifdef NASM
 
 // width == number of destination pixels
-
 void gr_linear_movsd_double(ubyte *src, ubyte *dest, int width)
 {
-	double	*d = (double *)dest;
-	uint	*s = (uint *)src;
-	uint	doubletemp[2];
-	uint	temp, work;
+	//double	*d = (double *)dest;
+	//uint	*s = (uint *)src;
+	//uint	doubletemp[2];
+	//uint	temp, work;
 	int		i, num_pixels;
 
 	num_pixels = width / 2;
-	if ( (num_pixels & 0x3) || (((int)src & 0x7) != ((int)dest & 0x7)) ) {					// not a multiple of 4?  do single pixel at a time
+	//if ( (num_pixels & 0x3) || (((int)src & 0x7) != ((int)dest & 0x7)) ) {					// not a multiple of 4?  do single pixel at a time
 		for (i=0; i<num_pixels; i++) {
 			*dest++ = *src;
 			*dest++ = *src++;
 		}
 		return;
-	}
+	//}
 	
+	#if 0
 	for (i = 0; i < num_pixels / 4; i++) {
 		temp = work = *s++;
 
@@ -907,8 +907,10 @@ void gr_linear_movsd_double(ubyte *src, ubyte *dest, int width)
 		*d = *(double *) &(doubletemp[0]);
 		d++;
 	}
+	#endif
 }
 
+#if 0
 //extern void BlitLargeAlign(ubyte *draw_buffer, int dstRowBytes, ubyte *dstPtr, int w, int h, int modulus);
 
 asm void BlitLargeAlign(ubyte *rSrcPtr, int rDblDStrd, ubyte *rDst1Ptr, int rWidth, int rHeight, int rModulus)
@@ -988,6 +990,7 @@ void gr_bm_ubitblt_double(int w, int h, int dx, int dy, int sx, int sy, grs_bitm
 	Assert( !((int)dbits & 0x7) );		// assert to check double word alignment
 	BlitLargeAlign(sbits, dstep, dbits, src->bm_w, src->bm_h, src->bm_rowsize);
 }
+#endif
 
 // w and h are the doubled width and height
 

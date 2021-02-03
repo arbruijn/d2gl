@@ -5,12 +5,12 @@
 
 #define NEWDEMO				//Demo is always IN 
 //#define EDITOR				//BUILD_EDITOR not set 
-#define RELEASE 1				//RELEASE_VERSION set  
-#define NDEBUG 1				//NDEBUG set  
-#define NMONO 1				//NMONO set  
-#define WINDOWS 1				//TARGSYS == WIN32  
+//#define RELEASE 1				//RELEASE_VERSION set  
+//#define NDEBUG 1				//NDEBUG set  
+//#define NMONO 1				//NMONO set  
+//#define WINDOWS 1				//TARGSYS == WIN32  
 //#define SHAREWARE				//SHAREWARE not set 
-#define TACTILE 1				//TACTILE set  
+//#define TACTILE 1				//TACTILE set  
 //#define SANTA				//SANTA not set 
 //#define ARCADE				//ARCADE not set 
 //#define DEMO_ONLY				//DEMO_ONLY not set 
@@ -22,6 +22,5 @@
 //#define SATURN				//SATURN not set 
 //#define COMPACT_SEGS				//COMPACT_SEGS not set 
 //#define NOSERIAL				//NOSERIAL not set 
-#define NETWORK 1				//NO_MULTIPLAYER not set  
+//#define NETWORK 1				//NO_MULTIPLAYER not set  
 #define PIGGY_USE_PAGING 1				//PIGGY_NO_PAGING not set  
-ÿ

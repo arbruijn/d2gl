@@ -46,7 +46,7 @@ void draw_hostage(object *obj)
 
 
 //------------- Called once when a hostage is rescued ------------------------------------------
-void hostage_rescue()
+void hostage_rescue(int hostage_number)
 {
 	//mprintf( (0, "Rescued hostage %d", hostage_number ));
 

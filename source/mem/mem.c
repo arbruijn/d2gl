@@ -242,7 +242,9 @@ void * mem_malloc( unsigned int size, char * var, char * filename, int line, int
 
 	MallocBase[id] = (unsigned int)ptr;
 	data = (int *)((int)MallocBase[id]-4);
+	#ifndef NDOS
 	MallocRealSize[id] = *data;
+	#endif
 	MallocSize[id] = size;
 	Varname[id] = var;
 	Filename[id] = filename;
@@ -286,12 +288,14 @@ int mem_check_integrity( int block_number )
 
 	data = (int *)((int)MallocBase[block_number]-4);
 
+	#ifndef NDOS
 	if ( *data != MallocRealSize[block_number] )	{
 		fprintf( stderr, "\nMEM_BAD_LENGTH: The length field of an allocated block was overwritten.\n" );
 		PrintInfo( block_number );
 		//Int3();
 		*data = MallocRealSize[block_number];
 	}
+	#endif
 
 	ErrorCount = 0;
 			

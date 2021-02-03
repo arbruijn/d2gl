@@ -364,7 +364,7 @@ start_endlevel_sequence()
 
 do_endlevel_frame() {Int3();}
 stop_endlevel_sequence() {Int3();}
-void render_endlevel_frame() {Int3();}
+void render_endlevel_frame(fix eye_offset) {Int3();}
 
 #else
 

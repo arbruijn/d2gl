@@ -8,21 +8,70 @@ SUCH USE, DISPLAY OR CREATION IS FOR NON-COMMERCIAL, ROYALTY OR REVENUE
 FREE PURPOSES.  IN NO EVENT SHALL THE END-USER USE THE COMPUTER CODE
 CONTAINED HEREIN FOR REVENUE-BEARING PURPOSES.  THE END-USER UNDERSTANDS
 AND AGREES TO THE TERMS HEREIN AND ACCEPTS THE SAME BY USE OF THIS FILE.  
-COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
+COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 */
+/*
+ * $Source: f:/miner/source/fix/rcs/fix.h $
+ * $Revision: 1.13 $
+ * $Author: matt $
+ * $Date: 1994/12/06 13:52:34 $
+ *
+ * FIX.H - prototypes and macros for fixed-point functions
+ *
+ * Copyright (c) 1993  Matt Toschlog & Mike Kulas
+ *
+ * $Log: fix.h $
+ * Revision 1.13  1994/12/06  13:52:34  matt
+ * Added f2ir(), which is fix-to-int with rounding
+ * 
+ * Revision 1.12  1994/05/18  21:45:16  matt
+ * Added comments
+ * 
+ * Revision 1.11  1994/01/19  23:12:02  matt
+ * Made fix_atan2() left-handed, like our coordinate system
+ * 
+ * Revision 1.10  1993/10/20  01:09:00  matt
+ * Add fix_asin(), improved fix_atan2()
+ * 
+ * Revision 1.9  1993/10/19  23:53:46  matt
+ * Added fix_atan2()
+ * 
+ * Revision 1.8  1993/10/19  22:22:40  matt
+ * Added fix_acos()
+ * 
+ * Revision 1.7  1993/09/17  11:37:01  mike
+ * Add capitalized versions of "some handy constants", eg:
+ * #define F1_0 f1_0
+ * 
+ * Revision 1.6  1993/08/24  13:00:48  matt
+ * Adopted new standard, and made assembly-callable routines not trash any regs
+ * 
+ * Revision 1.5  1993/08/12  13:12:45  matt
+ * Changed fixmul() to use SHRD instead of shl,shr,or
+ * 
+ * Revision 1.4  1993/08/04  19:57:18  matt
+ * Added parens in fix/float conversion macros
+ * 
+ * Revision 1.3  1993/08/04  11:41:45  matt
+ * Fixed bogus constants
+ * 
+ * Revision 1.2  1993/08/04  09:30:11  matt
+ * Added more constants
+ * 
+ * Revision 1.1  1993/08/03  17:45:53  matt
+ * Initial revision
+ * 
+ *
+ */
 
 #ifndef _FIX_H
 #define _FIX_H
 
+#include <stdint.h>
 #include "pstypes.h"
 
-typedef long fix;				//16 bits int, 16 bits frac
+typedef int fix;				//16 bits int, 16 bits frac
 typedef short fixang;		//angles
-
-typedef struct quad {
-	ulong low;
-	long high;
-} quad;
 
 //Convert an int to a fix
 #define i2f(i) ((i)<<16)
@@ -56,66 +105,20 @@ typedef struct quad {
 #define F0_5 	f0_5
 #define F0_1 	f0_1
 
-fix fixmul(fix a,fix b);
-#pragma aux fixmul parm [eax] [edx] = \
-	"imul	edx"				\
-	"shrd	eax,edx,16";
+static inline __attribute__((always_inline)) fix fixmul(fix a,fix b) { return (int32_t)(((int64_t)a * (int64_t)b) >> 16); }
 
+static inline __attribute__((always_inline)) fix fixdiv(fix a,fix b) { return (int32_t)((((int64_t)a) << 16) / b); }
 
-fix fixdiv(fix a,fix b);
-#pragma aux fixdiv parm [eax] [ebx] modify exact [eax edx] = \
-	"mov	edx,eax"	\
-	"sar	edx,16"	\
-	"shl	eax,16"	\
-	"idiv	ebx";
-
-fix fixmuldiv(fix a,fix b,fix c);
-#pragma aux fixmuldiv parm [eax] [edx] [ebx] modify exact [eax edx] = \
-	"imul	edx"	\
-	"idiv	ebx";
-
-#pragma aux fixmulaccum parm [esi] [eax] [edx] modify exact [eax edx] = \
-	"imul	edx"			\
-	"add  [esi],eax"	\
-	"adc	4[esi],edx";
-
-#pragma aux fixquadadjust parm [esi] modify exact [eax edx] = \
-	"mov  eax,[esi]"		\
-	"mov  edx,4[esi]"		\
-	"shrd	eax,edx,16";
-
-#pragma aux fixquadnegate parm [eax] modify exact [ebx] = \
-	"mov	ebx,[eax]"		\
-	"neg	ebx"				\
-	"mov	[eax],ebx"		\
-	"mov	ebx,4[eax]"		\
-	"not	ebx"				\
-	"sbb	ebx,-1"			\
-	"mov	4[eax],ebx";
-
-#pragma aux fixdivquadlong parm [eax] [edx] [ebx] modify exact [eax edx] = \
-	"idiv	ebx";
+static inline __attribute__((always_inline)) fix fixmuldiv(fix a,fix b,fix c) { return (int32_t)(((int64_t)a * (int64_t)b) / c); }
 
 //computes the square root of a long, returning a short
-ushort long_sqrt(long a);
+ushort long_sqrt(int a);
 
 //computes the square root of a quad, returning a long
-ulong quad_sqrt(long low,long high);
+int quad_sqrt(uint low,int high);
 
 //computes the square root of a fix, returning a fix
 fix fix_sqrt(fix a);
-
-//multiply two fixes, and add 64-bit product to a quad
-void fixmulaccum(quad *q,fix a,fix b);
-
-//extract a fix from a quad product
-fix fixquadadjust(quad *q);
-
-//divide a quad by a long
-long fixdivquadlong(ulong qlow,long qhigh,long d);
-
-//negate a quad
-void fixquadnegate(quad *q);
 
 //compute sine and cosine of an angle, filling in the variables
 //either of the pointers can be NULL
@@ -133,15 +136,42 @@ fixang fix_acos(fix v);
 //NOTE: this is different from the standard C atan2, since it is left-handed.
 fixang fix_atan2(fix cos,fix sin); 
 
+/*
 #pragma aux fix_fastsincos parm [eax] [esi] [edi] modify exact [eax ebx];
 #pragma aux fix_sincos parm [eax] [esi] [edi] modify exact [eax ebx];
 
-#pragma aux fix_asin "*" parm [eax] value [ax] modify exact [eax];
 #pragma aux fix_acos "*" parm [eax] value [ax] modify exact [eax];
 #pragma aux fix_atan2 "*" parm [eax] [ebx] value [ax] modify exact [eax ebx];
 
 #pragma aux long_sqrt "*" parm [eax] value [ax] modify [];
 #pragma aux fix_sqrt "*" parm [eax] value [eax] modify [];
 #pragma aux quad_sqrt "*" parm [eax] [edx] value [eax] modify [];
+*/
+
+typedef struct quad {
+	union {
+		struct {
+			uint low;
+			int high;
+		};
+		int64_t large;
+	};
+} quad;
+
+//typedef struct quad { struct int64_t large; } quad;
+
+//multiply two fixes, and add 64-bit product to a quad
+inline void fixmulaccum(quad *q,fix a,fix b) { q->large += (int64_t)a * b; }
+
+//extract a fix from a quad product
+inline fix fixquadadjust(quad *q) { return (fix)(q->large >> 16); }
+
+inline void fixquadinit(quad *q) { q->large = 0; }
+
+//divide a quad by a long
+long fixdivquadlong(ulong qlow,long qhigh,ulong d);
+
+//negate a quad
+inline void fixquadnegate(quad *q) { q->large = -q->large; }
 
 #endif

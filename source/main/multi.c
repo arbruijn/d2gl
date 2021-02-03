@@ -994,7 +994,7 @@ multi_endlevel(int *secret)
 //          the state of the game in some way.
 //
 
-#ifndef MACINTOSH
+#if !defined(MACINTOSH) && !defined(NDOS)
 extern PORT *com_port;
 #endif
 
@@ -1038,7 +1038,7 @@ multi_menu_poll(void)
 		return(-1);
 	}
 
-#if !defined(WINDOWS) && !defined(MACINTOSH)
+#if !defined(WINDOWS) && !defined(MACINTOSH) && !defined(NDOS)
 	if ((Game_mode & GM_MODEM) && (!GetCd(com_port)))
 	{
 		multi_leave_menu = 1;
@@ -3608,6 +3608,7 @@ void multi_prep_level(void)
 
 int Goal_blue_segnum,Goal_red_segnum;
 
+int find_goal_texture (ubyte t);
 void multi_apply_goal_textures()
 {
 	int		i,j,tex;

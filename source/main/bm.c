@@ -83,7 +83,7 @@ int					First_multi_bitmap_num=-1;
 bitmap_index		ObjBitmaps[MAX_OBJ_BITMAPS];
 ushort				ObjBitmapPtrs[MAX_OBJ_BITMAPS];		// These point back into ObjBitmaps, since some are used twice.
 
-#ifdef MACINTOSH
+#ifdef NPACK
 void read_tmap_info(CFILE *fp, int inNumTexturesToRead, int inOffset)
 {
 	int i;
@@ -355,7 +355,7 @@ void read_polygon_models(CFILE *fp, int inNumPolygonModelsToRead, int inOffset)
 	{
 		Polygon_models[i].n_models = cfile_read_int(fp);
 		Polygon_models[i].model_data_size = cfile_read_int(fp);
-		Polygon_models[i].model_data = (ubyte *)read_int_swap(fp);
+		Polygon_models[i].model_data = (ubyte *)INTEL_INT(cfile_read_int(fp));
 		for (j = 0; j < MAX_SUBMODELS; j++)
 			Polygon_models[i].submodel_ptrs[j] = cfile_read_int(fp);
 		for (j = 0; j < MAX_SUBMODELS; j++)
@@ -485,14 +485,14 @@ void load_exit_models()
 	exit_modelnum = N_polygon_models++;
 	destroyed_exit_modelnum = N_polygon_models++;
 
-	#ifndef MACINTOSH
+	#ifndef NPACK
 	cfread( &Polygon_models[exit_modelnum], sizeof(polymodel), 1, exit_hamfile );
 	cfread( &Polygon_models[destroyed_exit_modelnum], sizeof(polymodel), 1, exit_hamfile );
 	#else
 	for (i = exit_modelnum; i <= destroyed_exit_modelnum; i++) {
 		Polygon_models[i].n_models = cfile_read_int(exit_hamfile);
 		Polygon_models[i].model_data_size = cfile_read_int(exit_hamfile);
-		Polygon_models[i].model_data = (ubyte *)read_int_swap(exit_hamfile);
+		Polygon_models[i].model_data = (ubyte *)INTEL_INT(cfile_read_int(exit_hamfile));
 		for (j = 0; j < MAX_SUBMODELS; j++)
 			Polygon_models[i].submodel_ptrs[j] = cfile_read_int(exit_hamfile);
 		for (j = 0; j < MAX_SUBMODELS; j++)
@@ -541,7 +541,7 @@ void load_exit_models()
 }
 #endif		// SHAREWARE
 
-#endif		// MACINTOSH
+#endif		// NPACK
 
 //-----------------------------------------------------------------
 // Read data from piggy.
@@ -562,12 +562,14 @@ int bm_init()
 	return 0;
 }
 
+#define ELMS(x) (sizeof(x) / sizeof((x)[0]))
 void bm_read_all(CFILE * fp)
 {
 	int i,t;
 
 	NumTextures = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(NumTextures > 0 && NumTextures <= ELMS(Textures));
+#ifndef NPACK
 	cfread( Textures, sizeof(bitmap_index), NumTextures, fp );
 	cfread( TmapInfo, sizeof(tmap_info), NumTextures, fp );
 #else
@@ -577,60 +579,69 @@ void bm_read_all(CFILE * fp)
 #endif
 
 	t = cfile_read_int(fp);	
+	Assert(t > 0 && t <= ELMS(Sounds));
 	cfread( Sounds, sizeof(ubyte), t, fp );
 	cfread( AltSounds, sizeof(ubyte), t, fp );
 
 	Num_vclips = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(Num_vclips && Num_vclips <= ELMS(Vclip));
+#ifndef NPACK
 	cfread( Vclip, sizeof(vclip), Num_vclips, fp );
 #else
 	read_vclip_info(fp, Num_vclips, 0);
 #endif
 
 	Num_effects = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(Num_effects > 0 && Num_effects <= ELMS(Effects));
+#ifndef NPACK
 	cfread( Effects, sizeof(eclip), Num_effects, fp );
 #else	
 	read_effect_info(fp, Num_effects, 0);
 #endif
 
 	Num_wall_anims = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(Num_wall_anims > 0 && Num_wall_anims <= ELMS(WallAnims));
+#ifndef NPACK
 	cfread( WallAnims, sizeof(wclip), Num_wall_anims, fp );
 #else
 	read_wallanim_info(fp, Num_wall_anims, 0);
 #endif
 
 	N_robot_types = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(N_robot_types > 0 && N_robot_types <= MAX_ROBOT_TYPES);
+#ifndef NPACK
 	cfread( Robot_info, sizeof(robot_info), N_robot_types, fp );
 #else
 	read_robot_info(fp, N_robot_types, 0);
 #endif
 
 	N_robot_joints = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(N_robot_joints > 0 && N_robot_joints <= ELMS(Robot_joints));
+#ifndef NPACK
 	cfread( Robot_joints, sizeof(jointpos), N_robot_joints, fp );
 #else
 	read_robot_joint_info(fp, N_robot_joints, 0);
 #endif
 
 	N_weapon_types = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(N_weapon_types > 0 && N_weapon_types <= MAX_WEAPON_TYPES);
+#ifndef NPACK
 	cfread( Weapon_info, sizeof(weapon_info), N_weapon_types, fp );
 #else
 	read_weapon_info(fp, N_weapon_types, 0);
 #endif
 
 	N_powerup_types = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(N_powerup_types > 0 && N_powerup_types <= MAX_POWERUP_TYPES);
+#ifndef NPACK
 	cfread( Powerup_info, sizeof(powerup_type_info), N_powerup_types, fp );
 #else
 	read_powerup_info(fp, N_powerup_types, 0);
 #endif
 	
 	N_polygon_models = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(N_polygon_models > 0 && N_polygon_models <= MAX_POLYGON_MODELS);
+#ifndef NPACK
 	cfread( Polygon_models, sizeof(polymodel), N_polygon_models, fp );
 #else
 	read_polygon_models(fp, N_polygon_models, 0);
@@ -656,6 +667,7 @@ void bm_read_all(CFILE * fp)
 #endif
 
 	t = cfile_read_int(fp);
+	Assert(t > 0 && t <= ELMS(Gauges));
 	cfread( Gauges, sizeof(bitmap_index), t, fp );
 	cfread( Gauges_hires, sizeof(bitmap_index), t, fp );
 #ifdef MACINTOSH
@@ -666,6 +678,7 @@ void bm_read_all(CFILE * fp)
 #endif
 
 	t = cfile_read_int(fp);
+	Assert(t > 0 && t <= ELMS(ObjBitmaps));
 	cfread( ObjBitmaps, sizeof(bitmap_index), t, fp );
 	cfread( ObjBitmapPtrs, sizeof(ushort), t, fp );
 
@@ -679,15 +692,16 @@ void bm_read_all(CFILE * fp)
 	}
 #endif
 
-#ifndef MACINTOSH
+#ifndef NPACK
 	cfread( &only_player_ship, sizeof(player_ship), 1, fp );
 #else
 	read_player_ship(fp);
 #endif
 
 	Num_cockpits = cfile_read_int(fp);
+	Assert(Num_cockpits > 0 && Num_cockpits <= ELMS(cockpit_bitmap));
 	cfread( cockpit_bitmap, sizeof(bitmap_index), Num_cockpits, fp );
-#ifdef MACINTOSH
+#ifdef NPACK
 	for (i = 0; i < Num_cockpits; i++)
 		cockpit_bitmap[i].index = SWAPSHORT(cockpit_bitmap[i].index);
 #endif
@@ -700,7 +714,8 @@ void bm_read_all(CFILE * fp)
 	First_multi_bitmap_num = cfile_read_int(fp);
 
 	Num_reactors = cfile_read_int(fp);
-#ifndef MACINTOSH
+	Assert(Num_reactors > 0 && Num_reactors <= ELMS(Reactors));
+#ifndef NPACK
 	cfread( Reactors, sizeof(*Reactors), Num_reactors, fp);
 #else
 	read_reactor_info(fp, Num_reactors, 0);
@@ -735,7 +750,7 @@ void bm_read_extra_robots(char *fname,int type)
 	int t,i;
 	int version;
 	
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		ulong varSave = 0;
 	#endif
 
@@ -758,7 +773,7 @@ void bm_read_extra_robots(char *fname,int type)
 	N_weapon_types = N_D2_WEAPON_TYPES+t;
 	if (N_weapon_types >= MAX_WEAPON_TYPES)
 		Error("Too many weapons (%d) in <%s>.  Max is %d.",t,fname,MAX_WEAPON_TYPES-N_D2_WEAPON_TYPES);
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		read_weapon_info(fp, t, N_D2_WEAPON_TYPES);
 	#else
 		cfread( &Weapon_info[N_D2_WEAPON_TYPES], sizeof(weapon_info), t, fp );
@@ -770,7 +785,7 @@ void bm_read_extra_robots(char *fname,int type)
 	N_robot_types = N_D2_ROBOT_TYPES+t;
 	if (N_robot_types >= MAX_ROBOT_TYPES)
 		Error("Too many robots (%d) in <%s>.  Max is %d.",t,fname,MAX_ROBOT_TYPES-N_D2_ROBOT_TYPES);
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		read_robot_info(fp, t, N_D2_ROBOT_TYPES);
 	#else
 		cfread( &Robot_info[N_D2_ROBOT_TYPES], sizeof(robot_info), t, fp );
@@ -780,7 +795,7 @@ void bm_read_extra_robots(char *fname,int type)
 	N_robot_joints = N_D2_ROBOT_JOINTS+t;
 	if (N_robot_joints >= MAX_ROBOT_JOINTS)
 		Error("Too many robot joints (%d) in <%s>.  Max is %d.",t,fname,MAX_ROBOT_JOINTS-N_D2_ROBOT_JOINTS);
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		read_robot_joint_info(fp, t, N_D2_ROBOT_JOINTS);
 	#else
 		cfread( &Robot_joints[N_D2_ROBOT_JOINTS], sizeof(jointpos), t, fp );
@@ -790,7 +805,7 @@ void bm_read_extra_robots(char *fname,int type)
 	N_polygon_models = N_D2_POLYGON_MODELS+t;
 	if (N_polygon_models >= MAX_POLYGON_MODELS)
 		Error("Too many polygon models (%d) in <%s>.  Max is %d.",t,fname,MAX_POLYGON_MODELS-N_D2_POLYGON_MODELS);
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		read_polygon_models(fp, t, N_D2_POLYGON_MODELS);
 	#else
 		cfread( &Polygon_models[N_D2_POLYGON_MODELS], sizeof(polymodel), t, fp );
@@ -802,7 +817,7 @@ void bm_read_extra_robots(char *fname,int type)
 		Assert( Polygon_models[i].model_data != NULL );
 		cfread( Polygon_models[i].model_data, sizeof(ubyte), Polygon_models[i].model_data_size, fp );
 		
-		#ifdef MACINTOSH
+		#ifdef NPACK
 			swap_polygon_model_data(Polygon_models[i].model_data);
 		#endif
 		
@@ -812,7 +827,7 @@ void bm_read_extra_robots(char *fname,int type)
 	cfread( &Dying_modelnums[N_D2_POLYGON_MODELS], sizeof(int), t, fp );
 	cfread( &Dead_modelnums[N_D2_POLYGON_MODELS], sizeof(int), t, fp );
 
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		for (i = N_D2_POLYGON_MODELS; i < N_polygon_models; i++)
 		{
 			Dying_modelnums[i]= SWAPINT(Dying_modelnums[i]);
@@ -824,7 +839,7 @@ void bm_read_extra_robots(char *fname,int type)
 	if (N_D2_OBJBITMAPS+t >= MAX_OBJ_BITMAPS)
 		Error("Too many object bitmaps (%d) in <%s>.  Max is %d.",t,fname,MAX_OBJ_BITMAPS-N_D2_OBJBITMAPS);
 	cfread( &ObjBitmaps[N_D2_OBJBITMAPS], sizeof(bitmap_index), t, fp );
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		for (i = N_D2_OBJBITMAPS; i < (N_D2_OBJBITMAPS + t); i++)
 		{
 			ObjBitmaps[i].index = SWAPSHORT(ObjBitmaps[i].index);
@@ -835,7 +850,7 @@ void bm_read_extra_robots(char *fname,int type)
 	if (N_D2_OBJBITMAPPTRS+t >= MAX_OBJ_BITMAPS)
 		Error("Too many object bitmap pointers (%d) in <%s>.  Max is %d.",t,fname,MAX_OBJ_BITMAPS-N_D2_OBJBITMAPPTRS);
 	cfread( &ObjBitmapPtrs[N_D2_OBJBITMAPPTRS], sizeof(ushort), t, fp );
-	#ifdef MACINTOSH
+	#ifdef NPACK
 		for (i = N_D2_OBJBITMAPPTRS; i < (N_D2_OBJBITMAPPTRS + t); i++)
 		{
 			ObjBitmapPtrs[i] = SWAPSHORT(ObjBitmapPtrs[i]);
@@ -875,7 +890,7 @@ void load_robot_replacements(char *level_name)
 		i = cfile_read_int(fp);		//read robot number
 	   if (i<0 || i>=N_robot_types)
 			Error("Robots number (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_robot_types-1);
-		#ifdef MACINTOSH
+		#ifdef NPACK
 			read_robot_info(fp, 1, i);
 		#else
 			cfread( &Robot_info[i], sizeof(robot_info), 1, fp );
@@ -887,7 +902,7 @@ void load_robot_replacements(char *level_name)
 		i = cfile_read_int(fp);		//read joint number
 		if (i<0 || i>=N_robot_joints)
 			Error("Robots joint (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_robot_joints-1);
-		#ifdef MACINTOSH
+		#ifdef NPACK
 			read_robot_joint_info(fp, 1, i);
 		#else
 			cfread( &Robot_joints[i], sizeof(jointpos), 1, fp );
@@ -901,7 +916,7 @@ void load_robot_replacements(char *level_name)
 		if (i<0 || i>=N_polygon_models)
 			Error("Polygon model (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_polygon_models-1);
 	
-		#ifdef MACINTOSH
+		#ifdef NPACK
 			read_polygon_models(fp, 1, i);
 		#else
 			cfread( &Polygon_models[i], sizeof(polymodel), 1, fp );
@@ -912,7 +927,7 @@ void load_robot_replacements(char *level_name)
 		Assert( Polygon_models[i].model_data != NULL );
 
 		cfread( Polygon_models[i].model_data, sizeof(ubyte), Polygon_models[i].model_data_size, fp );
-		#ifdef MACINTOSH
+		#ifdef NPACK
 			swap_polygon_model_data(Polygon_models[i].model_data);
 		#endif
 		g3_init_polygon_model(Polygon_models[i].model_data);

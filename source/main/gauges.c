@@ -52,6 +52,8 @@ char gauges_rcsid[] = "$Id: gauges.c 2.130 1996/12/09 15:11:43 jeremy Exp $";
 #include "piggy.h"
 #include "laser.h"
 
+#include "globvars.h"
+
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif

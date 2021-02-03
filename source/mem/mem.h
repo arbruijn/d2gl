@@ -12,6 +12,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 */
  
 #ifdef MACINTOSH
+#include "pstypes.h"
 extern ubyte virtual_memory_on;
 #endif
 

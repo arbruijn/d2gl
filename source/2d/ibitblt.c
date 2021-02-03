@@ -16,7 +16,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 static char rcsid[] = "$Id: ibitblt.c 1.16 1996/12/19 16:51:38 matt Exp $";
 #pragma on (unreferenced)
 
-#ifndef MACINTOSH
+#ifndef NASM
 
 
 #include <conio.h>
@@ -604,7 +604,7 @@ void	gr_ibitblt_find_hole_size( grs_bitmap * mask_bmp, int *minx, int *miny, int
 	}
 }
 
-#else		// ifdef MACINTOSH
+#else		// ifdef NASM
 
 #include "pa_enabl.h"
 #include "pstypes.h"
@@ -866,4 +866,4 @@ void gr_ibitblt_find_hole_size(grs_bitmap *mask_bmp, int *minx, int *miny, int *
 	Assert (count);
 }
 
-#endif		// ifdef MACINTOSH
+#endif		// ifdef NASM

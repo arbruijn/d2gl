@@ -1116,7 +1116,7 @@ load_game_data(CFILE *LoadFile)
 
 // code to correctly read wall structure on mac.  I'm assuming only v20 walls
 // and up.
-#ifndef MACINTOSH
+#ifndef NPACK
 					if (cfread(&Walls[i], game_fileinfo.walls_sizeof, 1,LoadFile)!=1)
 						Error( "Error reading Walls[%d] in gamesave.c", i);
 #else
@@ -1190,7 +1190,7 @@ load_game_data(CFILE *LoadFile)
 					Assert(sizeof(ActiveDoors[i]) == game_fileinfo.doors_sizeof);
 
 // code to read doors for mac -- assume version 20 and greater for doors
-#ifndef MACINTOSH
+#ifndef NPACK
 					if (cfread(&ActiveDoors[i], game_fileinfo.doors_sizeof,1,LoadFile)!=1)
 						Error( "Error reading ActiveDoors[%d] in gamesave.c", i);
 #else
@@ -1308,7 +1308,7 @@ load_game_data(CFILE *LoadFile)
 					}
 				}
 				else {
-#ifndef MACINTOSH
+#ifndef NPACK
 					if (cfread(&Triggers[i], game_fileinfo.triggers_sizeof,1,LoadFile)!=1)
 						Error( "Error reading Triggers[%d] in gamesave.c", i);
 #else
@@ -1333,7 +1333,7 @@ load_game_data(CFILE *LoadFile)
 	{
 		if (!cfseek( LoadFile, game_fileinfo.control_offset,SEEK_SET ))	{
 			for (i=0;i<game_fileinfo.control_howmany;i++)
-#ifndef MACINTOSH
+#ifndef NPACK
 				if (cfread(&ControlCenterTriggers, game_fileinfo.control_sizeof,1,LoadFile)!=1)
 					Error( "Error reading ControlCenterTriggers in gamesave.c", i);
 #else
@@ -1369,7 +1369,7 @@ load_game_data(CFILE *LoadFile)
 				}
 				else {
 					Assert(game_fileinfo.matcen_sizeof == sizeof(RobotCenters[i]));
-#ifndef MACINTOSH
+#ifndef NPACK
 					if (cfread(&RobotCenters[i], game_fileinfo.matcen_sizeof,1,LoadFile)!=1)
 						Error( "Error reading RobotCenters in gamesave.c", i);
 #else
@@ -1409,7 +1409,7 @@ load_game_data(CFILE *LoadFile)
 					mprintf((0, "Warning: Old mine version.  Not reading Dl_indices info.\n"));
 					Int3();	//shouldn't be here!!!
 				} else {
-#ifndef MACINTOSH
+#ifndef NPACK
 					if (cfread(&Dl_indices[i], game_fileinfo.dl_indices_sizeof, 1, LoadFile) != 1)
 						Error( "Error reading Dl_indices in gamesave.c", i);
 #else
@@ -1437,7 +1437,7 @@ load_game_data(CFILE *LoadFile)
 				if (game_top_fileinfo.fileinfo_version < 29) {
 					mprintf((0, "Warning: Old mine version.  Not reading delta light info.\n"));
 				} else {
-#ifndef MACINTOSH
+#ifndef NPACK
 					if (cfread(&Delta_lights[i], game_fileinfo.delta_light_sizeof, 1, LoadFile) != 1)
 						Error( "Error reading Delta Lights in gamesave.c", i);
 #else
@@ -1738,7 +1738,7 @@ int load_level(char * filename_passed)
 
 	if (version >= 7) {
 		Num_flickering_lights = read_int(LoadFile);
-		#ifdef MACINTOSH
+		#ifdef NPACK
 			Assert((Num_flickering_lights >= 0) && (Num_flickering_lights < MAX_FLICKERING_LIGHTS));
 			for (i = 0; i < Num_flickering_lights; i++)
 			{

@@ -271,7 +271,7 @@ int gr_uline(fix _a1, fix _b1, fix _a2, fix _b2)
 	switch(TYPE)
 	{
 	case BM_LINEAR:
-#ifndef MACINTOSH
+#ifndef NASM
 		gr_linear_line( a1, b1, a2, b2 );
 #else
 		gr_universal_uline( a1, b1, a2, b2 );
@@ -306,7 +306,7 @@ int gr_line(fix a1, fix b1, fix a2, fix b2)
 
 	CLIPLINE(a1,b1,a2,b2,x1,y1,x2,y2,return 2,clipped=1, FSCALE );
 
-	#if defined(MACINTOSH)
+	#if defined(NASM)
 	if ( PAEnabled )
 		pa_draw_line( a1, b1, a2, b2 );
 	else

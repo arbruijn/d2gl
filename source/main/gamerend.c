@@ -420,7 +420,7 @@ extern int gr_bitblt_dest_step_shift;
 extern int gr_wait_for_retrace;
 extern int gr_bitblt_double;
 
-#ifndef MACINTOSH
+#ifndef NASM
 void expand_row(ubyte * dest, ubyte * src, int num_src_pixels );
 #pragma aux expand_row parm [edi] [esi] [ecx] modify exact [ecx esi edi eax ebx] = \
 	"add	esi, ecx"			\

@@ -30,5 +30,9 @@ typedef ubyte bool;
 #define NULL 0
 #endif
 
+#define max(a,b)  (((a) > (b)) ? (a) : (b))
+#define min(a,b)  (((a) < (b)) ? (a) : (b))
+#include "psrand.h"
+
 #endif
 

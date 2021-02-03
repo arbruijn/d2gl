@@ -23,10 +23,12 @@ void Error(char *fmt,...);					//exit with error code=1, print message
 
 #ifndef MACINTOSH
 
-	#if defined(__NT__) 
+	#if defined(__NT__) || defined(NDOS)
 		void WinInt3();
 		#define Int3() WinInt3()
-		#define Assert(expr) _Assert(expr, #expr, __FILE__, __LINE__)
+		//#define Assert(expr) do{if(!(expr))_Assert(0, #expr, __FILE__, __LINE__);}while(0)
+		#define Assert(expr) _AssertFun(expr, #expr, __FILE__, __LINE__)
+		static inline int _AssertFun(int val,const char*expr,const char*fn, int line) { if (!val)_Assert(0,expr,fn,line); return val; }
 	#else // ifdef __NT__
 		void Int3(void);									//generate int3
 		#pragma aux Int3 = "int 3h";

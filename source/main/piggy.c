@@ -533,9 +533,7 @@ void piggy_init_pigfile(char *filename)
 	grs_bitmap temp_bitmap;
 	DiskBitmapHeader bmh;
 	int header_size, N_bitmaps, data_size, data_start;
-	#ifdef MACINTOSH
 	char name[255];		// filename + path for the mac
-	#endif
 
 	piggy_close_file();             //close old pig if still open
 
@@ -544,8 +542,10 @@ void piggy_init_pigfile(char *filename)
 		filename = DEFAULT_PIGFILE_SHAREWARE;
 	#endif
 
+	strcpy(name, filename);
+	strlwr(name);
 	#ifndef MACINTOSH
-		Piggy_fp = cfopen( filename, "rb" );
+		Piggy_fp = cfopen( name, "rb" );
 	#else
 		sprintf(name, ":Data:%s", filename);
 		Piggy_fp = cfopen( name, "rb" );
@@ -591,7 +591,7 @@ void piggy_init_pigfile(char *filename)
 
 	N_bitmaps = cfile_read_int(Piggy_fp);
 
-	header_size = N_bitmaps*sizeof(DiskBitmapHeader);
+	header_size = N_bitmaps*18; //sizeof(DiskBitmapHeader);
 
 	data_start = header_size + cftell(Piggy_fp);
 
@@ -600,7 +600,7 @@ void piggy_init_pigfile(char *filename)
 	Num_bitmap_files = 1;
 
 	for (i=0; i<N_bitmaps; i++ )    {
-#ifndef MACINTOSH
+#ifndef NPACK
 		cfread( &bmh, sizeof(DiskBitmapHeader), 1, Piggy_fp );
 #else
 		cfread(bmh.name, 8, 1, Piggy_fp);
@@ -744,7 +744,7 @@ void piggy_new_pigfile(char *pigname)
 		data_size = cfilelength(Piggy_fp) - data_start;
 	
 		for (i=1; i<=N_bitmaps; i++ )   {
-#ifndef MACINTOSH       
+#ifndef NPACK
 			cfread( &bmh, sizeof(DiskBitmapHeader), 1, Piggy_fp );
 #else
 			cfread(bmh.name, 8, 1, Piggy_fp);
@@ -1290,6 +1290,7 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 			int zsize = 0;
 			descent_critical_error = 0;
 			zsize = cfile_read_int(Piggy_fp);
+			Assert(zsize < 16777216);
 			if ( descent_critical_error )   {
 				piggy_critical_error();
 				goto ReDoIt;

@@ -14,9 +14,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gr.h"
 #include "error.h"
 
+#if 0
 void gr_sync_display()
 {
 }
+#endif
 
 void gr_modex_uscanline( short x1, short x2, short y, unsigned char color )
 {

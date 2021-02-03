@@ -176,7 +176,7 @@ void gr_free_sub_bitmap(grs_bitmap *bm )
 //NO_INVERSE_TABLE 	"jne	again2x"				\
 
 void decode_data_asm(ubyte *data, int num_pixels, ubyte * colormap, int * count );
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux decode_data_asm parm [esi] [ecx] [edi] [ebx] modify exact [esi edi eax ebx ecx] = \
 "again_ddn:"							\
 	"xor	eax,eax"				\

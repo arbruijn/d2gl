@@ -47,7 +47,7 @@ extern int Physics_cheat_flag;
 
 int oflow_check(fix a,fix b);
 
-#ifndef MACINTOSH
+#ifndef NASM
 #pragma aux oflow_check parm [eax] [ebx] value [eax] modify exact [eax ebx edx] = \
    "cdq"				\
 	"xor eax,edx"	\

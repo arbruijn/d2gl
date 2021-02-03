@@ -1,63 +1,85 @@
 #
-# $Source: f:/miner/source/3d/rcs/makefile $
-# $Revision: 1.10 $
-# $Author: matt $
-# $Date: 1996/01/08 14:59:22 $
+# $Source: Buggin:miner:source:3d::RCS:makefile $
+# $Revision: 1.2 $
+# $Author: allender $
+# $Date: 1995/08/23 16:58:12 $
 #
 # Makefile for 3d library
 #
 
-# What to install
-INSTALL_TARGS = 3d.lib 3d.h 3d.inc
+LIBDIR = ::lib:
+OBJDIR = :obj:
+SRCDIR = :
 
-# What libs to build
-LIBS = 3d
+# What libs to make
+LIB = 3d.lib
 
-# What objs in the lib
-3D_OBJS = globvars.obj setup.obj matrix.obj points.obj draw.obj clipper.obj \
-	horizon.obj instance.obj rod.obj interp.obj
+# includes to copy to lib directory
+GLOBAL_INCLUDES = globvars.h 3d.h
 
-# What test programs to make
-TEST_PROGS = 3dtest
+# test file libraries needed
+TEST_LIBS = {LIBDIR}gr.lib {LIBDIR}mem.lib {LIBDIR}io.lib {LIBDIR}cfile.lib ¶
+	{LIBDIR}misc.lib {LIBDIR}macsys.lib
 
-# What object files and libs for the test programs
-3DTEST_SRCS = 3dtest.c segment.c trakball.c
-3DTEST_LIBS = 3d.lib vecmat.lib gr.lib io.lib fix.lib div0.lib texmap.lib misc.lib bm.lib
+# standard libs to link anything with
+STD_LIBS = ¶
+	"{CLibraries}"CSANELib.o ¶
+	"{CLibraries}"Math.o ¶
+	"{CLibraries}"StdClib.o ¶
+	"{Libraries}"Runtime.o ¶
+	"{Libraries}"Interface.o
 
-#rules and targets common to all Miner makefiles
-%include $(INIT)\makefile.def
+# resource files to be used in test file
+TEST_RESOURCES = {LIBDIR}bios.r {LIBDIR}macsys.r
 
-### OPUS MKMF:  Do not remove this line!  Generated dependencies follow.
+OBJ_DIR = :obj:
 
-3dtest.obj: 3d.h conio.h fix.h gr.h mono.h mouse.h out.c pstypes.h vecmat.h
+# C compiler options
+CFLAGS = {SYM_FLAG}
+	
+LDFLAGS = ¶
+	{SYM_FLAG}
+	
+3D_OBJS = ¶
+	{OBJDIR}clipper.c.o {OBJDIR}horizon.c.o {OBJDIR}matrix.c.o {OBJDIR}rod.c.o ¶
+	{OBJDIR}draw.c.o {OBJDIR}instance.c.o {OBJDIR}points.c.o {OBJDIR}setup.c.o ¶
+	{OBJDIR}globvars.c.o {OBJDIR}interp.c.o
 
-clipper.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
+All Ä {LIB}
 
-draw.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
+{LIB} Ä {3D_OBJS}
+	Echo "# `Date -t` ----- Building {LIB}..."
+	{Linker} {LibraryFlags} {OBJ_DIR}Å -o {LIB}
+	Echo "# Copying files to lib directory..."
+	duplicate -y {LIB} ::lib
+	duplicate -y {GLOBAL_INCLUDES} ::lib
+	
+clean Ä
+	del -i :obj:Å
+	del -i "{LIB}"
 
-globvars.obj: 3d.inc fix.inc psmacros.inc pstypes.inc vecmat.inc
+# dependency for obj and source directories
+"{OBJDIR}"		Ä	"{SRCDIR}"
 
-horizon.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
+.c.o	Ä	.c
+	Echo `Date -t` ---- Compiling {default}.c
+	{C} "{depDir}{default}.c" {MyCFlags} {CFlags} ¶
+		-o "{targDir}{default}.c.o"		¶
+		|| ( Echo "#####   ### ERROR ###   #####" )
 
-instance.obj: 3d.inc fix.inc psmacros.inc pstypes.inc vecmat.inc
+.a.o	Ä	.a
+	Echo "# `Date -t` ----- Assembling {default}.a..."
+	Asm "{depDir}{default}.a"			¶
+		-o "{targDir}{default}.a.o"		¶
+		|| ( Echo "#####   ### ERROR ###   #####" )
 
-interp.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
-
-matrix.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
-
-objects.obj: 3d.inc fix.inc psmacros.inc pstypes.inc vecmat.inc
-
-points.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
-
-rod.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
-
-segment.obj: 3d.h fix.h gr.h pstypes.h vecmat.h
-
-setup.obj: 3d.inc fix.inc gr.inc psmacros.inc pstypes.inc vecmat.inc
-
-trakball.obj: fix.h math.h mono.h pstypes.h
-
-upvecs.obj: fix.h pstypes.h vecmat.h
-
-upvecs2.obj: fix.h pstypes.h vecmat.h
-
+#  Dependencies below this line
+clipper.c.o Ä makefile clipper.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h globvars.h
+draw.c.o Ä makefile draw.c ::lib:error.h 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h globvars.h
+globvars.c.o Ä makefile globvars.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h globvars.h
+horizon.c.o Ä makefile horizon.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h
+instance.c.o Ä makefile instance.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h
+interp.c.o Ä makefile interp.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h
+matrix.c.o Ä makefile matrix.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h globvars.h
+rod.c.o Ä makefile rod.c 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h
+setup.c.o Ä makefile setup.c ::lib:error.h 3d.h ::lib:fix.h ::lib:dtypes.h ::lib:gr.h globvars.h

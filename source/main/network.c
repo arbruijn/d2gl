@@ -1419,7 +1419,7 @@ void network_send_rejoin_sync(int player_num)
 	mprintf((0, "Sending rejoin sync packet!!!\n"));
 
 	if (Network_game_type == IPX_GAME) {
-		#ifndef MACINTOSH       
+		#ifndef MACINTOSH
 		ipx_send_internetwork_packet_data( (ubyte *)&Netgame, sizeof(netgame_info), Network_player_rejoining.player.network.ipx.server, Network_player_rejoining.player.network.ipx.node );
 		ipx_send_internetwork_packet_data( (ubyte *)&NetPlayers, sizeof(AllNetPlayers_info), Network_player_rejoining.player.network.ipx.server, Network_player_rejoining.player.network.ipx.node );
 		#else
@@ -1460,7 +1460,7 @@ void resend_sync_due_to_packet_loss_for_allender ()
 	Netgame.monitor_vector = network_create_monitor_vector();
 
 	if (Network_game_type == IPX_GAME) {
-		#ifndef MACINTOSH       
+		#ifndef MACINTOSH
 		ipx_send_internetwork_packet_data( (ubyte *)&Netgame, sizeof(netgame_info), Network_player_rejoining.player.network.ipx.server, Network_player_rejoining.player.network.ipx.node );
 		ipx_send_internetwork_packet_data( (ubyte *)&NetPlayers, sizeof(AllNetPlayers_info), Network_player_rejoining.player.network.ipx.server, Network_player_rejoining.player.network.ipx.node );
 		#else
@@ -1640,7 +1640,7 @@ network_send_game_list_request()
 		memcpy( me.player.network.ipx.node, ipx_get_my_local_address(), 6 );
 		memcpy( me.player.network.ipx.server, ipx_get_my_server_address(), 4 );
 
-		#ifndef MACINTOSH       
+		#ifndef MACINTOSH
 		ipx_send_broadcast_packet_data( (ubyte *)&me, sizeof(sequence_packet) );
 		#else
 		send_sequence_packet( me, NULL, NULL, NULL);
@@ -1671,7 +1671,7 @@ void network_send_all_info_request(char type,int which_security)
 		memcpy( me.player.network.ipx.node, ipx_get_my_local_address(), 6 );
 		memcpy( me.player.network.ipx.server, ipx_get_my_server_address(), 4 );
 
-		#ifndef MACINTOSH       
+		#ifndef MACINTOSH
 		ipx_send_broadcast_packet_data( (ubyte *)&me, sizeof(sequence_packet) );
 		#else
 		send_sequence_packet(me, NULL, NULL, NULL);

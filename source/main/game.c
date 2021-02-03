@@ -168,7 +168,7 @@ int stop_count,start_count;
 int time_stopped,time_started;
 #endif
 
-#ifndef MACINTOSH
+#ifndef NASM
 ubyte * Game_cockpit_copy_code = NULL;
 #else
 ubyte Game_cockpit_copy_code = 0;
@@ -490,7 +490,7 @@ void init_cockpit()
  );
 	gr_set_curfont( GAME_FONT );
 
-#if !defined(MACINTOSH) && !defined(WINDOWS)
+#if !defined(NASM) && !defined(WINDOWS)
 	if (Game_cockpit_copy_code)
 		free(Game_cockpit_copy_code);
 	Game_cockpit_copy_code  = NULL;
@@ -533,7 +533,7 @@ void init_cockpit()
 	);
 
 #ifndef WINDOWS
-	#ifdef MACINTOSH
+	#ifdef NASM
 		if ( !PAEnabled )
 			gr_ibitblt_create_mask( bm, minx, miny, maxx-minx+1, maxy-miny+1, VR_offscreen_buffer->cv_bitmap.bm_rowsize);
 		else
@@ -657,7 +657,7 @@ void game_init_render_sub_buffers( int x, int y, int w, int h )
 
 #endif
 	if (Scanline_double) {
-		#ifdef MACINTOSH
+		#ifdef NASM
 		if ( w & 0x3 )
 			w &= ~0x3;
 		gr_init_sub_canvas( &VR_render_sub_buffer[0], &VR_render_buffer[0], x, y, w/2, (h/2)+1);
@@ -2352,7 +2352,7 @@ void close_game()
 
 	restore_effect_bitmap_icons();
 
-#if !defined(MACINTOSH) && !defined(WINDOWS)
+#if !defined(NASM) && !defined(WINDOWS)
 	if (Game_cockpit_copy_code)	{
 		free(Game_cockpit_copy_code);
 		Game_cockpit_copy_code = NULL;
@@ -2659,7 +2659,7 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 				init_cockpit();
 				force_cockpit_redraw=0;
 			}
-			game_render_frame();
+			my_game_render_frame();
 			//show_extra_views();		//missile view, buddy bot, etc.
 
 			#ifndef RELEASE

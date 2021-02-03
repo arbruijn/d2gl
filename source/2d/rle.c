@@ -48,7 +48,7 @@ static char rcsid[] = "$Id: rle.c 1.27 1996/03/14 10:22:05 matt Exp $";
 
 ubyte *gr_rle_decode_asm( ubyte * src, ubyte * dest );
 
-#if !defined(MACINTOSH)
+#if !defined(NASM)
 #pragma aux gr_rle_decode_asm parm [esi] [edi] value [edi] modify exact [eax ebx ecx edx esi edi] = \
 "  cld					"\
 "	xor	ecx, ecx		"\		
@@ -119,7 +119,7 @@ void gr_rle_decode( ubyte * src, ubyte * dest )
 
 void rle_stosb(char *dest, int len, int color);
 
-#if !defined(MACINTOSH)
+#if !defined(NASM)
 
 #pragma aux rle_stosb = "cld rep	stosb" parm [edi] [ecx] [eax] modify exact [edi ecx];
 
@@ -462,14 +462,14 @@ void rle_expand_texture_sub( grs_bitmap * bmp, grs_bitmap * rle_temp_bitmap_1 )
 	rle_temp_bitmap_1->bm_flags = bmp->bm_flags & (~BM_FLAG_RLE);
 
 	for (i=0; i < bmp->bm_h; i++ )    {
-#ifndef MACINTOSH
+#ifndef NASM
 		dbits1=(unsigned char *)gr_rle_decode_asm( sbits, dbits );
 #else
 		gr_rle_decode( sbits, dbits );
 #endif
 		sbits += (int)bmp->bm_data[4+i];
 		dbits += bmp->bm_w;
-#ifndef MACINTOSH
+#ifndef NASM
 		Assert( dbits == dbits1 );		// Get John, bogus rle data!
 #endif
 	}

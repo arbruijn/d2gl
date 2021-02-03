@@ -1,0 +1,1600 @@
+diff -u -p a/main/cntrlcen.c b/main/cntrlcen.c
+--- a/main/cntrlcen.c
++++ b/main/cntrlcen.c
+@@ -132,7 +132,7 @@ int	Alan_pavlish_reactor_times[NDL] = {9
+ void do_controlcen_dead_frame(void)
+ {
+ 	if ((Dead_controlcen_object_num != -1) && (Countdown_seconds_left > 0))
+-		if (rand() < FrameTime*4)
++		if (psrand() < FrameTime*4)
+ 			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0, 1);
+ 
+ 	if (Control_center_destroyed && !Endlevel_sequence)
+@@ -169,8 +169,8 @@ void do_countdown_frame()
+ 	if (Difficulty_level == 0)
+ 		div_scale = 4;
+ 
+-	ConsoleObject->mtype.phys_info.rotvel.x += (fixmul(rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
+-	ConsoleObject->mtype.phys_info.rotvel.z += (fixmul(rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
++	ConsoleObject->mtype.phys_info.rotvel.x += (fixmul(psrand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
++	ConsoleObject->mtype.phys_info.rotvel.z += (fixmul(psrand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
+ 	//	Hook in the rumble sound effect here.
+ 
+ 	old_time = Countdown_timer;
+@@ -385,7 +385,7 @@ void do_controlcen_frame(object *obj)
+ 			//	some of time, based on level, fire another thing, not directly at player, so it might hit him if he's constantly moving.
+ 			rand_prob = F1_0/(abs(Current_level_num)/4+2);
+ 			count = 0;
+-			while ((rand() > rand_prob) && (count < 4)) {
++			while ((psrand() > rand_prob) && (count < 4)) {
+ 				vms_vector	randvec;
+ 
+ 				make_random_vector(&randvec);
+diff -u -p a/main/newdemo.c b/main/newdemo.c
+--- a/main/newdemo.c
++++ b/main/newdemo.c
+@@ -3140,7 +3140,7 @@ void newdemo_start_playback(char * filen
+ 		if ( NumFiles == 0 ) { 
+ 			return;		// No files found!
+ 		}
+-		RandFileNum = rand() % NumFiles;
++		RandFileNum = psrand() % NumFiles;
+ 		NumFiles = 0;
+ 		if( !FileFindFirst( "demos\\*.DEM", &find ) )	{
+ 			do	{
+diff -u -p a/main/network.c b/main/network.c
+--- a/main/network.c
++++ b/main/network.c
+@@ -3424,7 +3424,7 @@ network_send_sync(void)
+ 
+ 	// Randomize their starting locations...
+ 
+-	srand( timer_get_fixed_seconds() );
++	pssrand(timer_get_fixed_seconds());
+ 	for (i=0; i<NumNetPlayerPositions; i++ )        
+ 	{
+ 		if (Players[i].connected)
+@@ -3434,7 +3434,7 @@ network_send_sync(void)
+ 		else {
+ 			do 
+ 			{
+-				np = rand() % NumNetPlayerPositions;
++				np = psrand() % NumNetPlayerPositions;
+ 				for (j=0; j<i; j++ )    
+ 				{
+ 					if (Netgame.locations[j]==np)   
+@@ -3816,8 +3816,8 @@ network_start_game()
+ 
+ 	network_set_game_mode(Netgame.gamemode);
+ 
+-   srand( timer_get_fixed_seconds() );
+-   Netgame.Security=rand();  // For syncing Netgames with player packets
++   pssrand(timer_get_fixed_seconds());
++   Netgame.Security=psrand();  // For syncing Netgames with player packets
+ 
+ 	if(network_select_players())
+ 	{
+diff -u -p a/main/laser.c b/main/laser.c
+--- a/main/laser.c
++++ b/main/laser.c
+@@ -759,7 +759,7 @@ int Laser_create_new( vms_vector * direc
+ 		fix	randval;
+ 
+ 		//	Get a scale factor between speedvar% and 1.0.
+-		randval = F1_0 - ((rand() * Weapon_info[obj->id].speedvar) >> 6);
++		randval = F1_0 - ((psrand() * Weapon_info[obj->id].speedvar) >> 6);
+ 		weapon_speed = fixmul(weapon_speed, randval);
+ 	}
+ 
+@@ -779,7 +779,7 @@ int Laser_create_new( vms_vector * direc
+ 	}
+ 
+ 	if ((obj->type == OBJ_WEAPON) && (obj->id == FLARE_ID))
+-		obj->lifeleft += (rand()-16384) << 2;		//	add in -2..2 seconds
++		obj->lifeleft += (psrand()-16384) << 2;		//	add in -2..2 seconds
+ 
+ 	//	mprintf( 0, "Weapon speed = %.1f (%.1f)\n", f2fl(Weapon_info[obj->id].speed[Difficulty_level] + parent_speed), f2fl(parent_speed) );
+ 
+@@ -1820,7 +1820,7 @@ int do_laser_firing(int objnum, int weap
+ 		case LASER_INDEX: {
+ 			int weapon_num;
+ 
+-			Laser_offset = ((F1_0*2)*(rand()%8))/8;
++			Laser_offset = ((F1_0*2)*(psrand()%8))/8;
+ 
+ 			if (level <= MAX_LASER_LEVEL)
+ 				weapon_num = LASER_ID + level;
+@@ -1842,11 +1842,20 @@ int do_laser_firing(int objnum, int weap
+ 			int	make_sound = 1;
+ 			//if (rand() > 24576)
+ 			//	make_sound = 1;
+-			Laser_player_fire_spread( objp, VULCAN_ID, 6, rand()/8 - 32767/16, rand()/8 - 32767/16, make_sound, 0);
++			Laser_player_fire_spread( objp, VULCAN_ID, 6,
++						 psrand()/8 - 32767/16,
++						 psrand()/8 - 32767/16,
++						 make_sound, 0);
+ 			if (nfires > 1) {
+-				Laser_player_fire_spread( objp, VULCAN_ID, 6, rand()/8 - 32767/16, rand()/8 - 32767/16, 0, 0);
++				Laser_player_fire_spread( objp, VULCAN_ID, 6,
++							 psrand()/8 - 32767/16,
++							 psrand()/8 - 32767/16,
++							 0, 0);
+ 				if (nfires > 2) {
+-					Laser_player_fire_spread( objp, VULCAN_ID, 6, rand()/8 - 32767/16, rand()/8 - 32767/16, 0, 0);
++					Laser_player_fire_spread( objp, VULCAN_ID, 6,
++								 psrand()/8 - 32767/16,
++								 psrand()/8 - 32767/16,
++								 0, 0);
+ 				}
+ 			}
+ 			break;
+@@ -1889,9 +1898,9 @@ int do_laser_firing(int objnum, int weap
+ 			force_vec.z = -(objp->orient.fvec.z << 7);
+ 			phys_apply_force(objp, &force_vec);
+ 
+-			force_vec.x = (force_vec.x >> 4) + rand() - 16384;
+-			force_vec.y = (force_vec.y >> 4) + rand() - 16384;
+-			force_vec.z = (force_vec.z >> 4) + rand() - 16384;
++			force_vec.x = (force_vec.x >> 4) + psrand() - 16384;
++			force_vec.y = (force_vec.y >> 4) + psrand() - 16384;
++			force_vec.z = (force_vec.z >> 4) + psrand() - 16384;
+ 			phys_apply_rot(objp, &force_vec);
+ 
+ 		}
+@@ -1914,11 +1923,20 @@ int do_laser_firing(int objnum, int weap
+ 			//if (rand() > 24576)
+ 			//	make_sound = 1;
+ 			
+-			Laser_player_fire_spread( objp, GAUSS_ID, 6, (rand()/8 - 32767/16)/5, (rand()/8 - 32767/16)/5, make_sound, 0);
++			Laser_player_fire_spread( objp, GAUSS_ID, 6,
++						 (psrand()/8 - 32767/16)/5,
++						 (psrand()/8 - 32767/16)/5,
++						 make_sound, 0);
+ 			if (nfires > 1) {
+-				Laser_player_fire_spread( objp, GAUSS_ID, 6, (rand()/8 - 32767/16)/5, (rand()/8 - 32767/16)/5, 0, 0);
++				Laser_player_fire_spread( objp, GAUSS_ID, 6,
++							 (psrand()/8 - 32767/16)/5,
++							 (psrand()/8 - 32767/16)/5,
++							 0, 0);
+ 				if (nfires > 2) {
+-					Laser_player_fire_spread( objp, GAUSS_ID, 6, (rand()/8 - 32767/16)/5, (rand()/8 - 32767/16)/5, 0, 0);
++					Laser_player_fire_spread( objp, GAUSS_ID, 6,
++								 (psrand()/8 - 32767/16)/5,
++								 (psrand()/8 - 32767/16)/5,
++								 0, 0);
+ 				}
+ 			}
+ 			break;
+@@ -2051,7 +2069,7 @@ void create_smart_children(object *objp,
+ 		int	i, objnum;
+ 
+ 		if (Game_mode & GM_MULTI)
+-			srand(8321L);
++			pssrand(8321L);
+ 
+ 		for (objnum=0; objnum<=Highest_object_index; objnum++) {
+ 			object	*curobjp = &Objects[objnum];
+@@ -2145,7 +2163,7 @@ void create_smart_children(object *objp,
+ 		make_sound = 1;
+ 		for (i=0; i<num_smart_children; i++) {
+ 			int objnum;
+-			objnum = (numobjs==0)?-1:objlist[(rand() * numobjs) >> 15];
++			objnum = (numobjs==0)?-1:objlist[(psrand() * numobjs) >> 15];
+ 			create_homing_missile(objp, objnum, blob_id, make_sound);
+ 			make_sound = 0;
+ 		}
+@@ -2235,9 +2253,9 @@ void do_missile_firing(int do_autoselect
+ 			force_vec.z = -(ConsoleObject->orient.fvec.z << 7);
+ 			phys_apply_force(ConsoleObject, &force_vec);
+ 	
+-			force_vec.x = (force_vec.x >> 4) + rand() - 16384;
+-			force_vec.y = (force_vec.y >> 4) + rand() - 16384;
+-			force_vec.z = (force_vec.z >> 4) + rand() - 16384;
++			force_vec.x = (force_vec.x >> 4) + psrand() - 16384;
++			force_vec.y = (force_vec.y >> 4) + psrand() - 16384;
++			force_vec.z = (force_vec.z >> 4) + psrand() - 16384;
+ 			phys_apply_rot(ConsoleObject, &force_vec);
+ 		}
+ 
+diff -u -p a/main/winmodem.c b/main/winmodem.c
+--- a/main/winmodem.c
++++ b/main/winmodem.c
+@@ -1326,8 +1326,8 @@ void serial_link_start(void)
+ 
+ 	synccnt = 0;
+ 
+-	srand(clock());
+-	my_sync.sync_time = rand();
++	pssrand(clock());
++	my_sync.sync_time = psrand();
+ 	mprintf((0, "My rand set to %d.\n", my_sync.sync_time));
+ 
+ 	if (!com_connect()) 
+@@ -2168,12 +2168,12 @@ com_level_sync(void)
+ //#ifndef SHAREWARE
+ 	my_sync.killed = Players[Player_num].net_killed_total;
+ //#endif
+-	srand(clock());
++	pssrand(clock());
+ 
+ 	if (Game_mode & GM_MULTI_COOP)
+ 		my_sync.difficulty = Player_num;
+ 	else
+-		my_sync.difficulty = rand()%MAX_NUM_NET_PLAYERS; // My starting position
++		my_sync.difficulty = psrand()%MAX_NUM_NET_PLAYERS; // My starting position
+ 
+ 	if (com_sync(Current_level_num))
+ 	{
+diff -u -p a/main/multibot.c b/main/multibot.c
+--- a/main/multibot.c
++++ b/main/multibot.c
+@@ -1150,7 +1150,7 @@ multi_do_create_robot_powerups(char *buf
+ 	Assert (pnum!=Player_num); // What? How'd we send ourselves this?
+ 
+ 	Net_create_loc = 0;
+-	srand(1245L);
++	pssrand(1245L);
+ 
+ 	egg_objnum = object_create_egg(&del_obj);
+ 
+@@ -1213,7 +1213,7 @@ multi_drop_robot_powerups(int objnum)
+ 					del_obj->contains_count = 0;
+ 			}
+ 		}
+-		srand(1245L);
++		pssrand(1245L);
+ 		if (del_obj->contains_count > 0)
+ 			egg_objnum = object_create_egg(del_obj);
+ 	}
+@@ -1222,9 +1222,9 @@ multi_drop_robot_powerups(int objnum)
+ 		return;
+ 
+ 	else if (robptr->contains_count) {
+-		srand(timer_get_approx_seconds());
+-		if (((rand() * 16) >> 15) < robptr->contains_prob) {
+-			del_obj->contains_count = ((rand() * robptr->contains_count) >> 15) + 1;
++		pssrand(timer_get_approx_seconds());
++		if (((psrand() * 16) >> 15) < robptr->contains_prob) {
++			del_obj->contains_count = ((psrand() * robptr->contains_count) >> 15) + 1;
+ 			del_obj->contains_type = robptr->contains_type;
+ 			del_obj->contains_id = robptr->contains_id;
+ 			if (del_obj->contains_type == OBJ_POWERUP)
+@@ -1234,7 +1234,7 @@ multi_drop_robot_powerups(int objnum)
+ 					del_obj->contains_id=POW_SHIELD_BOOST;
+ 			 }
+ 		
+-			srand(1245L);
++			pssrand(1245L);
+ 			if (del_obj->contains_count > 0)
+ 				egg_objnum = object_create_egg(del_obj);
+ 		}
+@@ -1277,7 +1277,7 @@ void multi_robot_request_change(object *
+ 	mprintf((0, "request_change(): my pri %d, player %d's pri %d.\n", MULTI_ROBOT_PRIORITY(remote_objnum, Player_num),
+ 			  player_num, MULTI_ROBOT_PRIORITY(remote_objnum, player_num)));
+ 
+-	if ( (robot_agitation[slot] < 70) || (MULTI_ROBOT_PRIORITY(remote_objnum, player_num) > MULTI_ROBOT_PRIORITY(remote_objnum, Player_num)) || (rand() > 0x4400))
++	if ( (robot_agitation[slot] < 70) || (MULTI_ROBOT_PRIORITY(remote_objnum, player_num) > MULTI_ROBOT_PRIORITY(remote_objnum, Player_num)) || (psrand() > 0x4400))
+ 	{
+ 		mprintf((0, "Robot %d (%d) released because it got hit by Player %d.\n", robot-Objects, remote_objnum, player_num));
+ 		if (robot_send_pending[slot])
+diff -u -p a/main/weapon.c b/main/weapon.c
+--- a/main/weapon.c
++++ b/main/weapon.c
+@@ -806,7 +806,7 @@ void rock_the_mine_frame(void)
+ 			if (!Seismic_sound_playing) {
+ 				digi_play_sample_looping(Seismic_sound, F1_0, -1, -1);
+ 				Seismic_sound_playing = 1;
+-				Next_seismic_sound_time = GameTime + rand()/2;
++				Next_seismic_sound_time = GameTime + psrand()/2;
+ 			}
+ 
+ 			if (delta_time < SMEGA_SHAKE_TIME) {
+@@ -825,8 +825,10 @@ void rock_the_mine_frame(void)
+ 
+ 				Seismic_tremor_volume += fc;
+ 
+-				rx = fixmul(rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
+-				rz = fixmul(rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
++				rx = fixmul(psrand() - 16384,
++					    3*F1_0/16 + (F1_0*(16-fc))/32);
++				rz = fixmul(psrand() - 16384,
++					    3*F1_0/16 + (F1_0*(16-fc))/32);
+ 
+ 				ConsoleObject->mtype.phys_info.rotvel.x += rx;
+ 				ConsoleObject->mtype.phys_info.rotvel.z += rz;
+@@ -876,7 +878,7 @@ int start_seismic_disturbance(void)
+ 	if (Level_shake_duration < 1)
+ 		return 0;
+ 
+-	rval =  (2 * fixmul(rand(), Level_shake_frequency)) < FrameTime;
++	rval =  (2 * fixmul(psrand(), Level_shake_frequency)) < FrameTime;
+ 
+ 	if (rval) {
+ 		Seismic_disturbance_start_time = GameTime;
+@@ -884,7 +886,7 @@ int start_seismic_disturbance(void)
+ 		if (!Seismic_sound_playing) {
+ 			digi_play_sample_looping(Seismic_sound, F1_0, -1, -1);
+ 			Seismic_sound_playing = 1;
+-			Next_seismic_sound_time = GameTime + rand()/2;
++			Next_seismic_sound_time = GameTime + psrand()/2;
+ 		}
+ 
+ 		if (Game_mode & GM_MULTI)
+@@ -913,8 +915,10 @@ void seismic_disturbance_frame(void)
+ 
+ 			Seismic_tremor_volume += fc;
+ 
+-			rx = fixmul(rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
+-			rz = fixmul(rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
++			rx = fixmul(psrand() - 16384,
++				    3*F1_0/16 + (F1_0*(16-fc))/32);
++			rz = fixmul(psrand() - 16384,
++				    3*F1_0/16 + (F1_0*(16-fc))/32);
+ 
+ 			ConsoleObject->mtype.phys_info.rotvel.x += rx;
+ 			ConsoleObject->mtype.phys_info.rotvel.z += rz;
+@@ -1033,13 +1037,13 @@ int spit_powerup(object *spitter, int id
+ 	object	*obj;
+ 	vms_vector	new_velocity, new_pos;
+ 
+-	srand(seed);
++	pssrand(seed);
+ 
+ 	vm_vec_scale_add(&new_velocity,&spitter->mtype.phys_info.velocity,&spitter->orient.fvec,i2f(SPIT_SPEED));
+ 
+-	new_velocity.x += (rand() - 16384) * SPIT_SPEED * 2;
+-	new_velocity.y += (rand() - 16384) * SPIT_SPEED * 2;
+-	new_velocity.z += (rand() - 16384) * SPIT_SPEED * 2;
++	new_velocity.x += (psrand() - 16384) * SPIT_SPEED * 2;
++	new_velocity.y += (psrand() - 16384) * SPIT_SPEED * 2;
++	new_velocity.z += (psrand() - 16384) * SPIT_SPEED * 2;
+ 
+ 	// Give keys zero velocity so they can be tracked better in multi
+ 
+@@ -1090,7 +1094,7 @@ int spit_powerup(object *spitter, int id
+ 		case POW_MISSILE_4:
+ 		case POW_SHIELD_BOOST:
+ 		case POW_ENERGY:
+-			obj->lifeleft = (rand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
++			obj->lifeleft = (psrand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
+ 			if (Game_mode & GM_MULTI)
+ 				obj->lifeleft /= 2;
+ 			break;
+@@ -1116,7 +1120,7 @@ void DropCurrentWeapon ()
+ 	HUD_init_message("%s dropped!",PRIMARY_WEAPON_NAMES(Primary_weapon));
+ 	digi_play_sample (SOUND_DROP_WEAPON,F1_0);
+ 
+-	seed = rand();
++	seed = psrand();
+ 
+ 	objnum = spit_powerup(ConsoleObject,Primary_weapon_to_powerup[Primary_weapon],seed);
+ 
+@@ -1175,7 +1179,7 @@ void DropSecondaryWeapon ()
+ 	HUD_init_message("%s dropped!",SECONDARY_WEAPON_NAMES(Secondary_weapon));
+ 	digi_play_sample (SOUND_DROP_WEAPON,F1_0);
+ 
+-	seed = rand();
++	seed = psrand();
+ 
+ 	objnum = spit_powerup(ConsoleObject,Secondary_weapon_to_powerup[Secondary_weapon],seed);
+ 	 
+@@ -1225,7 +1229,7 @@ void do_seismic_stuff(void)
+ 			if (volume > F1_0)
+ 				volume = F1_0;
+ 			digi_change_looping_volume(volume);
+-			Next_seismic_sound_time = GameTime + rand()/4 + 8192;
++			Next_seismic_sound_time = GameTime + psrand()/4 + 8192;
+ 		}
+ 	}
+ 
+diff -u -p a/main/physics.c b/main/physics.c
+--- a/main/physics.c
++++ b/main/physics.c
+@@ -1112,7 +1112,7 @@ void phys_apply_rot(object *obj,vms_vect
+ 
+ 					addval = f2i(tval);
+ 
+-					if ( (rand() * 2) < (tval & 0xffff))
++					if ( (psrand() * 2) < (tval & 0xffff))
+ 						addval++;
+ 					obj->ctype.ai_info.SKIP_AI_COUNT += addval;
+ 					// -- mk: too much stuff making hard to see my debug messages...mprintf((0, "FrameTime = %7.3f, addval = %i\n", f2fl(FrameTime), addval));
+diff -u -p a/main/escort.c b/main/escort.c
+--- a/main/escort.c
++++ b/main/escort.c
+@@ -860,7 +860,7 @@ void escort_create_path_to_goal(object *
+ 		Escort_special_goal = -1;
+ 	} else {
+ 		if (goal_seg == -3) {
+-			create_n_segment_path(objp, 16 + rand() * 16, -1);
++			create_n_segment_path(objp, 16 + psrand() * 16, -1);
+ 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+ 		} else {
+ 			create_path_to_segment(objp, goal_seg, Max_escort_length, 1);	//	MK!: Last parm (safety_flag) used to be 1!!
+@@ -876,7 +876,9 @@ void escort_create_path_to_goal(object *
+ 				if (dist_to_player > MIN_ESCORT_DISTANCE)
+ 					create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!
+ 				else {
+-					create_n_segment_path(objp, 8 + rand() * 8, -1);
++					create_n_segment_path(objp,
++							      8 + psrand() * 8,
++							      -1);
+ 					aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+ 				}
+ 			}
+@@ -1090,7 +1092,7 @@ void do_escort_frame(object *objp, fix d
+ 	if (ailp->mode == AIM_WANDER)
+ 		if (player_visibility) {
+ 			// -- mprintf((0, "Buddy: Going from wander to path following!\n"));
+-			create_n_segment_path(objp, 16 + rand() * 16, -1);
++			create_n_segment_path(objp, 16 + psrand() * 16, -1);
+ 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+ 		}
+ 
+@@ -1098,7 +1100,9 @@ void do_escort_frame(object *objp, fix d
+ 		if (player_visibility)
+ 			if (Escort_last_path_created + F1_0*3 < GameTime) {
+ 				mprintf((0, "Frame %i: Buddy creating new scram path.\n", FrameCount));
+-				create_n_segment_path(objp, 10 + rand() * 16, ConsoleObject->segnum);
++				create_n_segment_path(objp,
++						      10 + psrand() * 16,
++						      ConsoleObject->segnum);
+ 				Escort_last_path_created = GameTime;
+ 			}
+ 
+@@ -1234,9 +1238,11 @@ void do_snipe_frame(object *objp, fix di
+ 			if (ailp->next_action_time < 0) {
+ 				ai_static	*aip = &objp->ctype.ai_info;
+ 				// -- mprintf((0, "Object #%i going from fire to retreat.\n", objnum));
+-				create_n_segment_path(objp, 10 + rand()/2048, ConsoleObject->segnum);
++				create_n_segment_path(objp,
++						      10 + psrand()/2048,
++						      ConsoleObject->segnum);
+ 				aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+-				if (rand() < 8192)
++				if (psrand() < 8192)
+ 					ailp->mode = AIM_SNIPE_RETREAT_BACKWARDS;
+ 				else
+ 					ailp->mode = AIM_SNIPE_RETREAT;
+@@ -1276,7 +1282,7 @@ int choose_thief_recreation_segment(void
+ 
+ 	if (segnum == -1) {
+ 		mprintf((1, "Warning: Unable to find a connected segment for thief recreation.\n"));
+-		return (rand() * Highest_segment_index) >> 15;
++		return (psrand() * Highest_segment_index) >> 15;
+ 	} else
+ 		return segnum;
+ 
+@@ -1405,7 +1411,7 @@ void do_thief_frame(object *objp, fix di
+ 
+ 			if (ailp->player_awareness_type >= PA_PLAYER_COLLISION) {
+ 				ailp->player_awareness_type = 0;
+-				if (rand() > 8192) {
++				if (psrand() > 8192) {
+ 					// --- mprintf((0, "RETREAT!!\n"));
+ 					create_n_segment_path(objp, 10, ConsoleObject->segnum);
+ 					Ai_local_info[objp-Objects].next_action_time = Thief_wait_times[Difficulty_level]/2;
+@@ -1457,7 +1463,7 @@ void do_thief_frame(object *objp, fix di
+ int maybe_steal_flag_item(int player_num, int flagval)
+ {
+ 	if (Players[player_num].flags & flagval) {
+-		if (rand() < THIEF_PROBABILITY) {
++		if (psrand() < THIEF_PROBABILITY) {
+ 			int	powerup_index=-1;
+ 			Players[player_num].flags &= (~flagval);
+ 			// -- mprintf((0, "You lost your %4x capability!\n", flagval));
+@@ -1511,9 +1517,9 @@ int maybe_steal_flag_item(int player_num
+ int maybe_steal_secondary_weapon(int player_num, int weapon_num)
+ {
+ 	if ((Players[player_num].secondary_weapon_flags & HAS_FLAG(weapon_num)) && Players[player_num].secondary_ammo[weapon_num])
+-		if (rand() < THIEF_PROBABILITY) {
++		if (psrand() < THIEF_PROBABILITY) {
+ 			if (weapon_num == PROXIMITY_INDEX)
+-				if (rand() > 8192)		//	Come in groups of 4, only add 1/4 of time.
++				if (psrand() > 8192)		//	Come in groups of 4, only add 1/4 of time.
+ 					return 0;
+ 			Players[player_num].secondary_ammo[weapon_num]--;
+ 
+@@ -1538,7 +1544,7 @@ int maybe_steal_secondary_weapon(int pla
+ int maybe_steal_primary_weapon(int player_num, int weapon_num)
+ {
+ 	if ((Players[player_num].primary_weapon_flags & HAS_FLAG(weapon_num)) && Players[player_num].primary_ammo[weapon_num]) {
+-		if (rand() < THIEF_PROBABILITY) {
++		if (psrand() < THIEF_PROBABILITY) {
+ 			if (weapon_num == 0) {
+ 				if (Players[player_num].laser_level > 0) {
+ 					if (Players[player_num].laser_level > 3) {
+@@ -1636,7 +1642,7 @@ int attempt_to_steal_item_2(object *objp
+ 
+ 	if (rval) {
+ 		Stolen_item_index = (Stolen_item_index+1) % MAX_STOLEN_ITEMS;
+-		if (rand() > 20000)	//	Occasionally, boost the value again
++		if (psrand() > 20000)	//	Occasionally, boost the value again
+ 			Stolen_item_index = (Stolen_item_index+1) % MAX_STOLEN_ITEMS;
+ 	}
+ 
+@@ -1659,7 +1665,7 @@ int attempt_to_steal_item(object *objp,
+ 	rval += attempt_to_steal_item_2(objp, player_num);
+ 
+ 	for (i=0; i<3; i++) {
+-		if (!rval || (rand() < 11000)) {	//	about 1/3 of time, steal another item
++		if (!rval || (psrand() < 11000)) {	//	about 1/3 of time, steal another item
+ 			rval += attempt_to_steal_item_2(objp, player_num);
+ 		} else
+ 			break;
+diff -u -p a/main/multi.c b/main/multi.c
+--- a/main/multi.c
++++ b/main/multi.c
+@@ -4756,7 +4756,7 @@ void DropOrb ()
+ 		return;
+ 	}
+ 
+-	seed = rand();
++	seed = psrand();
+ 
+    objnum = spit_powerup(ConsoleObject,POW_HOARD_ORB,seed);
+  	 
+@@ -4798,7 +4798,7 @@ void DropFlag ()
+ 	HUD_init_message("Flag dropped!");
+ 	digi_play_sample (SOUND_DROP_WEAPON,F1_0);
+ 
+-	seed = rand();
++	seed = psrand();
+ 
+    if (get_team (Player_num)==TEAM_RED)
+ 	 objnum = spit_powerup(ConsoleObject,POW_FLAG_BLUE,seed);
+diff -u -p a/main/gameseg.c b/main/gameseg.c
+--- a/main/gameseg.c
++++ b/main/gameseg.c
+@@ -1869,9 +1869,9 @@ void pick_random_point_in_seg(vms_vector
+ 	vms_vector	vec2;
+ 
+ 	compute_segment_center(new_pos, &Segments[segnum]);
+-	vnum = (rand() * MAX_VERTICES_PER_SEGMENT) >> 15;
++	vnum = (psrand() * MAX_VERTICES_PER_SEGMENT) >> 15;
+ 	vm_vec_sub(&vec2, &Vertices[Segments[segnum].verts[vnum]], new_pos);
+-	vm_vec_scale(&vec2, rand());			//	rand() always in 0..1/2
++	vm_vec_scale(&vec2, psrand());			//	rand() always in 0..1/2
+ 	vm_vec_add2(new_pos, &vec2);
+ }
+ 
+diff -u -p a/main/object.c b/main/object.c
+--- a/main/object.c
++++ b/main/object.c
+@@ -625,7 +625,7 @@ void create_small_fireball_on_object(obj
+ 
+ 	vm_vec_add2(&pos, &rand_vec);
+ 
+-	size = fixmul(size_scale, F1_0/2 + rand()*4/2);
++	size = fixmul(size_scale, F1_0/2 + psrand()*4/2);
+ 
+ 	segnum = find_point_seg(&pos, objp->segnum);
+ 	if (segnum != -1) {
+@@ -634,7 +634,7 @@ void create_small_fireball_on_object(obj
+ 		if (!expl_obj)
+ 			return;
+ 		obj_attach(objp,expl_obj);
+-		if (rand() < 8192) {
++		if (psrand() < 8192) {
+ 			fix	vol = F1_0/2;
+ 			if (objp->type == OBJ_ROBOT)
+ 				vol *= 2;
+@@ -658,7 +658,7 @@ void create_vclip_on_object(object *objp
+ 
+ 	vm_vec_add2(&pos, &rand_vec);
+ 
+-	size = fixmul(size_scale, F1_0 + rand()*4);
++	size = fixmul(size_scale, F1_0 + psrand()*4);
+ 
+ 	segnum = find_point_seg(&pos, objp->segnum);
+ 	if (segnum != -1) {
+@@ -1632,7 +1632,7 @@ void dead_player_frame(void)
+ 				Players[Player_num].flags &= ~PLAYER_FLAGS_HEADLIGHT_ON;
+ 			}
+ 		} else {
+-			if (rand() < FrameTime*4) {
++			if (psrand() < FrameTime*4) {
+ 				#ifdef NETWORK
+ 				if (Game_mode & GM_MULTI)
+ 					multi_send_create_explosion(Player_num);
+diff -u -p a/main/lighting.c b/main/lighting.c
+--- a/main/lighting.c
++++ b/main/lighting.c
+@@ -313,7 +313,7 @@ fix compute_light_intensity(int objnum)
+ 			fix tval = Weapon_info[obj->id].light;
+ 			if (Game_mode & GM_MULTI)
+ 				if (obj->id == OMEGA_ID)
+-					if (rand() > 8192)
++					if (psrand() > 8192)
+ 						return 0;		//	3/4 of time, omega blobs will cast 0 light!
+ 
+ 			if (obj->id == FLARE_ID )
+diff -u -p a/main/gameseq.c b/main/gameseq.c
+--- a/main/gameseq.c
++++ b/main/gameseq.c
+@@ -2180,7 +2180,7 @@ void InitPlayerPosition(int random_flag)
+ 		int i, closest = -1, trys=0;
+ 		fix closest_dist = 0x7ffffff, dist;
+ 
+-		srand(clock());
++		pssrand(clock());
+ 
+ #ifndef NDEBUG
+ 		if (NumNetPlayerPositions != MAX_NUM_NET_PLAYERS)
+@@ -2197,7 +2197,7 @@ void InitPlayerPosition(int random_flag)
+ 			}
+ 			trys++;
+ 
+-			NewPlayer = rand() % NumNetPlayerPositions;
++			NewPlayer = psrand() % NumNetPlayerPositions;
+ 
+ 			closest = -1;
+ 			closest_dist = 0x7fffffff;
+diff -u -p a/main/ai2.c b/main/ai2.c
+--- a/main/ai2.c
++++ b/main/ai2.c
+@@ -798,7 +798,7 @@ void set_next_fire_time(object *objp, ai
+ {
+ 	//	For guys in snipe mode, they have a 50% shot of getting this shot in free.
+ 	if ((gun_num != 0) || (robptr->weapon_type2 == -1))
+-		if ((objp->ctype.ai_info.behavior != AIB_SNIPE) || (rand() > 16384))
++		if ((objp->ctype.ai_info.behavior != AIB_SNIPE) || (psrand() > 16384))
+ 			ailp->rapidfire_count++;
+ 
+ 	//	Old way, 10/15/95: Continuous rapidfire if rapidfire_count set.
+@@ -1002,7 +1002,7 @@ void ai_fire_laser_at_player(object *obj
+ 		fix	cloak_time = Ai_cloak_info[objnum % MAX_AI_CLOAK_INFO].last_time;
+ 
+ 		if (GameTime - cloak_time > CLOAK_TIME_MAX/4)
+-			if (rand() > fixdiv(GameTime - cloak_time, CLOAK_TIME_MAX)/2) {
++			if (psrand() > fixdiv(GameTime - cloak_time, CLOAK_TIME_MAX)/2) {
+ 				set_next_fire_time(obj, ailp, robptr, gun_num);
+ 				return;
+ 			}
+@@ -1069,7 +1069,7 @@ void ai_fire_laser_at_player(object *obj
+ 	//	Lead the player half the time.
+ 	//	Note that when leading the player, aim is perfect.  This is probably acceptable since leading is so hacked in.
+ 	//	Problem is all robots will lead equally badly.
+-	if (rand() < 16384) {
++	if (psrand() < 16384) {
+ 		if (lead_player(obj, fire_point, believed_player_pos, gun_num, &fire_vec))		//	Stuff direction to fire at in fire_point.
+ 			goto player_led;
+ 	}
+@@ -1077,9 +1077,12 @@ void ai_fire_laser_at_player(object *obj
+ 	dot = 0;
+ 	count = 0;			//	Don't want to sit in this loop forever...
+ 	while ((count < 4) && (dot < F1_0/4)) {
+-		bpp_diff.x = believed_player_pos->x + fixmul((rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
+-		bpp_diff.y = believed_player_pos->y + fixmul((rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
+-		bpp_diff.z = believed_player_pos->z + fixmul((rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
++		bpp_diff.x = believed_player_pos->x + fixmul((psrand()-16384) * (NDL-Difficulty_level-1) * 4,
++							     aim);
++		bpp_diff.y = believed_player_pos->y + fixmul((psrand()-16384) * (NDL-Difficulty_level-1) * 4,
++							     aim);
++		bpp_diff.z = believed_player_pos->z + fixmul((psrand()-16384) * (NDL-Difficulty_level-1) * 4,
++							     aim);
+ 
+ 		vm_vec_normalized_dir_quick(&fire_vec, &bpp_diff, fire_point);
+ 		dot = vm_vec_dot(&obj->orient.fvec, &fire_vec);
+@@ -1357,7 +1360,7 @@ void ai_move_relative_to_player(object *
+ 	if (robptr->attack_type == 1) {
+ 		if (((ailp->next_fire > robptr->firing_wait[Difficulty_level]/4) && (dist_to_player < F1_0*30)) || Player_is_dead) {
+ 			//	1/4 of time, move around player, 3/4 of time, move away from player
+-			if (rand() < 8192) {
++			if (psrand() < 8192) {
+ 				move_around_player(objp, vec_to_player, -1);
+ 			} else {
+ 				move_away_from_player(objp, vec_to_player, 1);
+@@ -1396,9 +1399,9 @@ void ai_move_relative_to_player(object *
+ //	Compute a somewhat random, normalized vector.
+ void make_random_vector(vms_vector *vec)
+ {
+-	vec->x = (rand() - 16384) | 1;	// make sure we don't create null vector
+-	vec->y = rand() - 16384;
+-	vec->z = rand() - 16384;
++	vec->x = (psrand() - 16384) | 1;	// make sure we don't create null vector
++	vec->y = psrand() - 16384;
++	vec->z = psrand() - 16384;
+ 
+ 	vm_vec_normalize_quick(vec);
+ }
+@@ -1504,7 +1507,7 @@ void do_ai_robot_hit(object *objp, int t
+ 					//	Attack robots (eg, green guy) shouldn't have behavior = still.
+ 					Assert(Robot_info[objp->id].attack_type == 0);
+ 
+-					r = rand();
++					r = psrand();
+ 					//	1/8 time, charge player, 1/4 time create path, rest of time, do nothing
+ 					if (r < 4096) {
+ 						// -- mprintf((0, "Still guy switching to Station, creating path to player."));
+@@ -1514,7 +1517,9 @@ void do_ai_robot_hit(object *objp, int t
+ 						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
+ 					} else if (r < 4096+8192) {
+ 						// -- mprintf((0, "Still guy creating n segment path."));
+-						create_n_segment_path(objp, rand()/8192 + 2, -1);
++						create_n_segment_path(objp,
++								      psrand()/8192 + 2,
++								      -1);
+ 						Ai_local_info[objp-Objects].mode = AIM_FOLLOW_PATH;
+ 					}
+ 					break;
+@@ -1565,7 +1570,7 @@ void compute_vis_and_vec(object *objp, v
+ 
+ 			if ((ailp->next_misc_sound_time < GameTime) && ((ailp->next_fire < F1_0) || (ailp->next_fire2 < F1_0)) && (dist < F1_0*20)) {
+ 				// mprintf((0, "ANGRY! "));
+-				ailp->next_misc_sound_time = GameTime + (rand() + F1_0) * (7 - Difficulty_level) / 1;
++				ailp->next_misc_sound_time = GameTime + (psrand() + F1_0) * (7 - Difficulty_level) / 1;
+ 				digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
+ 			}
+ 		} else {
+@@ -1597,7 +1602,7 @@ void compute_vis_and_vec(object *objp, v
+ 						// -- else
+ 							digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
+ 						ailp->time_player_sound_attacked = GameTime;
+-						ailp->next_misc_sound_time = GameTime + F1_0 + rand()*4;
++						ailp->next_misc_sound_time = GameTime + F1_0 + psrand()*4;
+ 					}
+ 				} else if (ailp->time_player_sound_attacked + F1_0/4 < GameTime) {
+ 					// -- mprintf((0, "ANGRY! "));
+@@ -1611,7 +1616,7 @@ void compute_vis_and_vec(object *objp, v
+ 
+ 			if ((*player_visibility == 2) && (ailp->next_misc_sound_time < GameTime)) {
+ 				// -- mprintf((0, "ATTACK! "));
+-				ailp->next_misc_sound_time = GameTime + (rand() + F1_0) * (7 - Difficulty_level) / 2;
++				ailp->next_misc_sound_time = GameTime + (psrand() + F1_0) * (7 - Difficulty_level) / 2;
+ 				// -- if (Player_exploded)
+ 				// -- 	digi_link_sound_to_pos( robptr->taunt_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
+ 				// -- else
+@@ -2029,7 +2034,9 @@ int boss_spew_robot(object *objp, vms_ve
+ 		return -1;
+ 	}	
+ 
+-	objnum = create_gated_robot( segnum, Spew_bots[boss_index][(Max_spew_bots[boss_index] * rand()) >> 15], pos);
++	objnum = create_gated_robot( segnum,
++				    Spew_bots[boss_index][(Max_spew_bots[boss_index] * psrand()) >> 15],
++				    pos);
+  
+ 	//	Make spewed robot come tumbling out as if blasted by a flash missile.
+ 	if (objnum != -1) {
+@@ -2040,9 +2047,9 @@ int boss_spew_robot(object *objp, vms_ve
+ 
+ 		if (force_val) {
+ 			newobjp->ctype.ai_info.SKIP_AI_COUNT += force_val;
+-			newobjp->mtype.phys_info.rotthrust.x = ((rand() - 16384) * force_val)/16;
+-			newobjp->mtype.phys_info.rotthrust.y = ((rand() - 16384) * force_val)/16;
+-			newobjp->mtype.phys_info.rotthrust.z = ((rand() - 16384) * force_val)/16;
++			newobjp->mtype.phys_info.rotthrust.x = ((psrand() - 16384) * force_val)/16;
++			newobjp->mtype.phys_info.rotthrust.y = ((psrand() - 16384) * force_val)/16;
++			newobjp->mtype.phys_info.rotthrust.z = ((psrand() - 16384) * force_val)/16;
+ 			newobjp->mtype.phys_info.flags |= PF_USES_THRUST;
+ 
+ 			//	Now, give a big initial velocity to get moving away from boss.
+@@ -2076,7 +2083,7 @@ void init_ai_for_ship(void)
+ int gate_in_robot(int type, int segnum)
+ {
+ 	if (segnum < 0)
+-		segnum = Boss_gate_segs[(rand() * Num_boss_gate_segs) >> 15];
++		segnum = Boss_gate_segs[(psrand() * Num_boss_gate_segs) >> 15];
+ 
+ 	Assert((segnum >= 0) && (segnum <= Highest_segment_index));
+ 
+@@ -2118,7 +2125,7 @@ void teleport_boss(object *objp)
+ 	Assert(Num_boss_teleport_segs > 0);
+ 
+ 	//	Pick a random segment from the list of boss-teleportable-to segments.
+-	rand_index = (rand() * Num_boss_teleport_segs) >> 15;	
++	rand_index = (psrand() * Num_boss_teleport_segs) >> 15;	
+ 	rand_segnum = Boss_teleport_segs[rand_index];
+ 	Assert((rand_segnum >= 0) && (rand_segnum <= Highest_segment_index));
+ 
+@@ -2188,10 +2195,14 @@ int do_robot_dying_frame(object *objp, f
+ 			mprintf((0, "Starting death sound!\n"));
+ 			*dying_sound_playing = 1;
+ 			digi_link_sound_to_object2( death_sound, objp-Objects, 0, sound_scale, sound_scale*256 );	//	F1_0*512 means play twice as loud
+-		} else if (rand() < FrameTime*16)
+-			create_small_fireball_on_object(objp, (F1_0 + rand()) * (16 * expl_scale/F1_0)/8, 0);
+-	} else if (rand() < FrameTime*8)
+-		create_small_fireball_on_object(objp, (F1_0/2 + rand()) * (16 * expl_scale/F1_0)/8, 1);
++		} else if (psrand() < FrameTime*16)
++			create_small_fireball_on_object(objp,
++						        (F1_0 + psrand()) * (16 * expl_scale/F1_0)/8,
++						        0);
++	} else if (psrand() < FrameTime*8)
++		create_small_fireball_on_object(objp,
++						(F1_0/2 + psrand()) * (16 * expl_scale/F1_0)/8,
++						1);
+ 
+ 	if (start_time + roll_duration < GameTime)
+ 		return 1;
+@@ -2521,7 +2532,7 @@ void ai_do_actual_firing_stuff(object *o
+ 
+ 		vms_vector	vec_to_last_pos;
+ 
+-		if (rand()/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
++		if (psrand()/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
+ 		if ((!object_animates || ready_to_fire(robptr, ailp)) && (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
+ 			vm_vec_normalized_dir_quick(&vec_to_last_pos, &Believed_player_pos, &obj->pos);
+ 			dot = vm_vec_dot(&obj->orient.fvec, &vec_to_last_pos);
+diff -u -p a/main/vclip.c b/main/vclip.c
+--- a/main/vclip.c
++++ b/main/vclip.c
+@@ -75,7 +75,7 @@ void draw_weapon_vclip(object *obj)
+ 
+ 	//	Should cause Omega blobs (which live for one frame) to not always be the same.
+ 	if (modtime == ONE_FRAME_TIME)
+-		modtime = rand();
++		modtime = psrand();
+ 
+ 	if (obj->id == PROXIMITY_ID) {		//make prox bombs spin out of sync
+ 		int objnum = obj-Objects;
+diff -u -p a/main/menu.c b/main/menu.c
+--- a/main/menu.c
++++ b/main/menu.c
+@@ -224,7 +224,7 @@ void autodemo_menu_check(int nitems, new
+ 
+ try_again:;
+ 
+-			if ((rand() % (n_demos+1)) == 0)
++			if ((psrand() % (n_demos+1)) == 0)
+ 			{
+ 				#ifndef SHAREWARE
+ 					#ifdef WINDOWS
+diff -u -p a/main/fuelcen.c b/main/fuelcen.c
+--- a/main/fuelcen.c
++++ b/main/fuelcen.c
+@@ -447,11 +447,11 @@ void robotmaker_proc( FuelCenter * robot
+ 		else 
+ 		{
+ 			dist_to_player = vm_vec_dist_quick( &ConsoleObject->pos, &robotcen->Center );
+-			top_time = dist_to_player/64 + rand() * 2 + F1_0*2;
++			top_time = dist_to_player/64 + psrand() * 2 + F1_0*2;
+ 			if ( top_time > ROBOT_GEN_TIME )
+-				top_time = ROBOT_GEN_TIME + rand();
++				top_time = ROBOT_GEN_TIME + psrand();
+ 			if ( top_time < F1_0*2 )
+-				top_time = F1_0*3/2 + rand()*2;
++				top_time = F1_0*3/2 + psrand()*2;
+ 		}
+ 
+  		// mprintf( (0, "Time between morphs %d seconds, dist_to_player = %7.3f\n", f2i(top_time), f2fl(dist_to_player) ));
+@@ -544,7 +544,7 @@ void robotmaker_proc( FuelCenter * robot
+ 				if (num_types == 1)
+ 					type = legal_types[0];
+ 				else
+-					type = legal_types[(rand() * num_types) / 32768];
++					type = legal_types[(psrand() * num_types) / 32768];
+ 
+ 				mprintf((0, "Morph: (type = %i) (seg = %i) (capacity = %08x)\n", type, robotcen->segnum, robotcen->Capacity));
+ 				obj = create_morph_robot(&Segments[robotcen->segnum], &cur_object_loc, type );
+diff -u -p a/main/aipath.c b/main/aipath.c
+--- a/main/aipath.c
++++ b/main/aipath.c
+@@ -61,7 +61,7 @@ void create_random_xlate(byte *xt)
+ 		xt[i] = i;
+ 
+ 	for (i=0; i<MAX_SIDES_PER_SEGMENT; i++) {
+-		int	j = (rand()*MAX_SIDES_PER_SEGMENT)/(RAND_MAX+1);
++		int	j = (psrand()*MAX_SIDES_PER_SEGMENT)/(PSRAND_MAX+1);
+ 		byte	temp_byte;
+ 		Assert((j >= 0) && (j < MAX_SIDES_PER_SEGMENT));
+ 
+@@ -171,8 +171,8 @@ void move_towards_outside(point_seg *pse
+ 		if (abs(vm_vec_dot(&a, &b)) > 3*F1_0/4 ) {
+ 			if (abs(a.z) < F1_0/2) {
+ 				if (rand_flag) {
+-					e.x = (rand()-16384)/2;
+-					e.y = (rand()-16384)/2;
++					e.x = (psrand()-16384)/2;
++					e.y = (psrand()-16384)/2;
+ 					e.z = abs(e.x) + abs(e.y) + 1;
+ 					vm_vec_normalize_quick(&e);
+ 				} else {
+@@ -182,8 +182,8 @@ void move_towards_outside(point_seg *pse
+ 				}
+ 			} else {
+ 				if (rand_flag) {
+-					e.y = (rand()-16384)/2;
+-					e.z = (rand()-16384)/2;
++					e.y = (psrand()-16384)/2;
++					e.z = (psrand()-16384)/2;
+ 					e.x = abs(e.y) + abs(e.z) + 1;
+ 					vm_vec_normalize_quick(&e);
+ 				} else {
+@@ -329,7 +329,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->
+ 		segment	*segp = &Segments[cur_seg];
+ 
+ 		if (random_flag)
+-			if (rand() < 8192)
++			if (psrand() < 8192)
+ 				create_random_xlate(random_xlate);
+ 
+ 		// mprintf((0, "\n"));
+@@ -1065,7 +1065,7 @@ void ai_follow_path(object *objp, int pl
+ 				} else {
+ 					fix	prob = fixdiv(distance_travellable, dist_to_goal);
+ 	
+-					int	rand_num = rand();
++					int	rand_num = psrand();
+ 					if ( (rand_num >> 1) < prob) {
+ 						move_object_to_goal(objp, &goal_point, goal_seg);
+ 					}
+@@ -1160,7 +1160,9 @@ void ai_follow_path(object *objp, int pl
+ 			if (robptr->companion) {
+ 				if (Escort_special_goal == ESCORT_GOAL_SCRAM)
+ 					if (player_visibility) {
+-						create_n_segment_path(objp, 16 + rand() * 16, -1);
++						create_n_segment_path(objp,
++								      16 + psrand() * 16,
++								      -1);
+ 						aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+ 						Assert(aip->path_length != 0);
+ 						// -- mprintf((0, "Buddy: Creating new path!\n"));
+@@ -1500,7 +1502,7 @@ void attempt_to_resume_path(object *objp
+ 	// mprintf((0, "Object %i trying to resume path at index %i\n", objp-Objects, aip->cur_path_index));
+ 
+ 	if ((aip->behavior == AIB_STATION) && (Robot_info[objp->id].companion != 1))
+-		if (rand() > 8192) {
++		if (psrand() > 8192) {
+ 			ai_local			*ailp = &Ai_local_info[objp-Objects];
+ 
+ 			aip->hide_segment = objp->segnum;
+@@ -1545,8 +1547,8 @@ void test_create_path_many(void)
+ 	int			i;
+ 
+ 	for (i=0; i<Test_size; i++) {
+-		Cursegp = &Segments[(rand() * (Highest_segment_index + 1)) / RAND_MAX];
+-		Markedsegp = &Segments[(rand() * (Highest_segment_index + 1)) / RAND_MAX];
++		Cursegp = &Segments[(psrand() * (Highest_segment_index + 1)) / PSRAND_MAX];
++		Markedsegp = &Segments[(psrand() * (Highest_segment_index + 1)) / PSRAND_MAX];
+ 		create_path_points(&Objects[0], Cursegp-Segments, Markedsegp-Segments, point_segs, &num_points, -1, 0, 0, -1);
+ 	}
+ 
+diff -u -p a/main/ai.c b/main/ai.c
+--- a/main/ai.c
++++ b/main/ai.c
+@@ -459,8 +459,8 @@ _exit_cheat:
+ 	//	Occasionally make non-still robots make a path to the player.  Based on agitation and distance from player.
+ 	if ((aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && !(Game_mode & GM_MULTI) && (robptr->companion != 1) && (robptr->thief != 1))
+ 		if (Overall_agitation > 70) {
+-			if ((dist_to_player < F1_0*200) && (rand() < FrameTime/4)) {
+-				if (rand() * (Overall_agitation - 40) > F1_0*5) {
++			if ((dist_to_player < F1_0*200) && (psrand() < FrameTime/4)) {
++				if (psrand() * (Overall_agitation - 40) > F1_0*5) {
+ 					// -- mprintf((0, "(1) Object #%i going from still to path in frame %i.\n", objnum, FrameCount));
+ 					create_path_to_player(obj, 4 + Overall_agitation/8 + Difficulty_level, 1);
+ 					return;
+@@ -568,7 +568,7 @@ _exit_cheat:
+ 
+ 
+ 	if (Player_is_dead && (ailp->player_awareness_type == 0))
+-		if ((dist_to_player < F1_0*200) && (rand() < FrameTime/8)) {
++		if ((dist_to_player < F1_0*200) && (psrand() < FrameTime/8)) {
+ 			if ((aip->behavior != AIB_STILL) && (aip->behavior != AIB_RUN_FROM)) {
+ 				if (!ai_multiplayer_awareness(obj, 30))
+ 					return;
+@@ -603,7 +603,7 @@ _exit_cheat:
+ 	} else if (((obj_ref&3) == 0) && !previous_visibility && (dist_to_player < F1_0*100)) {
+ 		fix	sval, rval;
+ 
+-		rval = rand();
++		rval = psrand();
+ 		sval = (dist_to_player * (Difficulty_level+1))/64;
+ 
+ 		// -- mprintf((0, "Object #%3i: dist = %7.3f, rval = %8x, sval = %8x", obj-Objects, f2fl(dist_to_player), rval, sval));
+@@ -800,7 +800,7 @@ _exit_cheat:
+ 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
+ 				ailp->next_fire = F1_0/2;
+ 				if (!Buddy_allowed_to_talk)	//	If buddy not talking, make him fire flares less often.
+-					ailp->next_fire += rand()*4;
++					ailp->next_fire += psrand()*4;
+ 			}
+ 
+ 		}
+@@ -825,7 +825,7 @@ _exit_cheat:
+ 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
+ 				ailp->next_fire = F1_0/2;
+ 				if (Stolen_item_index == 0)		//	If never stolen an item, fire flares less often (bad: Stolen_item_index wraps, but big deal)
+-					ailp->next_fire += rand()*4;
++					ailp->next_fire += psrand()*4;
+ 			}
+ 		}
+ 	}
+@@ -866,8 +866,8 @@ _exit_cheat:
+ 
+ 			if ((aip->CURRENT_STATE == AIS_REST) && (aip->GOAL_STATE == AIS_REST)) {
+ 				if (player_visibility) {
+-					if (rand() < FrameTime*player_visibility) {
+-						if (dist_to_player/256 < rand()*player_visibility) {
++					if (psrand() < FrameTime*player_visibility) {
++						if (dist_to_player/256 < psrand()*player_visibility) {
+ 							// mprintf((0, "Object %i searching for player.\n", obj-Objects));
+ 							aip->GOAL_STATE = AIS_SRCH;
+ 							aip->CURRENT_STATE = AIS_SRCH;
+@@ -1371,7 +1371,7 @@ int add_awareness_event(object *objp, in
+ 	if (Num_awareness_events < MAX_AWARENESS_EVENTS) {
+ 		if ((type == PA_WEAPON_WALL_COLLISION) || (type == PA_WEAPON_ROBOT_COLLISION))
+ 			if (objp->id == VULCAN_ID)
+-				if (rand() > 3276)
++				if (psrand() > 3276)
+ 					return 0;		//	For vulcan cannon, only about 1/10 actually cause awareness
+ 
+ 		Awareness_events[Num_awareness_events].segnum = objp->segnum;
+@@ -1394,7 +1394,7 @@ void create_awareness_event(object *objp
+ 	//	If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
+ 	if (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_ROBOTS)) {
+ 		if (add_awareness_event(objp, type)) {
+-			if (((rand() * (type+4)) >> 15) > 4)
++			if (((psrand() * (type+4)) >> 15) > 4)
+ 				Overall_agitation++;
+ 			if (Overall_agitation > OVERALL_AGITATION_MAX)
+ 				Overall_agitation = OVERALL_AGITATION_MAX;
+diff -u -p a/main/endlevel.c b/main/endlevel.c
+--- a/main/endlevel.c
++++ b/main/endlevel.c
+@@ -641,20 +641,22 @@ do_endlevel_frame()
+ 			static int sound_count;
+ 
+ 			vm_vec_scale_add(&tpnt,&ConsoleObject->pos,&ConsoleObject->orient.fvec,-ConsoleObject->size*5);
+-			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.rvec,(rand()-RAND_MAX/2)*15);
+-			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,(rand()-RAND_MAX/2)*15);
++			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.rvec,
++					  (psrand()-PSRAND_MAX/2)*15);
++			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,
++					  (psrand()-PSRAND_MAX/2)*15);
+ 
+ 			segnum = find_point_seg(&tpnt,ConsoleObject->segnum);
+ 
+ 			if (segnum != -1) {
+ 				expl = object_create_explosion(segnum,&tpnt,i2f(20),VCLIP_BIG_PLAYER_EXPLOSION);
+-				if (rand()<10000 || ++sound_count==7) {		//pseudo-random
++				if (psrand()<10000 || ++sound_count==7) {		//pseudo-random
+ 					digi_link_sound_to_pos( SOUND_TUNNEL_EXPLOSION, segnum, 0, &tpnt, 0, F1_0 );
+ 					sound_count=0;
+ 				}
+ 			}
+ 
+-			explosion_wait1 = 0x2000 + rand()/4;
++			explosion_wait1 = 0x2000 + psrand()/4;
+ 
+ 		}
+ 	}
+@@ -668,14 +670,18 @@ do_endlevel_frame()
+ 
+ 			//create little explosion on wall
+ 
+-			vm_vec_copy_scale(&tpnt,&ConsoleObject->orient.rvec,(rand()-RAND_MAX/2)*100);
+-			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,(rand()-RAND_MAX/2)*100);
++			vm_vec_copy_scale(&tpnt,&ConsoleObject->orient.rvec,
++					  (psrand()-PSRAND_MAX/2)*100);
++			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,
++					  (psrand()-PSRAND_MAX/2)*100);
+ 			vm_vec_add2(&tpnt,&ConsoleObject->pos);
+ 
+ 			if (Endlevel_sequence == EL_FLYTHROUGH)
+-				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,rand()*200);
++				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,
++						  psrand()*200);
+ 			else
+-				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,rand()*60);
++				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,
++						  psrand()*60);
+ 
+ 			//find hit point on wall
+ 
+@@ -690,9 +696,11 @@ do_endlevel_frame()
+ 			find_vector_intersection(&fq,&hit_data);
+ 
+ 			if (hit_data.hit_type==HIT_WALL && hit_data.hit_seg!=-1)
+-				object_create_explosion(hit_data.hit_seg,&hit_data.hit_pnt,i2f(3)+rand()*6,VCLIP_SMALL_EXPLOSION);
++				object_create_explosion(hit_data.hit_seg,&hit_data.hit_pnt,
++							i2f(3)+psrand()*6,
++							VCLIP_SMALL_EXPLOSION);
+ 
+-			explosion_wait2 = (0xa00 + rand()/8)/2;
++			explosion_wait2 = (0xa00 + psrand()/8)/2;
+ 		}
+ 
+ 	switch (Endlevel_sequence) {
+@@ -1065,9 +1073,9 @@ generate_starfield()
+ 
+ 	for (i=0;i<MAX_STARS;i++) {
+ 
+-		stars[i].x = (rand() - RAND_MAX/2) << 14;
+-		stars[i].z = (rand() - RAND_MAX/2) << 14;
+-		stars[i].y = (rand()/2) << 14;
++		stars[i].x = (psrand() - PSRAND_MAX/2) << 14;
++		stars[i].z = (psrand() - PSRAND_MAX/2) << 14;
++		stars[i].y = (psrand()/2) << 14;
+ 
+ 	}
+ }
+diff -u -p a/main/modem.c b/main/modem.c
+--- a/main/modem.c
++++ b/main/modem.c
+@@ -2245,8 +2245,8 @@ void serial_link_start(void)
+ 
+ 	synccnt = 0;
+ 
+-	srand(clock());
+-	my_sync.sync_time = rand();
++	pssrand(clock());
++	my_sync.sync_time = psrand();
+ 	mprintf((0, "My rand set to %d.\n", my_sync.sync_time));
+ 
+ 	if (!com_connect()) 
+@@ -2300,12 +2300,12 @@ com_level_sync(void)
+ //#ifndef SHAREWARE
+ 	my_sync.killed = Players[Player_num].net_killed_total;
+ //#endif
+-	srand(clock());
++	pssrand(clock());
+ 
+ 	if (Game_mode & GM_MULTI_COOP)
+ 		my_sync.difficulty = Player_num;
+ 	else
+-		my_sync.difficulty = rand()%MAX_NUM_NET_PLAYERS; // My starting position
++		my_sync.difficulty = psrand()%MAX_NUM_NET_PLAYERS; // My starting position
+ 
+ 	if (com_sync(Current_level_num))
+ 	{
+diff -u -p a/main/collide.c b/main/collide.c
+--- a/main/collide.c
++++ b/main/collide.c
+@@ -316,9 +316,9 @@ void collide_player_and_wall( object * p
+ 		PALETTE_FLASH_ADD(0, 0, 60);	//flash blue
+ 
+ 		//knock player around
+-		force.x = 40*(rand() - 16384);
+-		force.y = 40*(rand() - 16384);
+-		force.z = 40*(rand() - 16384);
++		force.x = 40*(psrand() - 16384);
++		force.y = 40*(psrand() - 16384);
++		force.z = 40*(psrand() - 16384);
+ 		phys_apply_rot(playerobj, &force);
+ 
+ #ifdef TACTILE
+@@ -434,8 +434,8 @@ int check_volatile_wall(object *obj,int
+ 				PALETTE_FLASH_ADD(f2i(damage*4), 0, 0);	//flash red
+ 			}
+ 
+-			obj->mtype.phys_info.rotvel.x = (rand() - 16384)/2;
+-			obj->mtype.phys_info.rotvel.z = (rand() - 16384)/2;
++			obj->mtype.phys_info.rotvel.x = (psrand() - 16384)/2;
++			obj->mtype.phys_info.rotvel.z = (psrand() - 16384)/2;
+ 		}
+ 
+ 		return (d>0)?1:2;
+@@ -1473,7 +1473,7 @@ int do_boss_weapon_collision(object *rob
+ 	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER)
+ 		if ((Weapon_info[weapon->id].matter && Boss_spews_bots_matter[d2_boss_index]) || (!Weapon_info[weapon->id].matter && Boss_spews_bots_energy[d2_boss_index])) {
+ 			if (Boss_spew_more[d2_boss_index])
+-				if (rand() > 16384) {
++				if (psrand() > 16384) {
+ 					if (boss_spew_robot(robot, collision_point) != -1)
+ 						Last_gate_time = GameTime - Gate_interval - 1;	//	Force allowing spew of another bot.
+ 				}
+@@ -1499,7 +1499,7 @@ int do_boss_weapon_collision(object *rob
+ 			damage_flag = 0;
+ 
+ 			if (Last_time_buddy_gave_hint == 0)
+-				Last_time_buddy_gave_hint = rand()*32 + F1_0*16;
++				Last_time_buddy_gave_hint = psrand()*32 + F1_0*16;
+ 
+ 			if (Buddy_gave_hint_count) {
+ 				if (Last_time_buddy_gave_hint + F1_0*20 < GameTime) {
+@@ -1507,7 +1507,7 @@ int do_boss_weapon_collision(object *rob
+ 
+ 					Buddy_gave_hint_count--;
+ 					Last_time_buddy_gave_hint = GameTime;
+-					sval = (rand()*4) >> 15;
++					sval = (psrand()*4) >> 15;
+ 					switch (sval) {
+ 						case 0:	buddy_message("Hit him in the back!");	break;
+ 						case 1:	buddy_message("He's invulnerable there!");	break;
+@@ -1613,7 +1613,7 @@ void collide_robot_and_weapon( object *
+ 			probval = Robot_info[robot->id].energy_blobs * probval/(NDL*32);
+ 
+ 			num_blobs = probval >> 16;
+-			if (2*rand() < (probval & 0xffff))
++			if (2*psrand() < (probval & 0xffff))
+ 				num_blobs++;
+ 
+ 			if (num_blobs)
+@@ -1688,9 +1688,12 @@ void collide_robot_and_weapon( object *
+ 
+ 			if (aip->SKIP_AI_COUNT * FrameTime < F1_0) {
+ 				aip->SKIP_AI_COUNT++;
+-				robot->mtype.phys_info.rotthrust.x = fixmul((rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
+-				robot->mtype.phys_info.rotthrust.y = fixmul((rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
+-				robot->mtype.phys_info.rotthrust.z = fixmul((rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
++				robot->mtype.phys_info.rotthrust.x = fixmul((psrand() - 16384),
++									    FrameTime * aip->SKIP_AI_COUNT);
++				robot->mtype.phys_info.rotthrust.y = fixmul((psrand() - 16384),
++									    FrameTime * aip->SKIP_AI_COUNT);
++				robot->mtype.phys_info.rotthrust.z = fixmul((psrand() - 16384),
++									    FrameTime * aip->SKIP_AI_COUNT);
+ 				robot->mtype.phys_info.flags |= PF_USES_THRUST;
+ 
+ 			}
+@@ -1846,13 +1849,13 @@ void drop_player_eggs(object *playerobj)
+ 		if (Game_mode & GM_MULTI) 
+ 		{
+ 			Net_create_loc = 0;
+-			srand(5483L);
++			pssrand(5483L);
+ 		}
+ 		#endif
+ 
+ 		//	If the player had smart mines, maybe arm one of them.
+ 		rthresh = 30000;
+-		while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (rand() < rthresh)) {
++		while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (psrand() < rthresh)) {
+ 			int			newseg;
+ 			vms_vector	tvec;
+ 
+@@ -1869,7 +1872,7 @@ void drop_player_eggs(object *playerobj)
+ 		if ((Game_mode & GM_MULTI) && !(Game_mode & GM_HOARD))
+ 		{
+ 			rthresh = 30000;
+-			while ((Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX]%4==1) && (rand() < rthresh)) {
++			while ((Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX]%4==1) && (psrand() < rthresh)) {
+ 				int			newseg;
+ 				vms_vector	tvec;
+ 	
+diff -u -p a/main/fireball.c b/main/fireball.c
+--- a/main/fireball.c
++++ b/main/fireball.c
+@@ -135,9 +135,9 @@ object *object_create_explosion_sub(obje
+ 
+ 									if (obj->ctype.ai_info.SKIP_AI_COUNT * FrameTime < F1_0) {
+ 										aip->SKIP_AI_COUNT += force_val;
+-										obj0p->mtype.phys_info.rotthrust.x = ((rand() - 16384) * force_val)/16;
+-										obj0p->mtype.phys_info.rotthrust.y = ((rand() - 16384) * force_val)/16;
+-										obj0p->mtype.phys_info.rotthrust.z = ((rand() - 16384) * force_val)/16;
++										obj0p->mtype.phys_info.rotthrust.x = ((psrand() - 16384) * force_val)/16;
++										obj0p->mtype.phys_info.rotthrust.y = ((psrand() - 16384) * force_val)/16;
++										obj0p->mtype.phys_info.rotthrust.z = ((psrand() - 16384) * force_val)/16;
+ 										obj0p->mtype.phys_info.flags |= PF_USES_THRUST;
+ 
+ 										//@@if (Robot_info[obj0p->id].companion)
+@@ -354,19 +354,21 @@ object *object_create_debris(object *par
+ 
+ 	po = &Polygon_models[obj->rtype.pobj_info.model_num];
+ 
+-	obj->mtype.phys_info.velocity.x = RAND_MAX/2 - rand();
+-	obj->mtype.phys_info.velocity.y = RAND_MAX/2 - rand();
+-	obj->mtype.phys_info.velocity.z = RAND_MAX/2 - rand();
++	obj->mtype.phys_info.velocity.x = PSRAND_MAX/2 - psrand();
++	obj->mtype.phys_info.velocity.y = PSRAND_MAX/2 - psrand();
++	obj->mtype.phys_info.velocity.z = PSRAND_MAX/2 - psrand();
+ 	vm_vec_normalize_quick(&obj->mtype.phys_info.velocity);
+-	vm_vec_scale(&obj->mtype.phys_info.velocity,i2f(10 + (30 * rand() / RAND_MAX)));
++	vm_vec_scale(&obj->mtype.phys_info.velocity,
++		     i2f(10 + (30 * psrand() / PSRAND_MAX)));
+ 
+ 	vm_vec_add2(&obj->mtype.phys_info.velocity,&parent->mtype.phys_info.velocity);
+ 
+ 	// -- used to be: Notice, not random! vm_vec_make(&obj->mtype.phys_info.rotvel,10*0x2000/3,10*0x4000/3,10*0x7000/3);
+-	vm_vec_make(&obj->mtype.phys_info.rotvel, rand() + 0x1000, rand()*2 + 0x4000, rand()*3 + 0x2000);
++	vm_vec_make(&obj->mtype.phys_info.rotvel, psrand() + 0x1000,
++		    psrand()*2 + 0x4000, psrand()*3 + 0x2000);
+ 	vm_vec_zero(&obj->mtype.phys_info.rotthrust);
+ 
+-	obj->lifeleft = 3*DEBRIS_LIFE/4 + fixmul(rand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
++	obj->lifeleft = 3*DEBRIS_LIFE/4 + fixmul(psrand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
+ 
+ 	obj->mtype.phys_info.mass = fixmuldiv(parent->mtype.phys_info.mass,obj->size,parent->size);
+ 	obj->mtype.phys_info.drag = 0; //fl2f(0.2);		//parent->mtype.phys_info.drag;
+@@ -439,7 +441,7 @@ int pick_connected_segment(object *objp,
+ 	for (i=0; i<4; i++) {
+ 		int	ind1, temp;
+ 
+-		ind1 = (rand() * MAX_SIDES_PER_SEGMENT) >> 15;
++		ind1 = (psrand() * MAX_SIDES_PER_SEGMENT) >> 15;
+ 		temp = side_rand[ind1];
+ 		side_rand[ind1] = side_rand[i];
+ 		side_rand[i] = temp;
+@@ -460,8 +462,8 @@ int pick_connected_segment(object *objp,
+ 		tail &= QUEUE_SIZE-1;
+ 
+ 		//	to make random, switch a pair of entries in side_rand.
+-		ind1 = (rand() * MAX_SIDES_PER_SEGMENT) >> 15;
+-		ind2 = (rand() * MAX_SIDES_PER_SEGMENT) >> 15;
++		ind1 = (psrand() * MAX_SIDES_PER_SEGMENT) >> 15;
++		ind2 = (psrand() * MAX_SIDES_PER_SEGMENT) >> 15;
+ 		temp = side_rand[ind1];
+ 		side_rand[ind1] = side_rand[ind2];
+ 		side_rand[ind2] = temp;
+@@ -521,15 +523,15 @@ int choose_drop_segment()
+ 
+ 	mprintf((0,"choose_drop_segment:"));
+ 
+-	srand(timer_get_fixed_seconds());
++	pssrand(timer_get_fixed_seconds());
+ 
+-	cur_drop_depth = BASE_NET_DROP_DEPTH + ((rand() * BASE_NET_DROP_DEPTH*2) >> 15);
++	cur_drop_depth = BASE_NET_DROP_DEPTH + ((psrand() * BASE_NET_DROP_DEPTH*2) >> 15);
+ 
+ 	player_pos = &Objects[Players[Player_num].objnum].pos;
+ 	player_seg = Objects[Players[Player_num].objnum].segnum;
+ 
+ 	while ((segnum == -1) && (cur_drop_depth > BASE_NET_DROP_DEPTH/2)) {
+-		pnum = (rand() * N_players) >> 15;
++		pnum = (psrand() * N_players) >> 15;
+ 		count = 0;
+ 		while ((count < N_players) && ((Players[pnum].connected == 0) || (pnum==Player_num) || ((Game_mode & (GM_TEAM|GM_CAPTURE)) && (get_team(pnum)==get_team(Player_num))))) {
+ 			pnum = (pnum+1)%N_players;
+@@ -582,7 +584,7 @@ int choose_drop_segment()
+ 
+ 	if (segnum == -1) {
+ 		mprintf((1, "Warning: Unable to find a connected segment.  Picking a random one.\n"));
+-		return (rand() * Highest_segment_index) >> 15;
++		return (psrand() * Highest_segment_index) >> 15;
+ 	} else
+ 		return segnum;
+ 
+@@ -723,7 +725,7 @@ void maybe_replace_powerup_with_energy(o
+ 		del_obj->contains_count = 0;
+ 	else if (weapon_index != -1) {
+ 		if ((player_has_weapon(weapon_index, 0) & HAS_WEAPON_FLAG) || weapon_nearby(del_obj, del_obj->contains_id)) {
+-			if (rand() > 16384) {
++			if (psrand() > 16384) {
+ 				del_obj->contains_type = OBJ_POWERUP;
+ 				if (weapon_index == VULCAN_INDEX) {
+ 					del_obj->contains_id = POW_VULCAN_AMMO;
+@@ -739,7 +741,7 @@ void maybe_replace_powerup_with_energy(o
+ 		}
+ 	} else if (del_obj->contains_id == POW_QUAD_FIRE)
+ 		if ((Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) || weapon_nearby(del_obj, del_obj->contains_id)) {
+-			if (rand() > 16384) {
++			if (psrand() > 16384) {
+ 				del_obj->contains_type = OBJ_POWERUP;
+ 				del_obj->contains_id = POW_ENERGY;
+ 			} else {
+@@ -786,9 +788,12 @@ int drop_powerup(int type, int id, int n
+ 				} else
+ 					rand_scale = 2;
+ 
+-				new_velocity.x += fixmul(old_mag+F1_0*32, rand()*rand_scale - 16384*rand_scale);
+-				new_velocity.y += fixmul(old_mag+F1_0*32, rand()*rand_scale - 16384*rand_scale);
+-				new_velocity.z += fixmul(old_mag+F1_0*32, rand()*rand_scale - 16384*rand_scale);
++				new_velocity.x += fixmul(old_mag+F1_0*32,
++							 psrand()*rand_scale - 16384*rand_scale);
++				new_velocity.y += fixmul(old_mag+F1_0*32,
++							 psrand()*rand_scale - 16384*rand_scale);
++				new_velocity.z += fixmul(old_mag+F1_0*32,
++							 psrand()*rand_scale - 16384*rand_scale);
+ 
+ 				// Give keys zero velocity so they can be tracked better in multi
+ 
+@@ -844,7 +849,7 @@ int drop_powerup(int type, int id, int n
+ 					case POW_MISSILE_4:
+ 					case POW_SHIELD_BOOST:
+ 					case POW_ENERGY:
+-						obj->lifeleft = (rand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
++						obj->lifeleft = (psrand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
+ 						if (Game_mode & GM_MULTI)
+ 							obj->lifeleft /= 2;
+ 						break;
+@@ -870,9 +875,9 @@ int drop_powerup(int type, int id, int n
+ //				else
+ 					rand_scale = 2;
+ 
+-				new_velocity.x += (rand()-16384)*2;
+-				new_velocity.y += (rand()-16384)*2;
+-				new_velocity.z += (rand()-16384)*2;
++				new_velocity.x += (psrand()-16384)*2;
++				new_velocity.y += (psrand()-16384)*2;
++				new_velocity.z += (psrand()-16384)*2;
+ 
+ 				vm_vec_normalize_quick(&new_velocity);
+ 				vm_vec_scale(&new_velocity, (F1_0*32 + old_mag) * rand_scale);
+@@ -934,7 +939,7 @@ int drop_powerup(int type, int id, int n
+ 			}
+ 
+ 			//	At JasenW's request, robots which contain robots sometimes drop shields.
+-			if (rand() > 16384)
++			if (psrand() > 16384)
+ 				drop_powerup(OBJ_POWERUP, POW_SHIELD_BOOST, 1, init_vel, pos, segnum);
+ 
+ 			break;
+@@ -957,24 +962,24 @@ int object_create_egg(object *objp)
+ 		if (objp->contains_type == OBJ_POWERUP)
+ 			if (objp->contains_id == POW_SHIELD_BOOST) {
+ 				if (Players[Player_num].shields >= i2f(100)) {
+-					if (rand() > 16384) {
++					if (psrand() > 16384) {
+ 						mprintf((0, "Not dropping shield!\n"));
+ 						return -1;
+ 					}
+ 				} else  if (Players[Player_num].shields >= i2f(150)) {
+-					if (rand() > 8192) {
++					if (psrand() > 8192) {
+ 						mprintf((0, "Not dropping shield!\n"));
+ 						return -1;
+ 					}
+ 				}
+ 			} else if (objp->contains_id == POW_ENERGY) {
+ 				if (Players[Player_num].energy >= i2f(100)) {
+-					if (rand() > 16384) {
++					if (psrand() > 16384) {
+ 						mprintf((0, "Not dropping energy!\n"));
+ 						return -1;
+ 					}
+ 				} else  if (Players[Player_num].energy >= i2f(150)) {
+-					if (rand() > 8192) {
++					if (psrand() > 8192) {
+ 						mprintf((0, "Not dropping energy!\n"));
+ 						return -1;
+ 					}
+@@ -1204,8 +1209,8 @@ void do_explosion_sequence(object *obj)
+ 		} else if ((del_obj->type == OBJ_ROBOT) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside this code!!
+ 			robot_info	*robptr = &Robot_info[del_obj->id];
+ 			if (robptr->contains_count) {
+-				if (((rand() * 16) >> 15) < robptr->contains_prob) {
+-					del_obj->contains_count = ((rand() * robptr->contains_count) >> 15) + 1;
++				if (((psrand() * 16) >> 15) < robptr->contains_prob) {
++					del_obj->contains_count = ((psrand() * robptr->contains_count) >> 15) + 1;
+ 					del_obj->contains_type = robptr->contains_type;
+ 					del_obj->contains_id = robptr->contains_id;
+ 					maybe_replace_powerup_with_energy(del_obj);
+@@ -1378,8 +1383,8 @@ void do_exploding_wall_frame()
+ 				vm_vec_sub(&vv0,v0,v1);
+ 				vm_vec_sub(&vv1,v2,v1);
+ 
+-				vm_vec_scale_add(&pos,v1,&vv0,rand()*2);
+-				vm_vec_scale_add2(&pos,&vv1,rand()*2);
++				vm_vec_scale_add(&pos,v1,&vv0,psrand()*2);
++				vm_vec_scale_add2(&pos,&vv1,psrand()*2);
+ 
+ 				size = EXPL_WALL_FIREBALL_SIZE + (2*EXPL_WALL_FIREBALL_SIZE * e / EXPL_WALL_TOTAL_FIREBALLS);
+ 
+diff -u -p a/main/game.c b/main/game.c
+--- a/main/game.c
++++ b/main/game.c
+@@ -1758,7 +1758,7 @@ void diminish_palette_towards_normal(voi
+ 	//	Diminish at DIMINISH_RATE units/second.
+ 	//	For frame rates > DIMINISH_RATE Hz, use randomness to achieve this.
+ 	if (FrameTime < F1_0/DIMINISH_RATE) {
+-		if (rand() < FrameTime*DIMINISH_RATE/2)	//	Note: rand() is in 0..32767, and 8 Hz means decrement every frame
++		if (psrand() < FrameTime*DIMINISH_RATE/2)	//	Note: rand() is in 0..32767, and 8 Hz means decrement every frame
+ 			dec_amount = 1;
+ 	} else {
+ 		dec_amount = f2i(FrameTime*DIMINISH_RATE);		// one second = DIMINISH_RATE counts
+@@ -1784,7 +1784,7 @@ void diminish_palette_towards_normal(voi
+ 		if (Flash_effect < 0)
+ 			Flash_effect = 0;
+ 
+-		if (force_do || (rand() > 4096 )) {
++		if (force_do || (psrand() > 4096 )) {
+       	if ( (Newdemo_state==ND_STATE_RECORDING) && (PaletteRedAdd || PaletteGreenAdd || PaletteBlueAdd) )
+ 	      	newdemo_record_palette_effect(PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd);
+ 
+@@ -2546,7 +2546,7 @@ void do_ambient_sounds()
+ 
+ 	if (has_lava) {							//has lava
+ 		sound = SOUND_AMBIENT_LAVA;
+-		if (has_water && (rand() & 1))	//both, pick one
++		if (has_water && (psrand() & 1))	//both, pick one
+ 			sound = SOUND_AMBIENT_WATER;
+ 	}
+ 	else if (has_water)						//just water
+@@ -2554,8 +2554,8 @@ void do_ambient_sounds()
+ 	else
+ 		return;
+ 
+-	if (((rand() << 3) < FrameTime)) {						//play the sound
+-		fix volume = rand() + f1_0/2;
++	if (((psrand() << 3) < FrameTime)) {						//play the sound
++		fix volume = psrand() + f1_0/2;
+ 		digi_play_sample(sound,volume);
+ 	}
+ }
+@@ -3092,7 +3092,8 @@ void FireLaser()
+ 			if (Fusion_next_sound_time < GameTime) {
+ 				if (Fusion_charge > F1_0*2) {
+ 					digi_play_sample( 11, F1_0 );
+-					apply_damage_to_player(ConsoleObject, ConsoleObject, rand() * 4);
++					apply_damage_to_player(ConsoleObject, ConsoleObject,
++							       psrand() * 4);
+ 				} else {
+ 					create_awareness_event(ConsoleObject, PA_WEAPON_ROBOT_COLLISION);
+ 					digi_play_sample( SOUND_FUSION_WARMUP, F1_0 );
+@@ -3102,7 +3103,7 @@ void FireLaser()
+ 					#endif
+ 				}
+ 				Fusion_last_sound_time = GameTime;
+-				Fusion_next_sound_time = GameTime + F1_0/8 + rand()/4;
++				Fusion_next_sound_time = GameTime + F1_0/8 + psrand()/4;
+ 			}
+ 		}
+ 	}
+@@ -3209,7 +3210,7 @@ int mark_player_path_to_segment(int segn
+ 		obj->rtype.vclip_info.vclip_num = Powerup_info[obj->id].vclip_num;
+ 		obj->rtype.vclip_info.frametime = Vclip[obj->rtype.vclip_info.vclip_num].frame_time;
+ 		obj->rtype.vclip_info.framenum = 0;
+-		obj->lifeleft = F1_0*100 + rand() * 4;
++		obj->lifeleft = F1_0*100 + psrand() * 4;
+ 	}
+ 
+ 	mprintf((0, "\n"));
+diff -u -p a/myipx.c b/myipx.c
+--- a/myipx.c
++++ b/myipx.c
+@@ -12,9 +12,9 @@ int ipx_init( int socket_number, int sho
+ int ipx_change_default_socket( ushort socket_number ) { return 0; }
+ ubyte ipx_net[4], ipx_node[6], ipx_has_addr;
+ static void ipx_init_addr() {
+-	srand(timer_get_fixed_seconds());
++	pssrand(timer_get_fixed_seconds());
+ 	for (int i = 0; i < 6; i++)
+-		ipx_node[i] = rand() / (RAND_MAX >> 8);
++		ipx_node[i] = psrand() / (PSRAND_MAX >> 8);
+ 	printf("ipx address %02x:%02x:%02x:%02x:%02x:%02x\n", ipx_node[0], ipx_node[1], ipx_node[2], ipx_node[3], ipx_node[4], ipx_node[5]);
+ 	ipx_has_addr = 1;
+ 	net_init(ipx_node);
+diff -u -p a/win95/palette.c b/win95/palette.c
+--- a/win95/palette.c
++++ b/win95/palette.c
+@@ -190,7 +190,7 @@ void add_computed_color(int r, int g, in
+ 		add_index = Num_computed_colors;
+ 		Num_computed_colors++;
+ 	} else
+-		add_index = (rand() * MAX_COMPUTED_COLORS) >> 15;
++		add_index = (psrand() * MAX_COMPUTED_COLORS) >> 15;
+ 
+ 	Computed_colors[add_index].r = r;
+ 	Computed_colors[add_index].g = g;
+diff -u -p a/vga/palette.c b/vga/palette.c
+--- a/vga/palette.c
++++ b/vga/palette.c
+@@ -126,7 +126,7 @@ void add_computed_color(int r, int g, in
+ 		add_index = Num_computed_colors;
+ 		Num_computed_colors++;
+ 	} else
+-		add_index = (rand() * MAX_COMPUTED_COLORS) >> 15;
++		add_index = (psrand() * MAX_COMPUTED_COLORS) >> 15;
+ 
+ 	Computed_colors[add_index].r = r;
+ 	Computed_colors[add_index].g = g;
+diff -u -p a/vga/framebuf.c b/vga/framebuf.c
+--- a/vga/framebuf.c
++++ b/vga/framebuf.c
+@@ -80,7 +80,8 @@ void VesaMain()
+    {
+ 		char *MyPtr;
+ 		MyPtr=(char *)VesaGetPtr();	
+-		  memset( (MyPtr+((rand()%0x10000)<<4)+rand()%0x10000),rand()%256, 1 );
++		  memset( (MyPtr+((psrand()%0x10000)<<4)+psrand()%0x10000),
++                         psrand()%256, 1 );
+    }
+ 
+    VesaEnd();
+diff -u -p a/vga/new/palette.c b/vga/new/palette.c
+--- a/vga/new/palette.c
++++ b/vga/new/palette.c
+@@ -125,7 +125,7 @@ void add_computed_color(int r, int g, in
+ 		add_index = Num_computed_colors;
+ 		Num_computed_colors++;
+ 	} else
+-		add_index = (rand() * MAX_COMPUTED_COLORS) >> 15;
++		add_index = (psrand() * MAX_COMPUTED_COLORS) >> 15;
+ 
+ 	Computed_colors[add_index].r = r;
+ 	Computed_colors[add_index].g = g;
+diff -u -p a/vecmat_asm/disttest.c b/vecmat_asm/disttest.c
+--- a/vecmat_asm/disttest.c
++++ b/vecmat_asm/disttest.c
+@@ -72,9 +72,9 @@ void main(int argc,char **argv)
+ 
+ 		do {
+ 
+-			a = (double) rand() * TEST_RANGE / (double) RAND_MAX;
+-			b = (double) rand() * TEST_RANGE / (double) RAND_MAX;
+-			c = (double) rand() * TEST_RANGE / (double) RAND_MAX;
++			a = (double) psrand() * TEST_RANGE / (double) PSRAND_MAX;
++			b = (double) psrand() * TEST_RANGE / (double) PSRAND_MAX;
++			c = (double) psrand() * TEST_RANGE / (double) PSRAND_MAX;
+ 
+ 			//printf("%lf %lf %lf \n",a,b,c);
+ 

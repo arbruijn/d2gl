@@ -459,8 +459,8 @@ _exit_cheat:
 	//	Occasionally make non-still robots make a path to the player.  Based on agitation and distance from player.
 	if ((aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && !(Game_mode & GM_MULTI) && (robptr->companion != 1) && (robptr->thief != 1))
 		if (Overall_agitation > 70) {
-			if ((dist_to_player < F1_0*200) && (rand() < FrameTime/4)) {
-				if (rand() * (Overall_agitation - 40) > F1_0*5) {
+			if ((dist_to_player < F1_0*200) && (psrand() < FrameTime/4)) {
+				if (psrand() * (Overall_agitation - 40) > F1_0*5) {
 					// -- mprintf((0, "(1) Object #%i going from still to path in frame %i.\n", objnum, FrameCount));
 					create_path_to_player(obj, 4 + Overall_agitation/8 + Difficulty_level, 1);
 					return;
@@ -568,7 +568,7 @@ _exit_cheat:
 
 
 	if (Player_is_dead && (ailp->player_awareness_type == 0))
-		if ((dist_to_player < F1_0*200) && (rand() < FrameTime/8)) {
+		if ((dist_to_player < F1_0*200) && (psrand() < FrameTime/8)) {
 			if ((aip->behavior != AIB_STILL) && (aip->behavior != AIB_RUN_FROM)) {
 				if (!ai_multiplayer_awareness(obj, 30))
 					return;
@@ -603,7 +603,7 @@ _exit_cheat:
 	} else if (((obj_ref&3) == 0) && !previous_visibility && (dist_to_player < F1_0*100)) {
 		fix	sval, rval;
 
-		rval = rand();
+		rval = psrand();
 		sval = (dist_to_player * (Difficulty_level+1))/64;
 
 		// -- mprintf((0, "Object #%3i: dist = %7.3f, rval = %8x, sval = %8x", obj-Objects, f2fl(dist_to_player), rval, sval));
@@ -800,7 +800,7 @@ _exit_cheat:
 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
 				ailp->next_fire = F1_0/2;
 				if (!Buddy_allowed_to_talk)	//	If buddy not talking, make him fire flares less often.
-					ailp->next_fire += rand()*4;
+					ailp->next_fire += psrand()*4;
 			}
 
 		}
@@ -825,7 +825,7 @@ _exit_cheat:
 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
 				ailp->next_fire = F1_0/2;
 				if (Stolen_item_index == 0)		//	If never stolen an item, fire flares less often (bad: Stolen_item_index wraps, but big deal)
-					ailp->next_fire += rand()*4;
+					ailp->next_fire += psrand()*4;
 			}
 		}
 	}
@@ -866,8 +866,8 @@ _exit_cheat:
 
 			if ((aip->CURRENT_STATE == AIS_REST) && (aip->GOAL_STATE == AIS_REST)) {
 				if (player_visibility) {
-					if (rand() < FrameTime*player_visibility) {
-						if (dist_to_player/256 < rand()*player_visibility) {
+					if (psrand() < FrameTime*player_visibility) {
+						if (dist_to_player/256 < psrand()*player_visibility) {
 							// mprintf((0, "Object %i searching for player.\n", obj-Objects));
 							aip->GOAL_STATE = AIS_SRCH;
 							aip->CURRENT_STATE = AIS_SRCH;
@@ -1371,7 +1371,7 @@ int add_awareness_event(object *objp, int type)
 	if (Num_awareness_events < MAX_AWARENESS_EVENTS) {
 		if ((type == PA_WEAPON_WALL_COLLISION) || (type == PA_WEAPON_ROBOT_COLLISION))
 			if (objp->id == VULCAN_ID)
-				if (rand() > 3276)
+				if (psrand() > 3276)
 					return 0;		//	For vulcan cannon, only about 1/10 actually cause awareness
 
 		Awareness_events[Num_awareness_events].segnum = objp->segnum;
@@ -1394,7 +1394,7 @@ void create_awareness_event(object *objp, int type)
 	//	If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
 	if (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_ROBOTS)) {
 		if (add_awareness_event(objp, type)) {
-			if (((rand() * (type+4)) >> 15) > 4)
+			if (((psrand() * (type+4)) >> 15) > 4)
 				Overall_agitation++;
 			if (Overall_agitation > OVERALL_AGITATION_MAX)
 				Overall_agitation = OVERALL_AGITATION_MAX;

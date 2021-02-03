@@ -313,7 +313,7 @@ fix compute_light_intensity(int objnum)
 			fix tval = Weapon_info[obj->id].light;
 			if (Game_mode & GM_MULTI)
 				if (obj->id == OMEGA_ID)
-					if (rand() > 8192)
+					if (psrand() > 8192)
 						return 0;		//	3/4 of time, omega blobs will cast 0 light!
 
 			if (obj->id == FLARE_ID )

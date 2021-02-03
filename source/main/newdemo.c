@@ -3140,7 +3140,7 @@ void newdemo_start_playback(char * filename)
 		if ( NumFiles == 0 ) { 
 			return;		// No files found!
 		}
-		RandFileNum = rand() % NumFiles;
+		RandFileNum = psrand() % NumFiles;
 		NumFiles = 0;
 		if( !FileFindFirst( "demos\\*.DEM", &find ) )	{
 			do	{

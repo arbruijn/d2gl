@@ -135,9 +135,9 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 
 									if (obj->ctype.ai_info.SKIP_AI_COUNT * FrameTime < F1_0) {
 										aip->SKIP_AI_COUNT += force_val;
-										obj0p->mtype.phys_info.rotthrust.x = ((rand() - 16384) * force_val)/16;
-										obj0p->mtype.phys_info.rotthrust.y = ((rand() - 16384) * force_val)/16;
-										obj0p->mtype.phys_info.rotthrust.z = ((rand() - 16384) * force_val)/16;
+										obj0p->mtype.phys_info.rotthrust.x = ((psrand() - 16384) * force_val)/16;
+										obj0p->mtype.phys_info.rotthrust.y = ((psrand() - 16384) * force_val)/16;
+										obj0p->mtype.phys_info.rotthrust.z = ((psrand() - 16384) * force_val)/16;
 										obj0p->mtype.phys_info.flags |= PF_USES_THRUST;
 
 										//@@if (Robot_info[obj0p->id].companion)
@@ -354,19 +354,21 @@ object *object_create_debris(object *parent, int subobj_num)
 
 	po = &Polygon_models[obj->rtype.pobj_info.model_num];
 
-	obj->mtype.phys_info.velocity.x = RAND_MAX/2 - rand();
-	obj->mtype.phys_info.velocity.y = RAND_MAX/2 - rand();
-	obj->mtype.phys_info.velocity.z = RAND_MAX/2 - rand();
+	obj->mtype.phys_info.velocity.x = PSRAND_MAX/2 - psrand();
+	obj->mtype.phys_info.velocity.y = PSRAND_MAX/2 - psrand();
+	obj->mtype.phys_info.velocity.z = PSRAND_MAX/2 - psrand();
 	vm_vec_normalize_quick(&obj->mtype.phys_info.velocity);
-	vm_vec_scale(&obj->mtype.phys_info.velocity,i2f(10 + (30 * rand() / RAND_MAX)));
+	vm_vec_scale(&obj->mtype.phys_info.velocity,
+		     i2f(10 + (30 * psrand() / PSRAND_MAX)));
 
 	vm_vec_add2(&obj->mtype.phys_info.velocity,&parent->mtype.phys_info.velocity);
 
 	// -- used to be: Notice, not random! vm_vec_make(&obj->mtype.phys_info.rotvel,10*0x2000/3,10*0x4000/3,10*0x7000/3);
-	vm_vec_make(&obj->mtype.phys_info.rotvel, rand() + 0x1000, rand()*2 + 0x4000, rand()*3 + 0x2000);
+	vm_vec_make(&obj->mtype.phys_info.rotvel, psrand() + 0x1000,
+		    psrand()*2 + 0x4000, psrand()*3 + 0x2000);
 	vm_vec_zero(&obj->mtype.phys_info.rotthrust);
 
-	obj->lifeleft = 3*DEBRIS_LIFE/4 + fixmul(rand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
+	obj->lifeleft = 3*DEBRIS_LIFE/4 + fixmul(psrand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
 
 	obj->mtype.phys_info.mass = fixmuldiv(parent->mtype.phys_info.mass,obj->size,parent->size);
 	obj->mtype.phys_info.drag = 0; //fl2f(0.2);		//parent->mtype.phys_info.drag;
@@ -439,7 +441,7 @@ int pick_connected_segment(object *objp, int max_depth)
 	for (i=0; i<4; i++) {
 		int	ind1, temp;
 
-		ind1 = (rand() * MAX_SIDES_PER_SEGMENT) >> 15;
+		ind1 = (psrand() * MAX_SIDES_PER_SEGMENT) >> 15;
 		temp = side_rand[ind1];
 		side_rand[ind1] = side_rand[i];
 		side_rand[i] = temp;
@@ -460,8 +462,8 @@ int pick_connected_segment(object *objp, int max_depth)
 		tail &= QUEUE_SIZE-1;
 
 		//	to make random, switch a pair of entries in side_rand.
-		ind1 = (rand() * MAX_SIDES_PER_SEGMENT) >> 15;
-		ind2 = (rand() * MAX_SIDES_PER_SEGMENT) >> 15;
+		ind1 = (psrand() * MAX_SIDES_PER_SEGMENT) >> 15;
+		ind2 = (psrand() * MAX_SIDES_PER_SEGMENT) >> 15;
 		temp = side_rand[ind1];
 		side_rand[ind1] = side_rand[ind2];
 		side_rand[ind2] = temp;
@@ -521,15 +523,15 @@ int choose_drop_segment()
 
 	mprintf((0,"choose_drop_segment:"));
 
-	srand(timer_get_fixed_seconds());
+	pssrand(timer_get_fixed_seconds());
 
-	cur_drop_depth = BASE_NET_DROP_DEPTH + ((rand() * BASE_NET_DROP_DEPTH*2) >> 15);
+	cur_drop_depth = BASE_NET_DROP_DEPTH + ((psrand() * BASE_NET_DROP_DEPTH*2) >> 15);
 
 	player_pos = &Objects[Players[Player_num].objnum].pos;
 	player_seg = Objects[Players[Player_num].objnum].segnum;
 
 	while ((segnum == -1) && (cur_drop_depth > BASE_NET_DROP_DEPTH/2)) {
-		pnum = (rand() * N_players) >> 15;
+		pnum = (psrand() * N_players) >> 15;
 		count = 0;
 		while ((count < N_players) && ((Players[pnum].connected == 0) || (pnum==Player_num) || ((Game_mode & (GM_TEAM|GM_CAPTURE)) && (get_team(pnum)==get_team(Player_num))))) {
 			pnum = (pnum+1)%N_players;
@@ -582,7 +584,7 @@ int choose_drop_segment()
 
 	if (segnum == -1) {
 		mprintf((1, "Warning: Unable to find a connected segment.  Picking a random one.\n"));
-		return (rand() * Highest_segment_index) >> 15;
+		return (psrand() * Highest_segment_index) >> 15;
 	} else
 		return segnum;
 
@@ -723,7 +725,7 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 		del_obj->contains_count = 0;
 	else if (weapon_index != -1) {
 		if ((player_has_weapon(weapon_index, 0) & HAS_WEAPON_FLAG) || weapon_nearby(del_obj, del_obj->contains_id)) {
-			if (rand() > 16384) {
+			if (psrand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				if (weapon_index == VULCAN_INDEX) {
 					del_obj->contains_id = POW_VULCAN_AMMO;
@@ -739,7 +741,7 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 		}
 	} else if (del_obj->contains_id == POW_QUAD_FIRE)
 		if ((Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) || weapon_nearby(del_obj, del_obj->contains_id)) {
-			if (rand() > 16384) {
+			if (psrand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_ENERGY;
 			} else {
@@ -786,9 +788,12 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 				} else
 					rand_scale = 2;
 
-				new_velocity.x += fixmul(old_mag+F1_0*32, rand()*rand_scale - 16384*rand_scale);
-				new_velocity.y += fixmul(old_mag+F1_0*32, rand()*rand_scale - 16384*rand_scale);
-				new_velocity.z += fixmul(old_mag+F1_0*32, rand()*rand_scale - 16384*rand_scale);
+				new_velocity.x += fixmul(old_mag+F1_0*32,
+							 psrand()*rand_scale - 16384*rand_scale);
+				new_velocity.y += fixmul(old_mag+F1_0*32,
+							 psrand()*rand_scale - 16384*rand_scale);
+				new_velocity.z += fixmul(old_mag+F1_0*32,
+							 psrand()*rand_scale - 16384*rand_scale);
 
 				// Give keys zero velocity so they can be tracked better in multi
 
@@ -844,7 +849,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 					case POW_MISSILE_4:
 					case POW_SHIELD_BOOST:
 					case POW_ENERGY:
-						obj->lifeleft = (rand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
+						obj->lifeleft = (psrand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
 						if (Game_mode & GM_MULTI)
 							obj->lifeleft /= 2;
 						break;
@@ -870,9 +875,9 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 //				else
 					rand_scale = 2;
 
-				new_velocity.x += (rand()-16384)*2;
-				new_velocity.y += (rand()-16384)*2;
-				new_velocity.z += (rand()-16384)*2;
+				new_velocity.x += (psrand()-16384)*2;
+				new_velocity.y += (psrand()-16384)*2;
+				new_velocity.z += (psrand()-16384)*2;
 
 				vm_vec_normalize_quick(&new_velocity);
 				vm_vec_scale(&new_velocity, (F1_0*32 + old_mag) * rand_scale);
@@ -934,7 +939,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 			}
 
 			//	At JasenW's request, robots which contain robots sometimes drop shields.
-			if (rand() > 16384)
+			if (psrand() > 16384)
 				drop_powerup(OBJ_POWERUP, POW_SHIELD_BOOST, 1, init_vel, pos, segnum);
 
 			break;
@@ -957,24 +962,24 @@ int object_create_egg(object *objp)
 		if (objp->contains_type == OBJ_POWERUP)
 			if (objp->contains_id == POW_SHIELD_BOOST) {
 				if (Players[Player_num].shields >= i2f(100)) {
-					if (rand() > 16384) {
+					if (psrand() > 16384) {
 						mprintf((0, "Not dropping shield!\n"));
 						return -1;
 					}
 				} else  if (Players[Player_num].shields >= i2f(150)) {
-					if (rand() > 8192) {
+					if (psrand() > 8192) {
 						mprintf((0, "Not dropping shield!\n"));
 						return -1;
 					}
 				}
 			} else if (objp->contains_id == POW_ENERGY) {
 				if (Players[Player_num].energy >= i2f(100)) {
-					if (rand() > 16384) {
+					if (psrand() > 16384) {
 						mprintf((0, "Not dropping energy!\n"));
 						return -1;
 					}
 				} else  if (Players[Player_num].energy >= i2f(150)) {
-					if (rand() > 8192) {
+					if (psrand() > 8192) {
 						mprintf((0, "Not dropping energy!\n"));
 						return -1;
 					}
@@ -1204,8 +1209,8 @@ void do_explosion_sequence(object *obj)
 		} else if ((del_obj->type == OBJ_ROBOT) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside this code!!
 			robot_info	*robptr = &Robot_info[del_obj->id];
 			if (robptr->contains_count) {
-				if (((rand() * 16) >> 15) < robptr->contains_prob) {
-					del_obj->contains_count = ((rand() * robptr->contains_count) >> 15) + 1;
+				if (((psrand() * 16) >> 15) < robptr->contains_prob) {
+					del_obj->contains_count = ((psrand() * robptr->contains_count) >> 15) + 1;
 					del_obj->contains_type = robptr->contains_type;
 					del_obj->contains_id = robptr->contains_id;
 					maybe_replace_powerup_with_energy(del_obj);
@@ -1378,8 +1383,8 @@ void do_exploding_wall_frame()
 				vm_vec_sub(&vv0,v0,v1);
 				vm_vec_sub(&vv1,v2,v1);
 
-				vm_vec_scale_add(&pos,v1,&vv0,rand()*2);
-				vm_vec_scale_add2(&pos,&vv1,rand()*2);
+				vm_vec_scale_add(&pos,v1,&vv0,psrand()*2);
+				vm_vec_scale_add2(&pos,&vv1,psrand()*2);
 
 				size = EXPL_WALL_FIREBALL_SIZE + (2*EXPL_WALL_FIREBALL_SIZE * e / EXPL_WALL_TOTAL_FIREBALLS);
 

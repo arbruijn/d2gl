@@ -4756,7 +4756,7 @@ void DropOrb ()
 		return;
 	}
 
-	seed = rand();
+	seed = psrand();
 
    objnum = spit_powerup(ConsoleObject,POW_HOARD_ORB,seed);
  	 
@@ -4798,7 +4798,7 @@ void DropFlag ()
 	HUD_init_message("Flag dropped!");
 	digi_play_sample (SOUND_DROP_WEAPON,F1_0);
 
-	seed = rand();
+	seed = psrand();
 
    if (get_team (Player_num)==TEAM_RED)
 	 objnum = spit_powerup(ConsoleObject,POW_FLAG_BLUE,seed);

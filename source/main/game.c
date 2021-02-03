@@ -1758,7 +1758,7 @@ void diminish_palette_towards_normal(void)
 	//	Diminish at DIMINISH_RATE units/second.
 	//	For frame rates > DIMINISH_RATE Hz, use randomness to achieve this.
 	if (FrameTime < F1_0/DIMINISH_RATE) {
-		if (rand() < FrameTime*DIMINISH_RATE/2)	//	Note: rand() is in 0..32767, and 8 Hz means decrement every frame
+		if (psrand() < FrameTime*DIMINISH_RATE/2)	//	Note: rand() is in 0..32767, and 8 Hz means decrement every frame
 			dec_amount = 1;
 	} else {
 		dec_amount = f2i(FrameTime*DIMINISH_RATE);		// one second = DIMINISH_RATE counts
@@ -1784,7 +1784,7 @@ void diminish_palette_towards_normal(void)
 		if (Flash_effect < 0)
 			Flash_effect = 0;
 
-		if (force_do || (rand() > 4096 )) {
+		if (force_do || (psrand() > 4096 )) {
       	if ( (Newdemo_state==ND_STATE_RECORDING) && (PaletteRedAdd || PaletteGreenAdd || PaletteBlueAdd) )
 	      	newdemo_record_palette_effect(PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd);
 
@@ -2546,7 +2546,7 @@ void do_ambient_sounds()
 
 	if (has_lava) {							//has lava
 		sound = SOUND_AMBIENT_LAVA;
-		if (has_water && (rand() & 1))	//both, pick one
+		if (has_water && (psrand() & 1))	//both, pick one
 			sound = SOUND_AMBIENT_WATER;
 	}
 	else if (has_water)						//just water
@@ -2554,8 +2554,8 @@ void do_ambient_sounds()
 	else
 		return;
 
-	if (((rand() << 3) < FrameTime)) {						//play the sound
-		fix volume = rand() + f1_0/2;
+	if (((psrand() << 3) < FrameTime)) {						//play the sound
+		fix volume = psrand() + f1_0/2;
 		digi_play_sample(sound,volume);
 	}
 }
@@ -3092,7 +3092,8 @@ void FireLaser()
 			if (Fusion_next_sound_time < GameTime) {
 				if (Fusion_charge > F1_0*2) {
 					digi_play_sample( 11, F1_0 );
-					apply_damage_to_player(ConsoleObject, ConsoleObject, rand() * 4);
+					apply_damage_to_player(ConsoleObject, ConsoleObject,
+							       psrand() * 4);
 				} else {
 					create_awareness_event(ConsoleObject, PA_WEAPON_ROBOT_COLLISION);
 					digi_play_sample( SOUND_FUSION_WARMUP, F1_0 );
@@ -3102,7 +3103,7 @@ void FireLaser()
 					#endif
 				}
 				Fusion_last_sound_time = GameTime;
-				Fusion_next_sound_time = GameTime + F1_0/8 + rand()/4;
+				Fusion_next_sound_time = GameTime + F1_0/8 + psrand()/4;
 			}
 		}
 	}
@@ -3209,7 +3210,7 @@ int mark_player_path_to_segment(int segnum)
 		obj->rtype.vclip_info.vclip_num = Powerup_info[obj->id].vclip_num;
 		obj->rtype.vclip_info.frametime = Vclip[obj->rtype.vclip_info.vclip_num].frame_time;
 		obj->rtype.vclip_info.framenum = 0;
-		obj->lifeleft = F1_0*100 + rand() * 4;
+		obj->lifeleft = F1_0*100 + psrand() * 4;
 	}
 
 	mprintf((0, "\n"));

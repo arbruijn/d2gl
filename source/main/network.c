@@ -3424,7 +3424,7 @@ network_send_sync(void)
 
 	// Randomize their starting locations...
 
-	srand( timer_get_fixed_seconds() );
+	pssrand(timer_get_fixed_seconds());
 	for (i=0; i<NumNetPlayerPositions; i++ )        
 	{
 		if (Players[i].connected)
@@ -3434,7 +3434,7 @@ network_send_sync(void)
 		else {
 			do 
 			{
-				np = rand() % NumNetPlayerPositions;
+				np = psrand() % NumNetPlayerPositions;
 				for (j=0; j<i; j++ )    
 				{
 					if (Netgame.locations[j]==np)   
@@ -3816,8 +3816,8 @@ network_start_game()
 
 	network_set_game_mode(Netgame.gamemode);
 
-   srand( timer_get_fixed_seconds() );
-   Netgame.Security=rand();  // For syncing Netgames with player packets
+   pssrand(timer_get_fixed_seconds());
+   Netgame.Security=psrand();  // For syncing Netgames with player packets
 
 	if(network_select_players())
 	{

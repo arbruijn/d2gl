@@ -798,7 +798,7 @@ void set_next_fire_time(object *objp, ai_local *ailp, robot_info *robptr, int gu
 {
 	//	For guys in snipe mode, they have a 50% shot of getting this shot in free.
 	if ((gun_num != 0) || (robptr->weapon_type2 == -1))
-		if ((objp->ctype.ai_info.behavior != AIB_SNIPE) || (rand() > 16384))
+		if ((objp->ctype.ai_info.behavior != AIB_SNIPE) || (psrand() > 16384))
 			ailp->rapidfire_count++;
 
 	//	Old way, 10/15/95: Continuous rapidfire if rapidfire_count set.
@@ -1002,7 +1002,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 		fix	cloak_time = Ai_cloak_info[objnum % MAX_AI_CLOAK_INFO].last_time;
 
 		if (GameTime - cloak_time > CLOAK_TIME_MAX/4)
-			if (rand() > fixdiv(GameTime - cloak_time, CLOAK_TIME_MAX)/2) {
+			if (psrand() > fixdiv(GameTime - cloak_time, CLOAK_TIME_MAX)/2) {
 				set_next_fire_time(obj, ailp, robptr, gun_num);
 				return;
 			}
@@ -1069,7 +1069,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	//	Lead the player half the time.
 	//	Note that when leading the player, aim is perfect.  This is probably acceptable since leading is so hacked in.
 	//	Problem is all robots will lead equally badly.
-	if (rand() < 16384) {
+	if (psrand() < 16384) {
 		if (lead_player(obj, fire_point, believed_player_pos, gun_num, &fire_vec))		//	Stuff direction to fire at in fire_point.
 			goto player_led;
 	}
@@ -1077,9 +1077,12 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	dot = 0;
 	count = 0;			//	Don't want to sit in this loop forever...
 	while ((count < 4) && (dot < F1_0/4)) {
-		bpp_diff.x = believed_player_pos->x + fixmul((rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
-		bpp_diff.y = believed_player_pos->y + fixmul((rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
-		bpp_diff.z = believed_player_pos->z + fixmul((rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
+		bpp_diff.x = believed_player_pos->x + fixmul((psrand()-16384) * (NDL-Difficulty_level-1) * 4,
+							     aim);
+		bpp_diff.y = believed_player_pos->y + fixmul((psrand()-16384) * (NDL-Difficulty_level-1) * 4,
+							     aim);
+		bpp_diff.z = believed_player_pos->z + fixmul((psrand()-16384) * (NDL-Difficulty_level-1) * 4,
+							     aim);
 
 		vm_vec_normalized_dir_quick(&fire_vec, &bpp_diff, fire_point);
 		dot = vm_vec_dot(&obj->orient.fvec, &fire_vec);
@@ -1357,7 +1360,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 	if (robptr->attack_type == 1) {
 		if (((ailp->next_fire > robptr->firing_wait[Difficulty_level]/4) && (dist_to_player < F1_0*30)) || Player_is_dead) {
 			//	1/4 of time, move around player, 3/4 of time, move away from player
-			if (rand() < 8192) {
+			if (psrand() < 8192) {
 				move_around_player(objp, vec_to_player, -1);
 			} else {
 				move_away_from_player(objp, vec_to_player, 1);
@@ -1396,9 +1399,9 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 //	Compute a somewhat random, normalized vector.
 void make_random_vector(vms_vector *vec)
 {
-	vec->x = (rand() - 16384) | 1;	// make sure we don't create null vector
-	vec->y = rand() - 16384;
-	vec->z = rand() - 16384;
+	vec->x = (psrand() - 16384) | 1;	// make sure we don't create null vector
+	vec->y = psrand() - 16384;
+	vec->z = psrand() - 16384;
 
 	vm_vec_normalize_quick(vec);
 }
@@ -1504,7 +1507,7 @@ void do_ai_robot_hit(object *objp, int type)
 					//	Attack robots (eg, green guy) shouldn't have behavior = still.
 					Assert(Robot_info[objp->id].attack_type == 0);
 
-					r = rand();
+					r = psrand();
 					//	1/8 time, charge player, 1/4 time create path, rest of time, do nothing
 					if (r < 4096) {
 						// -- mprintf((0, "Still guy switching to Station, creating path to player."));
@@ -1514,7 +1517,9 @@ void do_ai_robot_hit(object *objp, int type)
 						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
 					} else if (r < 4096+8192) {
 						// -- mprintf((0, "Still guy creating n segment path."));
-						create_n_segment_path(objp, rand()/8192 + 2, -1);
+						create_n_segment_path(objp,
+								      psrand()/8192 + 2,
+								      -1);
 						Ai_local_info[objp-Objects].mode = AIM_FOLLOW_PATH;
 					}
 					break;
@@ -1565,7 +1570,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 			if ((ailp->next_misc_sound_time < GameTime) && ((ailp->next_fire < F1_0) || (ailp->next_fire2 < F1_0)) && (dist < F1_0*20)) {
 				// mprintf((0, "ANGRY! "));
-				ailp->next_misc_sound_time = GameTime + (rand() + F1_0) * (7 - Difficulty_level) / 1;
+				ailp->next_misc_sound_time = GameTime + (psrand() + F1_0) * (7 - Difficulty_level) / 1;
 				digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 			}
 		} else {
@@ -1597,7 +1602,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 						// -- else
 							digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 						ailp->time_player_sound_attacked = GameTime;
-						ailp->next_misc_sound_time = GameTime + F1_0 + rand()*4;
+						ailp->next_misc_sound_time = GameTime + F1_0 + psrand()*4;
 					}
 				} else if (ailp->time_player_sound_attacked + F1_0/4 < GameTime) {
 					// -- mprintf((0, "ANGRY! "));
@@ -1611,7 +1616,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 			if ((*player_visibility == 2) && (ailp->next_misc_sound_time < GameTime)) {
 				// -- mprintf((0, "ATTACK! "));
-				ailp->next_misc_sound_time = GameTime + (rand() + F1_0) * (7 - Difficulty_level) / 2;
+				ailp->next_misc_sound_time = GameTime + (psrand() + F1_0) * (7 - Difficulty_level) / 2;
 				// -- if (Player_exploded)
 				// -- 	digi_link_sound_to_pos( robptr->taunt_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 				// -- else
@@ -2029,7 +2034,9 @@ int boss_spew_robot(object *objp, vms_vector *pos)
 		return -1;
 	}	
 
-	objnum = create_gated_robot( segnum, Spew_bots[boss_index][(Max_spew_bots[boss_index] * rand()) >> 15], pos);
+	objnum = create_gated_robot( segnum,
+				    Spew_bots[boss_index][(Max_spew_bots[boss_index] * psrand()) >> 15],
+				    pos);
  
 	//	Make spewed robot come tumbling out as if blasted by a flash missile.
 	if (objnum != -1) {
@@ -2040,9 +2047,9 @@ int boss_spew_robot(object *objp, vms_vector *pos)
 
 		if (force_val) {
 			newobjp->ctype.ai_info.SKIP_AI_COUNT += force_val;
-			newobjp->mtype.phys_info.rotthrust.x = ((rand() - 16384) * force_val)/16;
-			newobjp->mtype.phys_info.rotthrust.y = ((rand() - 16384) * force_val)/16;
-			newobjp->mtype.phys_info.rotthrust.z = ((rand() - 16384) * force_val)/16;
+			newobjp->mtype.phys_info.rotthrust.x = ((psrand() - 16384) * force_val)/16;
+			newobjp->mtype.phys_info.rotthrust.y = ((psrand() - 16384) * force_val)/16;
+			newobjp->mtype.phys_info.rotthrust.z = ((psrand() - 16384) * force_val)/16;
 			newobjp->mtype.phys_info.flags |= PF_USES_THRUST;
 
 			//	Now, give a big initial velocity to get moving away from boss.
@@ -2076,7 +2083,7 @@ void init_ai_for_ship(void)
 int gate_in_robot(int type, int segnum)
 {
 	if (segnum < 0)
-		segnum = Boss_gate_segs[(rand() * Num_boss_gate_segs) >> 15];
+		segnum = Boss_gate_segs[(psrand() * Num_boss_gate_segs) >> 15];
 
 	Assert((segnum >= 0) && (segnum <= Highest_segment_index));
 
@@ -2118,7 +2125,7 @@ void teleport_boss(object *objp)
 	Assert(Num_boss_teleport_segs > 0);
 
 	//	Pick a random segment from the list of boss-teleportable-to segments.
-	rand_index = (rand() * Num_boss_teleport_segs) >> 15;	
+	rand_index = (psrand() * Num_boss_teleport_segs) >> 15;	
 	rand_segnum = Boss_teleport_segs[rand_index];
 	Assert((rand_segnum >= 0) && (rand_segnum <= Highest_segment_index));
 
@@ -2188,10 +2195,14 @@ int do_robot_dying_frame(object *objp, fix start_time, fix roll_duration, byte *
 			mprintf((0, "Starting death sound!\n"));
 			*dying_sound_playing = 1;
 			digi_link_sound_to_object2( death_sound, objp-Objects, 0, sound_scale, sound_scale*256 );	//	F1_0*512 means play twice as loud
-		} else if (rand() < FrameTime*16)
-			create_small_fireball_on_object(objp, (F1_0 + rand()) * (16 * expl_scale/F1_0)/8, 0);
-	} else if (rand() < FrameTime*8)
-		create_small_fireball_on_object(objp, (F1_0/2 + rand()) * (16 * expl_scale/F1_0)/8, 1);
+		} else if (psrand() < FrameTime*16)
+			create_small_fireball_on_object(objp,
+						        (F1_0 + psrand()) * (16 * expl_scale/F1_0)/8,
+						        0);
+	} else if (psrand() < FrameTime*8)
+		create_small_fireball_on_object(objp,
+						(F1_0/2 + psrand()) * (16 * expl_scale/F1_0)/8,
+						1);
 
 	if (start_time + roll_duration < GameTime)
 		return 1;
@@ -2521,7 +2532,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 
 		vms_vector	vec_to_last_pos;
 
-		if (rand()/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
+		if (psrand()/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
 		if ((!object_animates || ready_to_fire(robptr, ailp)) && (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
 			vm_vec_normalized_dir_quick(&vec_to_last_pos, &Believed_player_pos, &obj->pos);
 			dot = vm_vec_dot(&obj->orient.fvec, &vec_to_last_pos);

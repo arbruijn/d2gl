@@ -1326,8 +1326,8 @@ void serial_link_start(void)
 
 	synccnt = 0;
 
-	srand(clock());
-	my_sync.sync_time = rand();
+	pssrand(clock());
+	my_sync.sync_time = psrand();
 	mprintf((0, "My rand set to %d.\n", my_sync.sync_time));
 
 	if (!com_connect()) 
@@ -2168,12 +2168,12 @@ com_level_sync(void)
 //#ifndef SHAREWARE
 	my_sync.killed = Players[Player_num].net_killed_total;
 //#endif
-	srand(clock());
+	pssrand(clock());
 
 	if (Game_mode & GM_MULTI_COOP)
 		my_sync.difficulty = Player_num;
 	else
-		my_sync.difficulty = rand()%MAX_NUM_NET_PLAYERS; // My starting position
+		my_sync.difficulty = psrand()%MAX_NUM_NET_PLAYERS; // My starting position
 
 	if (com_sync(Current_level_num))
 	{

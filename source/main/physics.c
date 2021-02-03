@@ -1112,7 +1112,7 @@ void phys_apply_rot(object *obj,vms_vector *force_vec)
 
 					addval = f2i(tval);
 
-					if ( (rand() * 2) < (tval & 0xffff))
+					if ( (psrand() * 2) < (tval & 0xffff))
 						addval++;
 					obj->ctype.ai_info.SKIP_AI_COUNT += addval;
 					// -- mk: too much stuff making hard to see my debug messages...mprintf((0, "FrameTime = %7.3f, addval = %i\n", f2fl(FrameTime), addval));

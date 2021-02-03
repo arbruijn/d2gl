@@ -224,7 +224,7 @@ void autodemo_menu_check(int nitems, newmenu_item * items, int *last_key, int ci
 
 try_again:;
 
-			if ((rand() % (n_demos+1)) == 0)
+			if ((psrand() % (n_demos+1)) == 0)
 			{
 				#ifndef SHAREWARE
 					#ifdef WINDOWS

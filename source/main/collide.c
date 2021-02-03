@@ -316,9 +316,9 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 		PALETTE_FLASH_ADD(0, 0, 60);	//flash blue
 
 		//knock player around
-		force.x = 40*(rand() - 16384);
-		force.y = 40*(rand() - 16384);
-		force.z = 40*(rand() - 16384);
+		force.x = 40*(psrand() - 16384);
+		force.y = 40*(psrand() - 16384);
+		force.z = 40*(psrand() - 16384);
 		phys_apply_rot(playerobj, &force);
 
 #ifdef TACTILE
@@ -434,8 +434,8 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 				PALETTE_FLASH_ADD(f2i(damage*4), 0, 0);	//flash red
 			}
 
-			obj->mtype.phys_info.rotvel.x = (rand() - 16384)/2;
-			obj->mtype.phys_info.rotvel.z = (rand() - 16384)/2;
+			obj->mtype.phys_info.rotvel.x = (psrand() - 16384)/2;
+			obj->mtype.phys_info.rotvel.z = (psrand() - 16384)/2;
 		}
 
 		return (d>0)?1:2;
@@ -1473,7 +1473,7 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER)
 		if ((Weapon_info[weapon->id].matter && Boss_spews_bots_matter[d2_boss_index]) || (!Weapon_info[weapon->id].matter && Boss_spews_bots_energy[d2_boss_index])) {
 			if (Boss_spew_more[d2_boss_index])
-				if (rand() > 16384) {
+				if (psrand() > 16384) {
 					if (boss_spew_robot(robot, collision_point) != -1)
 						Last_gate_time = GameTime - Gate_interval - 1;	//	Force allowing spew of another bot.
 				}
@@ -1499,7 +1499,7 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 			damage_flag = 0;
 
 			if (Last_time_buddy_gave_hint == 0)
-				Last_time_buddy_gave_hint = rand()*32 + F1_0*16;
+				Last_time_buddy_gave_hint = psrand()*32 + F1_0*16;
 
 			if (Buddy_gave_hint_count) {
 				if (Last_time_buddy_gave_hint + F1_0*20 < GameTime) {
@@ -1507,7 +1507,7 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 
 					Buddy_gave_hint_count--;
 					Last_time_buddy_gave_hint = GameTime;
-					sval = (rand()*4) >> 15;
+					sval = (psrand()*4) >> 15;
 					switch (sval) {
 						case 0:	buddy_message("Hit him in the back!");	break;
 						case 1:	buddy_message("He's invulnerable there!");	break;
@@ -1613,7 +1613,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 			probval = Robot_info[robot->id].energy_blobs * probval/(NDL*32);
 
 			num_blobs = probval >> 16;
-			if (2*rand() < (probval & 0xffff))
+			if (2*psrand() < (probval & 0xffff))
 				num_blobs++;
 
 			if (num_blobs)
@@ -1688,9 +1688,12 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 			if (aip->SKIP_AI_COUNT * FrameTime < F1_0) {
 				aip->SKIP_AI_COUNT++;
-				robot->mtype.phys_info.rotthrust.x = fixmul((rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
-				robot->mtype.phys_info.rotthrust.y = fixmul((rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
-				robot->mtype.phys_info.rotthrust.z = fixmul((rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
+				robot->mtype.phys_info.rotthrust.x = fixmul((psrand() - 16384),
+									    FrameTime * aip->SKIP_AI_COUNT);
+				robot->mtype.phys_info.rotthrust.y = fixmul((psrand() - 16384),
+									    FrameTime * aip->SKIP_AI_COUNT);
+				robot->mtype.phys_info.rotthrust.z = fixmul((psrand() - 16384),
+									    FrameTime * aip->SKIP_AI_COUNT);
 				robot->mtype.phys_info.flags |= PF_USES_THRUST;
 
 			}
@@ -1846,13 +1849,13 @@ void drop_player_eggs(object *playerobj)
 		if (Game_mode & GM_MULTI) 
 		{
 			Net_create_loc = 0;
-			srand(5483L);
+			pssrand(5483L);
 		}
 		#endif
 
 		//	If the player had smart mines, maybe arm one of them.
 		rthresh = 30000;
-		while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (rand() < rthresh)) {
+		while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (psrand() < rthresh)) {
 			int			newseg;
 			vms_vector	tvec;
 
@@ -1869,7 +1872,7 @@ void drop_player_eggs(object *playerobj)
 		if ((Game_mode & GM_MULTI) && !(Game_mode & GM_HOARD))
 		{
 			rthresh = 30000;
-			while ((Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX]%4==1) && (rand() < rthresh)) {
+			while ((Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX]%4==1) && (psrand() < rthresh)) {
 				int			newseg;
 				vms_vector	tvec;
 	

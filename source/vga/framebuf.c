@@ -80,7 +80,8 @@ void VesaMain()
    {
 		char *MyPtr;
 		MyPtr=(char *)VesaGetPtr();	
-		  memset( (MyPtr+((rand()%0x10000)<<4)+rand()%0x10000),rand()%256, 1 );
+		  memset( (MyPtr+((psrand()%0x10000)<<4)+psrand()%0x10000),
+                         psrand()%256, 1 );
    }
 
    VesaEnd();

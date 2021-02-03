@@ -12,9 +12,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 */
 
 
-#pragma off (unreferenced)
-static char rcsid[] = "$Id: ntmap.c 1.66 1996/12/04 19:27:55 matt Exp $";
-#pragma on (unreferenced)
+//#pragma off (unreferenced)
+//static char rcsid[] = "$Id: ntmap.c 1.66 1996/12/04 19:27:55 matt Exp $";
+//#pragma on (unreferenced)
 
 #define VESA 0
 #define NUM_TMAPS 16
@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: ntmap.c 1.66 1996/12/04 19:27:55 matt Exp $";
 #include <stdio.h>
 #include <conio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "pa_enabl.h"                   //$$POLY_ACC
 #include "mono.h"
@@ -78,14 +79,14 @@ int Window_clip_left, Window_clip_bot, Window_clip_right, Window_clip_top;
 //	They should be set only when they change, which is generally when the window bounds change.  And, even still, it's
 //	a pretty bad interface.
 int	bytes_per_row=-1;
-int	write_buffer;
+intptr_t	write_buffer;
 int  	window_left;
 int	window_right;
 int	window_top;
 int	window_bottom;
 int	window_width;
 int	window_height;
-uint	dest_row_data;
+intptr_t	dest_row_data;
 int	loop_count;
 
 #define	MAX_Y_POINTERS	1024
@@ -114,10 +115,15 @@ ubyte tmap_flat_shade_value;
 //             11 breaks up when close, but quite acceptable, Uses 8K
 //             12	looks good,except when very close. Can be used for game.  Uses 16K. Recommended by John.
 
+#ifdef NASM
+#define DIVIDE_SIG_BITS		17
+#else
 #define DIVIDE_SIG_BITS		12
+#endif
 #define Z_SHIFTER 			(30-DIVIDE_SIG_BITS)
-#define DIVIDE_TABLE_SIZE	(1<<DIVIDE_SIG_BITS)
 
+#ifndef NASM
+#define DIVIDE_TABLE_SIZE	(1<<DIVIDE_SIG_BITS)
 ubyte divide_table_filled = 0;
 fix divide_table[1<<DIVIDE_SIG_BITS];		// Can use 16 bits if we divide by the greator of Z0 or Z1, instead of always Z0.
 
@@ -134,6 +140,7 @@ void fill_divide_table()
 		divide_table[i] = fixdiv( F1_0*2, 2*i+1 );
 	}
 }
+#endif
 
 
 
@@ -178,7 +185,7 @@ void init_interface_vars_to_assembler(void)
 		}
 	}
 
-	write_buffer = (int) bp->bm_data;
+	write_buffer = (intptr_t) bp->bm_data;
 
 	window_left = 0;
 	window_right = (int) bp->bm_w-1;
@@ -200,7 +207,9 @@ void init_interface_vars_to_assembler(void)
     pa_set_3d_offset(bp->bm_x, bp->bm_y);
 #endif
 
+#ifndef NASM
 	if ( !divide_table_filled ) fill_divide_table();
+#endif
 }
 
 
@@ -625,7 +634,7 @@ void draw_tmap(grs_bitmap *bp,int nverts,g3s_point **vertbuf)
 	int	i;
 	int	lighting_mode = Lighting_on;
 	int	render_method;
-	fix 	min_z;
+	fix 	min_z = 0;
    #ifdef _3DFX
    int   bm_index = bp->bm_handle;
    #endif

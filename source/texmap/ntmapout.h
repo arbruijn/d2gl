@@ -211,15 +211,19 @@ draw_scanline:
 		dx = fx_xright - fx_xleft;
 
 		if ( (y >= Window_clip_top) && (dx>=0) && (xright>=0) && (xleft<=xright) )	{
+			#if USE_UVS == 1 || LIGHTING == 1 || LINEAR == 0
 			fix	recip_dx;
+			#endif
 		
 			fx_y = y;
 
+			#if USE_UVS == 1 || LIGHTING == 1 || LINEAR == 0
 			// setup to call assembler scanline renderer
 			if (dx < FIX_RECIP_TABLE_SIZE)
 				recip_dx = fix_recip[dx];
 			else
 				recip_dx = F1_0/dx;
+			#endif
 
 #if USE_UVS == 1
 				fx_u = uleft;
@@ -231,9 +235,9 @@ draw_scanline:
 #endif
 
 #if LINEAR == 0
-				fx_z = zleft;
-				fx_dz_dx = fixmul(zright - zleft,recip_dx);
-				fx_z_right = zright;
+				fx_z = zleft >> Z_SHIFTER;
+				fx_dz_dx = fixmul(zright - zleft,recip_dx) >> Z_SHIFTER;
+				fx_z_right = zright >> Z_SHIFTER;
 #endif
 
 

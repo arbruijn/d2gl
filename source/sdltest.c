@@ -342,6 +342,7 @@ int test_main2(int argc, char **argv) {
 	#define SM_640x480V 14
 	#define VR_NONE 0
 	Cockpit_mode = CM_FULL_SCREEN;
+	#if 0
 	int screen_mode = !is_play || play_show ? SM_640x480V : SM_320x200C;
 	int screen_width = modes[screen_mode][0];
 	int screen_height = modes[screen_mode][1];
@@ -349,12 +350,15 @@ int test_main2(int argc, char **argv) {
 	int screen_compatible = 0;
 	int use_double_buffer = 0;
 	call_reg5(game_init_render_buffers, screen_mode, screen_width, screen_height, 0, 0); //use_double_buffer, vr_mode, screen_compatible );
+	#endif
+	set_display_mode(!is_play || play_show ? 1 : 0);
 
 	int ret = call_reg0(gr_init);
 	(void)ret;
 	//printf("gr_init=%d\n", ret);
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
-	ret = call_reg1(gr_set_mode, screen_mode);
+	extern int VR_screen_mode;
+	ret = call_reg1(gr_set_mode, VR_screen_mode);
 	//printf("gr_set_mode=%d\n", ret);
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
 	//(*cur_canvas)[3] = (int)vga_screen;

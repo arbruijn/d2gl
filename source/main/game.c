@@ -172,7 +172,7 @@ int time_stopped,time_started;
 ubyte * Game_cockpit_copy_code = NULL;
 #else
 ubyte Game_cockpit_copy_code = 0;
-ubyte Scanline_double = 1;
+ubyte Scanline_double = 0;
 #endif
 
 int			VR_screen_mode			= 0;

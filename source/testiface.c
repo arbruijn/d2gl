@@ -486,7 +486,6 @@ int SavePictScreen() { return -1; }
 int send_netgame_packet() { return -1; }
 int swapshort() { return -1; }
 int tm_warning() { return -1; }
-int VGA_current_mode;
 int ch_warning() { return -1; }
 void digi_set_channel_pan(int ch, int pan) { }
 int joy_have_mousestick() { return -1; }

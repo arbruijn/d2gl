@@ -1,6 +1,7 @@
 #include "gr.h"
 #include "modes.h"
 extern ubyte gr_screen_buffer[];
+int VGA_current_mode;
 
 int gr_set_mode(int mode) {
 	unsigned int w,h,t,r;
@@ -11,6 +12,8 @@ int gr_set_mode(int mode) {
 	memset(gr_screen_buffer, 0, w * h);
 	extern void video_set_res(int w, int h);
 	video_set_res(w, h);
+
+	VGA_current_mode = mode;
 
 	gr_palette_clear();
 

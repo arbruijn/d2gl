@@ -436,7 +436,6 @@ int CybermouseActive() { return -1; }
 int descent_critical_deverror() { return -1; }
 int digi_is_channel_playing(int ch) { return -1; }
 void digi_stop_all_channels() { }
-int g3_remap_interp_colors() { return -1; }
 void gr_bm_ubitblt_double(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *src, grs_bitmap *dest) { }
 int hide_cursor() { return -1; }
 int init_extra_robot_movie() { return -1; }

@@ -77,6 +77,28 @@ struct {short pal_entry,rgb15;} interp_color_table[MAX_INTERP_COLORS];
 
 int n_interp_colors=0;
 
+int uninit_flag;
+
+#include <stdio.h>
+int find_color_index(int rgb15)
+{
+	for (int i = 0; i < n_interp_colors; i++)
+		if (interp_color_table[i].rgb15 == rgb15)
+			return i;
+	Assert(n_interp_colors < MAX_INTERP_COLORS);
+	printf("adding color %d: %x\n", n_interp_colors, rgb15);
+	interp_color_table[n_interp_colors].rgb15 = rgb15;
+	interp_color_table[n_interp_colors].pal_entry = gr_find_closest_color_15bpp(rgb15);
+	return n_interp_colors++;
+}
+
+void g3_remap_interp_colors()
+{
+	for (int i = 0; i < n_interp_colors; i++)
+		interp_color_table[i].pal_entry =
+			gr_find_closest_color_15bpp(interp_color_table[i].rgb15);
+}
+
 //gives the interpreter an array of points to use
 void g3_set_interp_points(g3s_point *pointlist)
 {
@@ -249,7 +271,7 @@ bool g3_draw_polygon_model(void *model_ptr,grs_bitmap **model_bitmaps,vms_angvec
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
 					int i;
 
-					gr_setcolor(w(p+28));
+					gr_setcolor(interp_color_table[w(p+28)].pal_entry);
 
 					for (i=0;i<nv;i++)
 						point_list[i] = Interp_point_list + wp(p+30)[i];
@@ -411,7 +433,7 @@ bool g3_draw_morphing_model(void *model_ptr,grs_bitmap **model_bitmaps,vms_angve
 				int nv = w(p+2);
 				int i,ntris;
 
-				gr_setcolor(w(p+28));
+				gr_setcolor(interp_color_table[w(p+28)].pal_entry);
 				
 				for (i=0;i<2;i++)
 					point_list[i] = Interp_point_list + wp(p+30)[i];
@@ -574,7 +596,9 @@ void init_model_sub(ubyte *p)
 
 				Assert(nv > 2);		//must have 3 or more points
 
-				*wp(p+28) = (short)gr_find_closest_color_15bpp(w(p+28));
+				int c = w(p+28);
+				c = uninit_flag ? interp_color_table[c].rgb15 : find_color_index(c);
+				*wp(p+28) = c;
 
 				p += 30 + ((nv&~1)+1)*2;
 					
@@ -634,5 +658,11 @@ void g3_init_polygon_model(void *model_ptr)
 	highest_texture_num = -1;
 
 	init_model_sub((ubyte *) model_ptr);
+	uninit_flag = 0;
 }
 
+void g3_uninit_polygon_model(void *model_ptr)
+{
+	uninit_flag = 1;
+	g3_init_polygon_model(model_ptr);
+}

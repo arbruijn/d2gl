@@ -340,7 +340,8 @@ void do_weapon_select(int weapon_num, int secondary_flag)
 		has_flag = HAS_WEAPON_FLAG+HAS_AMMO_FLAG;
 	}
 
-	if (current == weapon_num || current == weapon_num+SUPER_WEAPON) {
+	if ((current == weapon_num || current == weapon_num+SUPER_WEAPON) &&
+		!Current_level_D1) {
 
 		//already have this selected, so toggle to other of normal/super version
 

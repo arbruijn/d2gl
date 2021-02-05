@@ -2301,15 +2301,22 @@ void FinalCheats(int key)
 				Players[Player_num].primary_weapon_flags = ~((1<<PHOENIX_INDEX) | (1<<OMEGA_INDEX) | (1<<FUSION_INDEX) | HAS_FLAG(SUPER_LASER_INDEX));
 				Players[Player_num].secondary_weapon_flags = ~((1<<SMISSILE4_INDEX) | (1<<MEGA_INDEX) | (1<<SMISSILE5_INDEX));
 			#else
+			if (Current_level_D1) {
+				Players[Player_num].primary_weapon_flags = 0x1f;
+				Players[Player_num].secondary_weapon_flags = 0x1f;
+			} else {
 				Players[Player_num].primary_weapon_flags = 0xffff ^ HAS_FLAG(SUPER_LASER_INDEX);		//no super laser
 				Players[Player_num].secondary_weapon_flags = 0xffff;
+			}
 			#endif
 
 			for (i=0; i<MAX_PRIMARY_WEAPONS; i++)
+				if (Players[Player_num].primary_weapon_flags & (1 << i))
 					Players[Player_num].primary_ammo[i] = Primary_ammo_max[i];
 
 				for (i=0; i<MAX_SECONDARY_WEAPONS; i++)
-					Players[Player_num].secondary_ammo[i] = Secondary_ammo_max[i];
+					if (Players[Player_num].secondary_weapon_flags & (1 << i))
+						Players[Player_num].secondary_ammo[i] = Secondary_ammo_max[i];
 
 			#ifdef SHAREWARE
 					Players[Player_num].secondary_ammo[SMISSILE4_INDEX] = 0;
@@ -2324,7 +2331,7 @@ void FinalCheats(int key)
 					newdemo_record_laser_level(Players[Player_num].laser_level, MAX_LASER_LEVEL);
 
 				Players[Player_num].energy = MAX_ENERGY;
-				Players[Player_num].laser_level = MAX_SUPER_LASER_LEVEL;
+				Players[Player_num].laser_level = Current_level_D1 ? MAX_LASER_LEVEL : MAX_SUPER_LASER_LEVEL;
 				Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
 				update_laser_weapon_info();
 	}

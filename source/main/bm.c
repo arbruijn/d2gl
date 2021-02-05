@@ -46,6 +46,7 @@ static char rcsid[] = "$Id: bm.c 2.37 1996/10/16 15:03:28 jeremy Exp $";
 #include "endlevel.h"
 #include "cntrlcen.h"
 #include "byteswap.h"
+#include "laser.h"
 
 ubyte Sounds[MAX_SOUNDS];
 ubyte AltSounds[MAX_SOUNDS];
@@ -351,7 +352,9 @@ void read_weapon_info(CFILE *fp, int inNumWeaponsToRead, int inOffset)
 		Weapon_info[i].flash = data_d1 ? 0 : cfile_read_byte(fp);
 		Weapon_info[i].afterburner_size = data_d1 ? 0 : cfile_read_byte(fp);
 		
-		Weapon_info[i].children = data_d1 ? -1 : cfile_read_byte(fp);
+		Weapon_info[i].children =
+			data_d1 ? i == SMART_ID ? PLAYER_SMART_HOMING_ID : -1 :
+			cfile_read_byte(fp);
 
 		Weapon_info[i].energy_usage = cfile_read_fix(fp);
 		Weapon_info[i].fire_wait = cfile_read_fix(fp);

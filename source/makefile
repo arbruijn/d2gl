@@ -311,7 +311,7 @@ endif
 DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	scores.c object.c laser.c physics.c bm.c \
 	menu.c gamesave.c switch.c effects.c texmerge.c polyobj.c \
-	gamemine.c fireball.c ai.c ai2.c aipath.c hostage.c \
+	gamemine.c fireball.c ai.c ai2.c aipath.c aid1.c hostage.c \
 	powerup.c fuelcen.c render.c piggy.c digiobj.c \
 	gameseg.c wall.c collide.c lighting.c \
 	robot.c morph.c vclip.c weapon.c fvi.c newdemo.c titles.c \

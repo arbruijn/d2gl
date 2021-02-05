@@ -578,15 +578,14 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 	fq.rad					= F1_0/4;
 	fq.thisobjnum			= objp-Objects;
 	fq.ignore_obj_list	= NULL;
-	fq.flags					= FQ_TRANSWALL; // -- Why were we checking objects? | FQ_CHECK_OBJS;		//what about trans walls???
+	fq.flags					= FQ_TRANSWALL | (Current_level_D1 ? FQ_CHECK_OBJS : 0); // -- Why were we checking objects? | FQ_CHECK_OBJS;		//what about trans walls???
 
 	Hit_type = find_vector_intersection(&fq,&Hit_data);
 
 	Hit_pos = Hit_data.hit_pnt;
 	Hit_seg = Hit_data.hit_seg;
 
-	// -- when we stupidly checked objects -- if ((Hit_type == HIT_NONE) || ((Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
-	if (Hit_type == HIT_NONE) {
+	if ((Hit_type == HIT_NONE) || (Current_level_D1 && (Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
 		dot = vm_vec_dot(vec_to_player, &objp->orient.fvec);
 		// mprintf((0, "Fvec = [%5.2f %5.2f %5.2f], vec_to_player = [%5.2f %5.2f %5.2f], dot = %7.3f\n", f2fl(objp->orient.fvec.x), f2fl(objp->orient.fvec.y), f2fl(objp->orient.fvec.z), f2fl(vec_to_player->x), f2fl(vec_to_player->y), f2fl(vec_to_player->z), f2fl(dot)));
 		if (dot > field_of_view - (Overall_agitation << 9)) {
@@ -1376,9 +1375,14 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 		//	Changes here by MK, 12/29/95.  Trying to get rid of endless circling around bots in a large room.
 		if (robptr->kamikaze) {
 			move_towards_player(objp, vec_to_player);
-		} else if (dist_to_player < circle_distance)
+		} else if (dist_to_player < circle_distance) {
 			move_away_from_player(objp, vec_to_player, 0);
-		else if ((dist_to_player < (3+objval)*circle_distance/2) && (ailp->next_fire > -F1_0)) {
+		} else if (Current_level_D1) {
+			if (dist_to_player < circle_distance*2)
+				move_around_player(objp, vec_to_player, -1);
+			else
+				move_towards_player(objp, vec_to_player);
+		} else if ((dist_to_player < (3+objval)*circle_distance/2) && (ailp->next_fire > -F1_0)) {
 			move_around_player(objp, vec_to_player, -1);
 		} else {
 			if ((-ailp->next_fire > F1_0 + (objval << 12)) && player_visibility) {
@@ -1504,6 +1508,11 @@ void do_ai_robot_hit(object *objp, int type)
 				{
 					int	r;
 
+					if (Current_level_D1) {
+						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
+						break;
+					}
+
 					//	Attack robots (eg, green guy) shouldn't have behavior = still.
 					Assert(Robot_info[objp->id].attack_type == 0);
 
@@ -1593,7 +1602,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 				}
 			}
 
-			if ((ailp->previous_visibility != *player_visibility) && (*player_visibility == 2)) {
+			if ((!Current_level_D1 || !Player_exploded) && (ailp->previous_visibility != *player_visibility) && (*player_visibility == 2)) {
 				if (ailp->previous_visibility == 0) {
 					if (ailp->time_player_seen + F1_0/2 < GameTime) {
 						// -- mprintf((0, "SEE! "));
@@ -1629,7 +1638,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 		//	@mk, 09/21/95: If player view is not obstructed and awareness is at least as high as a nearby collision,
 		//	act is if robot is looking at player.
-		if (ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED)
+		if (!Current_level_D1 && ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED)
 			if (*player_visibility == 1)
 				*player_visibility = 2;
 				
@@ -2429,7 +2438,10 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 {
 	fix	dot;
 
-	if ((player_visibility == 2) || (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD )) {
+	if (gun_num == -1)
+		gun_num = aip->CURRENT_GUN;
+
+	if ((player_visibility == 2) || (!Current_level_D1 && Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD )) {
 		vms_vector	fire_pos;
 
 		fire_pos = Believed_player_pos;
@@ -2462,7 +2474,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION))
 								return;
 							//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
-							if (gun_num != 0) {
+							if (!Current_level_D1 && gun_num != 0) {
 								if (ailp->next_fire <= 0) {
 									ai_fire_laser_at_player(obj, gun_point, gun_num, &fire_pos);
 									Last_fired_upon_player_pos = fire_pos;
@@ -2525,7 +2537,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 			if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				aip->CURRENT_GUN = 0;
 		}
-	} else {
+	} else if (!Current_level_D1) {
 
 
 	//	---------------------------------------------------------------

@@ -260,8 +260,8 @@ extern fix				Boss_hit_time;
 
 extern int	ai_evaded;
 
-extern byte	Super_boss_gate_list[];
-#define	MAX_GATE_INDEX	25
+//extern byte	Super_boss_gate_list[];
+//#define	MAX_GATE_INDEX	25
 
 extern int	Ai_info_enabled;
 extern int	Robot_firing_enabled;
@@ -303,8 +303,8 @@ extern void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, v
 extern void do_firing_stuff(object *obj, int player_visibility, vms_vector *vec_to_player);
 extern int maybe_ai_do_actual_firing_stuff(object *obj, ai_static *aip);
 extern void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robot_info *robptr, vms_vector *vec_to_player, fix dist_to_player, vms_vector *gun_point, int player_visibility, int object_animates, int gun_num);
-extern void do_super_boss_stuff(object *objp, fix dist_to_player, int player_visibility);
-extern void do_boss_stuff(object *objp, int player_visibility);
+//extern void do_super_boss_stuff(object *objp, fix dist_to_player, int player_visibility);
+//extern void do_boss_stuff(object *objp, int player_visibility);
 // -- unused, 08/07/95 -- extern void ai_turn_randomly(vms_vector *vec_to_player, object *obj, fix rate, int previous_visibility);
 extern void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player, vms_vector *vec_to_player, fix circle_distance, int evade_only, int player_visibility);
 extern void move_away_from_player(object *objp, vms_vector *vec_to_player, int attack_type);
@@ -332,5 +332,7 @@ extern void buddy_message(char * format, ... );
 
 #define	SPECIAL_REACTOR_ROBOT	65
 extern void special_reactor_stuff(void);
+
+void do_ai_frame_d1(object *obj);
 
 #endif

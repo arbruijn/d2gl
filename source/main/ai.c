@@ -313,6 +313,12 @@ void do_ai_frame(object *obj)
 	vms_vector	gun_point;
 	vms_vector	vis_vec_pos;
 
+
+	if (Current_level_D1) {
+		do_ai_frame_d1(obj);
+		return;
+	}
+
 	ailp->next_action_time -= FrameTime;
 
 	if (aip->SKIP_AI_COUNT) {
@@ -1413,9 +1419,9 @@ void pae_aux(int segnum, int type, int level)
 		New_awareness[segnum] = type;
 
 	// Process children.
-	for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
-		if (IS_CHILD(Segments[segnum].children[j]))
-			if (level <= 3)
+	if (level <= (Current_level_D1 ? 4 : 3))
+		for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
+			if (IS_CHILD(Segments[segnum].children[j]))
 				if (type == 4)
 					pae_aux(Segments[segnum].children[j], type-1, level+1);
 				else

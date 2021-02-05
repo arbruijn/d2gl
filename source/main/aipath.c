@@ -1046,7 +1046,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		dist_to_player = vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos);
 
 	//	Efficiency hack: If far away from player, move in big quantized jumps.
-	if (!(player_visibility || previous_visibility) && (dist_to_player > F1_0*200) && !(Game_mode & GM_MULTI)) {
+	if ((Current_level_D1 || !(player_visibility || previous_visibility)) &&
+		(dist_to_player > F1_0*200) && !(Game_mode & GM_MULTI)) {
 		if (dist_to_goal < F1_0*2) {
 			move_object_to_goal(objp, &goal_point, goal_seg);
 			return;
@@ -1070,6 +1071,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 						move_object_to_goal(objp, &goal_point, goal_seg);
 					}
 				}
+
 				return;
 			}
 		}
@@ -1088,7 +1090,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			vm_vec_scale(&objp->mtype.phys_info.velocity, vel_scale);
 
 			return;
-		} else if (!(FrameCount ^ ((objp-Objects) & 0x07))) {		//	Done 1/8 frames.
+		} else if (Current_level_D1 || !(FrameCount ^ ((objp-Objects) & 0x07))) {		//	Done 1/8 frames.
 			//	If player on path (beyond point robot is now at), then create a new path.
 			point_seg	*curpsp = &Point_segs[aip->hide_index];
 			int			player_segnum = ConsoleObject->segnum;
@@ -1675,7 +1677,7 @@ void player_path_set_orient_and_vel(object *objp, vms_vector *goal_point)
 	fix			dot;
 	fix			max_speed;
 
-	max_speed = Robot_info[objp->id].max_speed[Difficulty_level];
+	max_speed = Current_level_D1 ? F1_0*50 : Robot_info[objp->id].max_speed[Difficulty_level];
 
 	vm_vec_sub(&norm_vec_to_goal, goal_point, &cur_pos);
 	vm_vec_normalize_quick(&norm_vec_to_goal);

@@ -669,7 +669,7 @@ void read_verts(int segnum,CFILE *LoadFile)
 // -- 	}
 // -- }
 
-int load_mine_data_compiled(CFILE *LoadFile)
+int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 {
 	int		i,segnum,sidenum;
 	ubyte		version;
@@ -727,6 +727,22 @@ int load_mine_data_compiled(CFILE *LoadFile)
 		#endif
 
 		Segments[segnum].objects = -1;
+
+		if (file_version == 1) { // d1
+			if (bit_mask & (1 << MAX_SIDES_PER_SEGMENT)) {
+				cfread( &Segment2s[segnum].special, sizeof(ubyte), 1, LoadFile);
+				cfread( &Segment2s[segnum].matcen_num, sizeof(ubyte), 1, LoadFile);
+				cfread( &Segment2s[segnum].value, sizeof(short), 1, LoadFile);
+			} else {
+				Segment2s[segnum].special = 0;
+				Segment2s[segnum].matcen_num = -1;
+				Segment2s[segnum].value = 0;
+			}
+
+			cfread( &temp_ushort, sizeof(temp_ushort), 1, LoadFile );
+			Segment2s[segnum].static_light   = ((fix)temp_ushort) << 4;
+		}
+
 
 		// Read fix	Segments[segnum].static_light (shift down 5 bits, write as short)
 //		cfread( &temp_ushort, sizeof(temp_ushort), 1, LoadFile );
@@ -833,11 +849,13 @@ int load_mine_data_compiled(CFILE *LoadFile)
 
 	for (i=0; i<Num_segments; i++) {
 // NO NO!!!!		cfread( &Segment2s[i], sizeof(segment2), 1, LoadFile );
-		Segment2s[i].special = read_byte(LoadFile);
-		Segment2s[i].matcen_num = read_byte(LoadFile);
-		Segment2s[i].value = read_byte(LoadFile);
-		Segment2s[i].s2_flags = read_byte(LoadFile);
-		Segment2s[i].static_light = read_fix(LoadFile);
+		if (file_version > 1) {
+			Segment2s[i].special = read_byte(LoadFile);
+			Segment2s[i].matcen_num = read_byte(LoadFile);
+			Segment2s[i].value = read_byte(LoadFile);
+			Segment2s[i].s2_flags = read_byte(LoadFile);
+			Segment2s[i].static_light = read_fix(LoadFile);
+		}
 		fuelcen_activate( &Segments[i], Segment2s[i].special );
 	}
 

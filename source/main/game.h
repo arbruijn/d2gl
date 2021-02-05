@@ -197,6 +197,8 @@ extern int Game_window_w,		//width and height of player's game window
 
 extern int Rear_view;			//if true, looking back.
 
+extern int Current_level_D1;
+
 //initalize flying
 void fly_init(object *obj);
 

@@ -567,12 +567,16 @@ void piggy_init_pigfile(char *filename)
 		#endif
 	}
 
+	int is_d1 = 0;
 	if (Piggy_fp) {                         //make sure pig is valid type file & is up-to-date
 		int pig_id,pig_version;
 
 		pig_id = cfile_read_int(Piggy_fp);
 		pig_version = cfile_read_int(Piggy_fp);
-		if (pig_id != PIGFILE_ID || pig_version != PIGFILE_VERSION) {
+		if (pig_id > 0x10000 && pig_id < 0x100000 && pig_version > 100 && pig_version < 800) { // D1 1.4 pig
+			is_d1 = 1;
+			cfseek(Piggy_fp, pig_id, SEEK_SET);
+		} else if (pig_id != PIGFILE_ID || pig_version != PIGFILE_VERSION) {
 			cfclose(Piggy_fp);              //out of date pig
 			Piggy_fp = NULL;                        //..so pretend it's not here
 		}
@@ -591,9 +595,11 @@ void piggy_init_pigfile(char *filename)
 
 	N_bitmaps = cfile_read_int(Piggy_fp);
 
-	header_size = N_bitmaps*18; //sizeof(DiskBitmapHeader);
+	int N_sounds = is_d1 ? cfile_read_int(Piggy_fp) : 0;
 
-	data_start = header_size + cftell(Piggy_fp);
+	header_size = N_bitmaps*(is_d1 ? 17 : 18); //sizeof(DiskBitmapHeader);
+
+	data_start = header_size + cftell(Piggy_fp) + N_sounds * 20;
 
 	data_size = cfilelength(Piggy_fp) - data_start;
 
@@ -607,7 +613,7 @@ void piggy_init_pigfile(char *filename)
 		bmh.dflags = cfile_read_byte(Piggy_fp);
 		bmh.width = cfile_read_byte(Piggy_fp);
 		bmh.height = cfile_read_byte(Piggy_fp);
-		bmh.wh_extra = cfile_read_byte(Piggy_fp);
+		bmh.wh_extra = is_d1 ? 0 : cfile_read_byte(Piggy_fp);
 		bmh.flags = cfile_read_byte(Piggy_fp);
 		bmh.avg_color = cfile_read_byte(Piggy_fp);
 		bmh.offset = cfile_read_int(Piggy_fp);
@@ -953,7 +959,7 @@ grs_bitmap bogus_bitmap;
 ubyte bogus_bitmap_initialized=0;
 digi_sound bogus_sound;
 
-extern void bm_read_all(CFILE * fp);
+extern void bm_read_all(CFILE * fp, int is_d1);
 
 #define HAMFILE_ID              '!MAH'          //HAM!
 #define HAMFILE_VERSION 3
@@ -994,16 +1000,7 @@ int read_hamfile()
 
 	#ifndef EDITOR
 	{
-		bm_read_all( ham_fp );  // Note connection to above if!!!
-		cfread( GameBitmapXlat, sizeof(ushort)*MAX_BITMAP_FILES, 1, ham_fp );
-		#ifdef MACINTOSH
-		{
-			int i;
-			
-			for (i = 0; i < MAX_BITMAP_FILES; i++)
-				GameBitmapXlat[i] = SWAPSHORT(GameBitmapXlat[i]);
-		}
-		#endif
+		bm_read_all( ham_fp, 0 );  // Note connection to above if!!!
 	}
 	#endif
 
@@ -1013,52 +1010,24 @@ int read_hamfile()
 
 }
 
-int read_sndfile()
+char sndfile[16];
+
+void read_sndfile_data(CFILE *snd_fp, int N_sounds)
 {
-	CFILE * snd_fp = NULL;
-	int snd_id,snd_version;
-	int N_sounds;
-	int sound_start;
-	int header_size;
-	int i,size, length;
 	DiskSoundHeader sndh;
 	digi_sound temp_sound;
 	char temp_name_read[16];
 	int sbytes = 0;
-	#ifdef MACINTOSH
-	char name[255];
-	#endif
+	int sound_start = cftell(snd_fp);
+	int size = cfilelength(snd_fp) - sound_start;
 
-	#ifndef MACINTOSH
-	snd_fp = cfopen( DEFAULT_SNDFILE, "rb" );
-	#else
-	sprintf( name, ":Data:%s", DEFAULT_SNDFILE );
-	snd_fp = cfopen( name, "rb");
-	#endif
-	
-	if (snd_fp == NULL)
-		return 0;
-
-	//make sure soundfile is valid type file & is up-to-date
-	snd_id = cfile_read_int(snd_fp);
-	snd_version = cfile_read_int(snd_fp);
-	if (snd_id != SNDFILE_ID || snd_version != SNDFILE_VERSION) {
-		cfclose(snd_fp);						//out of date sound file
-		return 0;
-	}
-
-	N_sounds = cfile_read_int(snd_fp);
-
-	sound_start = cftell(snd_fp);
-	size = cfilelength(snd_fp) - sound_start;
-	length = size;
 	mprintf( (0, "\nReading data (%d KB) ", size/1024 ));
 
-	header_size = N_sounds*sizeof(DiskSoundHeader);
+	int header_size = N_sounds*sizeof(DiskSoundHeader);
 
 	//Read sounds
 
-	for (i=0; i<N_sounds; i++ )     {
+	for (int i=0; i<N_sounds; i++ ) {
 		cfread( sndh.name, 8, 1, snd_fp);
 		sndh.length = cfile_read_int(snd_fp);
 		sndh.data_length = cfile_read_int(snd_fp);
@@ -1083,6 +1052,41 @@ int read_sndfile()
 		Error( "Not enough memory to load sounds\n" );
 
 	mprintf(( 0, "\nBitmaps: %d KB   Sounds: %d KB\n", Piggy_bitmap_cache_size/1024, sbytes/1024 ));
+}
+
+int read_sndfile()
+{
+	CFILE * snd_fp = NULL;
+	int snd_id,snd_version;
+	//int N_sounds;
+	//int sound_start;
+	//int header_size;
+	//int i,size, length;
+	#ifdef MACINTOSH
+	char name[255];
+	#endif
+
+	#ifndef MACINTOSH
+	snd_fp = cfopen( DEFAULT_SNDFILE, "rb" );
+	#else
+	sprintf( name, ":Data:%s", DEFAULT_SNDFILE );
+	snd_fp = cfopen( name, "rb");
+	#endif
+
+	if (snd_fp == NULL)
+		return 0;
+
+	//make sure soundfile is valid type file & is up-to-date
+	snd_id = cfile_read_int(snd_fp);
+	snd_version = cfile_read_int(snd_fp);
+	if (snd_id != SNDFILE_ID || snd_version != SNDFILE_VERSION) {
+		cfclose(snd_fp);						//out of date sound file
+		return 0;
+	}
+
+	int N_sounds = cfile_read_int(snd_fp);
+
+	read_sndfile_data(snd_fp, N_sounds);
 
 //	piggy_read_sounds(snd_fp);
 
@@ -1091,7 +1095,25 @@ int read_sndfile()
 	return 1;
 }
 
-int piggy_init(void)
+int read_d1_hamsnd() {
+	strcpy(sndfile, "descent.pig");
+	CFILE *f;
+	if (!(f = cfopen(sndfile, "rb")))
+		Error("Cannot open descent.pig");
+	int ofs = cfile_read_int(f);
+	if (ofs < 65536)
+		Error("Cannot open old descent.pig");
+	bm_read_all(f, 1);
+	cfseek(f, ofs, SEEK_SET);
+	int N_bitmaps = cfile_read_int(f);
+	int N_sounds = cfile_read_int(f);
+	cfseek(f, ofs + 8 + N_bitmaps * 17, SEEK_SET);
+	read_sndfile_data(f, N_sounds);
+	cfclose(f);
+	return 1;
+}
+
+int piggy_init(int is_d1)
 {
 	int ham_ok=0,snd_ok=0;
 	int i;
@@ -1154,13 +1176,17 @@ int piggy_init(void)
 	piggy_init_pigfile(DEFAULT_PIGFILE);
 	#endif
 
-	ham_ok = read_hamfile();
+	if (is_d1) {
+		ham_ok = snd_ok = read_d1_hamsnd();
+	} else {
+		ham_ok = read_hamfile();
 
-	snd_ok = read_sndfile();
+		snd_ok = read_sndfile();
+	}
 
 	atexit(piggy_close);
 
-   mprintf ((0,"HamOk=%d SndOk=%d\n",ham_ok,snd_ok));
+	mprintf ((0,"HamOk=%d SndOk=%d\n",ham_ok,snd_ok));
 	return (ham_ok && snd_ok);               //read ok
 }
 

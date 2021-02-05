@@ -2541,6 +2541,9 @@ void do_ambient_sounds()
 	int has_water,has_lava;
 	int sound;
 
+	if (Current_level_D1)
+		return;
+
 	has_lava = (Segment2s[ConsoleObject->segnum].s2_flags & S2F_AMBIENT_LAVA);
 	has_water = (Segment2s[ConsoleObject->segnum].s2_flags & S2F_AMBIENT_WATER);
 

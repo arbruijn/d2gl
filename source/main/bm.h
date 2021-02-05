@@ -62,7 +62,7 @@ extern int Dead_modelnums[];
 extern int Marker_model_num;
 
 // Initializes the palette, bitmap system...
-int bm_init();
+int bm_init(int is_d1);
 void bm_close();
 
 // Initializes the Texture[] array of bmd_bitmap structures.

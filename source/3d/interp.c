@@ -86,17 +86,28 @@ int find_color_index(int rgb15)
 		if (interp_color_table[i].rgb15 == rgb15)
 			return i;
 	Assert(n_interp_colors < MAX_INTERP_COLORS);
-	printf("adding color %d: %x\n", n_interp_colors, rgb15);
 	interp_color_table[n_interp_colors].rgb15 = rgb15;
 	interp_color_table[n_interp_colors].pal_entry = gr_find_closest_color_15bpp(rgb15);
+	return n_interp_colors++;
+}
+
+int find_color_index_pal(int pal_entry)
+{
+	for (int i = 0; i < n_interp_colors; i++)
+		if (interp_color_table[i].pal_entry == pal_entry)
+			return i;
+	Assert(n_interp_colors < MAX_INTERP_COLORS);
+	interp_color_table[n_interp_colors].rgb15 = -1;
+	interp_color_table[n_interp_colors].pal_entry = pal_entry;
 	return n_interp_colors++;
 }
 
 void g3_remap_interp_colors()
 {
 	for (int i = 0; i < n_interp_colors; i++)
-		interp_color_table[i].pal_entry =
-			gr_find_closest_color_15bpp(interp_color_table[i].rgb15);
+		if (interp_color_table[i].rgb15 != -1)
+			interp_color_table[i].pal_entry =
+				gr_find_closest_color_15bpp(interp_color_table[i].rgb15);
 }
 
 //gives the interpreter an array of points to use
@@ -597,7 +608,7 @@ void init_model_sub(ubyte *p)
 				Assert(nv > 2);		//must have 3 or more points
 
 				int c = w(p+28);
-				c = uninit_flag ? interp_color_table[c].rgb15 : find_color_index(c);
+				c = uninit_flag ? interp_color_table[c].rgb15 : find_color_index_pal(c);
 				*wp(p+28) = c;
 
 				p += 30 + ((nv&~1)+1)*2;

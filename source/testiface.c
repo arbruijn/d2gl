@@ -449,7 +449,7 @@ int joy_do_buttons() { return -1; }
 int joy_get_any_button_down_cnt() { return -1; }
 int macintosh_quit() { return -1; }
 int ms_warning() { return -1; }
-int MVEPaletteCalls() { return -1; }
+int MVEPaletteCalls;
 int network_dump_appletalk_player() { return -1; }
 int p2cstr() { return -1; }
 int pa_draw_line() { return -1; }

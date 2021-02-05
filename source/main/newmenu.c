@@ -1705,7 +1705,7 @@ RePaintNewmenu4:
 					item[choice].redraw = 1;	
 				} else {
 					ascii = key_to_ascii(k);
-					if ((ascii < 255 ) && (item[choice].value < item[choice].text_len ))
+					if ((ascii != (char)255 ) && (item[choice].value < item[choice].text_len ))
 					{
 						int allowed;
 

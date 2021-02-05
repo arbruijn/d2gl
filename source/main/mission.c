@@ -45,10 +45,10 @@ char Level_names[MAX_LEVELS_PER_MISSION][FILENAME_LEN];
 char Secret_level_names[MAX_SECRET_LEVELS_PER_MISSION][FILENAME_LEN];
 
 //where the missions go
-#ifndef EDITOR
-#define MISSION_DIR ".\\missions\\"
+#if 0 //ndef EDITOR
+#define MISSION_DIR "./missions/"
 #else
-#define MISSION_DIR ".\\"
+#define MISSION_DIR "./"
 #endif
 
 #ifdef SHAREWARE
@@ -336,7 +336,7 @@ int build_mission_list(int anarchy_mode)
 	static int num_missions=-1;
 	int count=0,special_count=0;
 	FILEFINDSTRUCT find;
-	char search_name[100] = MISSION_DIR "*.MN2";
+	char search_name[100] = MISSION_DIR "*.mn2";
 
 	//now search for levels on disk
 
@@ -429,7 +429,7 @@ int load_mission(int mission_num)
 		case ML_CURDIR:		strcpy(buf,"");				break;
 	}
 	strcat(buf,Mission_list[mission_num].filename);
-	strcat(buf,".MN2");
+	strcat(buf,".mn2");
 
 	mfile = cfopen(buf,"rb");
 	if (mfile == NULL) {
@@ -439,7 +439,7 @@ int load_mission(int mission_num)
 
 	if (mission_num != 0) {		//for non-builtin missions, load HOG
 
-		strcpy(buf+strlen(buf)-4,".HOG");		//change extension
+		strcpy(buf+strlen(buf)-4,".hog");		//change extension
 
 		found_hogfile = cfile_use_alternate_hogfile(buf);
 

@@ -137,6 +137,9 @@ void Error(char *fmt,...)
 	vsprintf(exit_message+strlen(exit_message),fmt,arglist);
 	va_end(arglist);
 
+	#ifndef NDEBUG
+	printf("%s\n", exit_message);
+	#endif
 	Int3();
 
 	if (!initialized) print_exit_message();

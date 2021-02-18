@@ -811,6 +811,11 @@ descent2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
 	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm
 
+game2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
+	testiface.o game2.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+	myipx.o myvga.o cfile_ext.o main/inferno.o
+	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm
+
 #all: $(ALL_DOSOBJS)
 #	wlink system dos4g $(WLFLAGS) $(addprefix file ,$^) $(addprefix file ,$(subst /,\,$(EXT_LIBS))) name descent2.exe
 

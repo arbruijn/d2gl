@@ -126,16 +126,19 @@ int WVIDEO_running=0;		//debugger can set to 1 if running
 int Inferno_is_800x600_available = 0;
 #endif
 
+#ifndef NDOS
 //--unused-- int Cyberman_installed=0;			// SWIFT device present
 ubyte CybermouseActive=0;
 
 int __far descent_critical_error_handler( unsigned deverr, unsigned errcode, unsigned __far * devhdr );
+#endif
 
 void check_joystick_calibration(void);
 
 
 //--------------------------------------------------------------------------
 
+#ifndef NDOS
 #ifndef NDEBUG
 void do_heap_check()
 {
@@ -156,6 +159,7 @@ void do_heap_check()
 		Error("Invalid heap status.");
 	}
 }
+#endif
 #endif
 
 int registered_copy=0;
@@ -253,6 +257,7 @@ int init_graphics()
 	return 0;
 }
 
+#ifndef NDOS
 void check_dos_version()
 {
 	int major, minor;
@@ -406,6 +411,7 @@ void check_memory()
 		digi_sample_rate = SAMPLE_RATE_11K;
 
 }
+#endif
 
 
 int Inferno_verbose = 0;
@@ -443,6 +449,7 @@ int Inferno_verbose = 0;
 
 extern int digi_timer_rate;
 
+#ifndef NDOS
 int descent_critical_error = 0;
 unsigned descent_critical_deverror = 0;
 unsigned descent_critical_errcode = 0;
@@ -460,6 +467,7 @@ void chandler_end (void)  // dummy functions
 {
 }
 #pragma on (check_stack)
+#endif
 
 extern int Network_allow_socket_changes;
 
@@ -514,6 +522,7 @@ print_commandline_help()
 
 		printf("%s",line);
 
+		#ifndef NDOS
 		if (isatty(stdout->_handle) && ++line_count == screen_lines-1) {
 			char c;
 			printf("\n%s",TXT_PRESS_ANY_KEY3);
@@ -523,6 +532,7 @@ print_commandline_help()
 				return;
 			line_count=0;
 		}
+		#endif
 	}
 
 	cfclose(ifile);
@@ -548,6 +558,7 @@ void do_joystick_init()
 	if (!FindArg( "-nojoystick" ))	{
 		if (Inferno_verbose) printf( "\n%s", TXT_VERBOSE_6);
 		joy_init();
+		#ifndef NDOS
 		if ( FindArg( "-joyslow" ))	{
 			if (Inferno_verbose) printf( "\n%s", TXT_VERBOSE_7);
 			joy_set_slow_reading(JOY_SLOW_READINGS);
@@ -569,6 +580,7 @@ void do_joystick_init()
                 Error( "\nCouldn't initialize the Notebook Gameport.\nMake sure the NG driver is loaded.\n" );
         	}
 		}
+		#endif
 	} else {
 		if (Inferno_verbose) printf( "\n%s", TXT_VERBOSE_10);
 	}
@@ -588,6 +600,7 @@ void do_joystick_init()
 //set this to force game to run in low res
 int disable_high_res=0;
 
+#ifndef NDOS
 //initialize stuff for various VR headsets
 void do_headset_init()
 {
@@ -727,6 +740,7 @@ void do_headset_init()
 	if (is_special)
 		set_display_mode(-1);	//flag as special non-changable mode
 }
+#endif
 
 do_register_player(ubyte *title_pal)
 {
@@ -789,6 +803,7 @@ do_network_init()
 }
 
 
+#ifndef NDOS
 //	3d BIOS enhancements from Descent v1.5 by John.
 //		Added by Samir.
 
@@ -983,6 +998,7 @@ init_cdrom()
 		return 1;
 	}
 }
+#endif
 
 #ifdef SHAREARE
 #define PROGNAME "d2demo"
@@ -1040,6 +1056,7 @@ int main(int argc,char **argv)
 	if ( FindArg( "-verbose" ) )
 		Inferno_verbose = 1;
 
+	#ifndef NDOS
 	// Initialize DPMI before anything else!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// (To check memory size and availbabitliy and allocate some low DOS memory)
 	verbose( "%s... ", TXT_INITIALIZING_DPMI);
@@ -1100,6 +1117,7 @@ int main(int argc,char **argv)
 
 	//tell cfile about our counter
 	cfile_set_critical_error_counter_ptr(&descent_critical_error);
+	#endif
 
 	#ifdef SHAREWARE
 		cfile_init("d2demo.hog");			//specify name of hogfile
@@ -1137,6 +1155,7 @@ int main(int argc,char **argv)
 	printf(TXT_HELP, PROGNAME);		//help message has %s for program name
 	printf("\n");
 
+	#ifndef NDOS
 	verbose( "\n%s...", "Checking for Descent 2 CD-ROM");
 	if (!init_cdrom()) {		//look for Cd, etc.
 		#if defined(RELEASE) && !defined(D2_OEM)
@@ -1149,6 +1168,7 @@ int main(int argc,char **argv)
 					"       To run Descent II, CD to the directory you installed to, then type D2.\n"
 					"       To install Descent II, type %c:\\INSTALL.",toupper(CDROM_dir[0]));
 	}
+	#endif
 
 	#ifdef PASSWORD
 	if ((t = FindArg("-pswd")) != 0) {
@@ -1173,6 +1193,7 @@ int main(int argc,char **argv)
 
 	Lighting_on = 1;
 
+	#ifndef NDOS
 	if ( !FindArg( "-nodoscheck" ))
 		check_dos_version();
 	
@@ -1180,6 +1201,7 @@ int main(int argc,char **argv)
 		dos_check_file_handles(5);
 
 	check_memory();
+	#endif
 
 	if (init_graphics()) return 1;
 
@@ -1218,12 +1240,14 @@ int main(int argc,char **argv)
 	if (!FindArg( "-nomouse" ))	{
 		verbose( "\n%s", TXT_VERBOSE_4);
 	
+	#ifndef NDOS
       if (FindArg ("-cybermouse"))
 		 {
 		 // CybermouseActive=InitCyberMouse();
 		  if (CybermouseActive)
 			goto Here;
 		 }
+	#endif
 		if (FindArg( "-nocyberman" ))
 			mouse_init(0);
 		else
@@ -1237,8 +1261,10 @@ int main(int argc,char **argv)
   
 	do_joystick_init();
 
+	#ifndef NDOS
 	verbose( "\n%s", TXT_VERBOSE_11);
 	div0_init(DM_ERROR);
+	#endif
 
 	//------------ Init sound ---------------
 	if (!FindArg( "-disablesound" ))	{
@@ -1266,7 +1292,9 @@ int main(int argc,char **argv)
     Current_display_mode = -1;
     game_init_render_buffers(SM_640x480x15xPA, 640, 480, VR_NONE, VRF_COMPATIBLE_MENUS+VRF_ALLOW_COCKPIT );
 #else
+	#ifndef NDOS
 	do_headset_init();
+	#endif
 
 	if (!VR_offscreen_buffer)	//if hasn't been initialied (by headset init)
 		set_display_mode(0);		//..then set default display mode
@@ -1450,7 +1478,7 @@ int main(int argc,char **argv)
 	#ifdef EDITOR
 		bm_init_use_tbl();
 	#else
-		bm_init();
+		bm_init(0);
 	#endif
 
 	#ifdef EDITOR

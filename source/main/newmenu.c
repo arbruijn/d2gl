@@ -18,6 +18,10 @@ static char rcsid[] = "$Id: newmenu.c 2.133 1997/01/24 17:48:48 jeremy Exp $";
 
 #ifdef WINDOWS
 #include "desw.h"
+#define MENU_MOUSE
+#endif
+#ifdef NDOS
+#define MENU_MOUSE
 #endif
 
 #include <stdio.h>
@@ -62,6 +66,7 @@ static char rcsid[] = "$Id: newmenu.c 2.133 1997/01/24 17:48:48 jeremy Exp $";
 
 #ifdef MACINTOSH
 #include <Events.h>
+#define MENU_MOUSE
 #endif
 
 #if defined (TACTILE)
@@ -684,7 +689,7 @@ int check_button_press()
 extern int network_request_player_names(int);
 extern int RestoringMenu;
 
-#if defined(WINDOWS) || defined(MACINTOSH)
+#ifdef MENU_MOUSE
 ubyte Hack_DblClick_MenuMode=0;
 #endif
 
@@ -720,8 +725,8 @@ int newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item,
 	int dont_restore=0;
    int MaxOnMenu=MAXDISPLAYABLEITEMS;
 	WINDOS(dd_grs_canvas *save_canvas, grs_canvas *save_canvas );	
-#if defined(MACINTOSH) || defined(WINDOWS)
-	int mouse_state, omouse_state, dblclick_flag=0;
+#ifdef MENU_MOUSE
+	int mouse_state, omouse_state, dblclick_flag=0, mouse_press;
 	int mx=0, my=0, x1, x2, y1, y2;
 	int close_box=0;
 #endif
@@ -733,8 +738,7 @@ int newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item,
 	PA_DFX (pa_set_front_to_read());
 
 	WIN(if (!_AppActive) return -1);		// Don't draw message if minimized!
-	WIN(HideCursorW());
-	MAC(hide_cursor();)
+	mouse_hide_cursor();
 
 	if (nitems < 1 )
     {
@@ -1072,7 +1076,7 @@ RePaintNewmenu4:
 		if (citem > nitems-1 ) citem = nitems-1;
 		choice = citem;
 	
-	#if defined(WINDOWS) || defined(MACINTOSH) 
+	#ifdef MENU_MOUSE 
 		dblclick_flag = 1;
 	#endif
 
@@ -1094,12 +1098,13 @@ RePaintNewmenu4:
 	// Clear mouse, joystick to clear button presses.
 	game_flush_inputs();
 
-#if defined(WINDOWS) || defined(MACINTOSH)
-	mouse_state = omouse_state = 0;
+#ifdef MENU_MOUSE
+	mouse_state = omouse_state = mouse_press = 0;
 	if (filename == NULL && !MenuReordering) {
 		draw_close_box(0,0);
 		close_box = 1;
 	}
+	mouse_show_cursor();
 #endif
 
 #ifdef WINDOWS
@@ -1149,13 +1154,17 @@ RePaintNewmenu4:
 		mouse_state = mouse_button_state(0);
 		if (!joydefs_calibrating)
 			show_cursor();		// possibly hidden
-#endif
+		mouse_press = mouse_state && !omouse_state;
+#else
 
-#ifdef WINDOWS
+#ifdef MENU_MOUSE
 		omouse_state = mouse_state;	
-		if (!MenuReordering)
+		if (!MenuReordering) {
+			mouse_press = mouse_button_down_count(0); //mouse_button_state(0);
 			mouse_state = mouse_button_state(0);
+		}
 //@@      mprintf ((0,"mouse state:%d\n",mouse_state));
+#endif
 #endif
 
 		//see if redbook song needs to be restarted
@@ -1180,7 +1189,7 @@ RePaintNewmenu4:
 			k = -1;
 			done = 1;
 		}
-#ifndef WINDOWS
+#ifndef MENU_MOUSE
 		if (check_button_press())
 			done = 1;
 #endif
@@ -1401,14 +1410,14 @@ RePaintNewmenu4:
 
 		MAC(case KEY_COMMAND+KEY_SHIFTED+KEY_3:)
 		case KEY_PRINT_SCREEN:
-			MAC(hide_cursor());
+			mouse_hide_cursor();
 			save_screen_shot(0);
 			PA_DFX (pa_set_frontbuffer_current());
 			PA_DFX (pa_set_front_to_read());
 			for (i=0;i<nitems;i++)
 				item[i].redraw=1;
 			
-			MAC(show_cursor());
+			mouse_show_cursor();
 			MAC(key_flush());
 			break;
 
@@ -1478,7 +1487,7 @@ RePaintNewmenu4:
 
 		}
 
-#if defined(MACINTOSH) || defined(WINDOWS) // for mouse selection of menu's etc.
+#ifdef MENU_MOUSE // for mouse selection of menu's etc.
 		WIN(Sleep(100));
 		if ( !done && mouse_state && !omouse_state && !all_text ) {
 			mouse_get_pos(&mx, &my);
@@ -1843,8 +1852,7 @@ RePaintNewmenu4:
 		}
 	}
 	
-	MAC(hide_cursor());
-	WIN(HideCursorW());
+	mouse_hide_cursor();
 	
 	// Restore everything...
 
@@ -2014,7 +2022,7 @@ int newmenu_get_filename( char * title, char * filespec, char * filename, int al
 	int w_x, w_y, w_w, w_h, title_height;
 	int box_x, box_y, box_w, box_h;
 	bkg bg;		// background under listbox
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 	int mx, my, x1, x2, y1, y2, mouse_state, omouse_state;
 	int mouse2_state, omouse2_state;
 	int dblclick_flag=0;
@@ -2198,7 +2206,7 @@ RePaintNewmenuFile:
 		#endif
 		for ( i=0; i<NumFiles; i++ )	{
 			if (!stricmp(Players[Player_num].callsign, &filenames[i*14]) )	{
-			#if defined(WINDOWS) || defined(MACINTOSH) 
+			#ifdef MENU_MOUSE 
 				dblclick_flag = 1;
 			#endif
 				citem = i;
@@ -2206,14 +2214,17 @@ RePaintNewmenuFile:
 	 	}
 	}
 	
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 	mouse_state = omouse_state = 0;
 	mouse2_state = omouse2_state = 0;
 	draw_close_box(w_x,w_y);
-   #ifdef MACINTOSH
+	mouse_show_cursor();
+	#if 0
+	#ifdef MACINTOSH
 		show_cursor();
 	#else
 		ShowCursorW();
+	#endif
 	#endif
 #endif
 
@@ -2239,7 +2250,7 @@ RePaintNewmenuFile:
 		ocitem = citem;
 		ofirst_item = first_item;
 
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 		omouse_state = mouse_state;
 		omouse2_state = mouse2_state;
 		mouse_state = mouse_button_state(0);
@@ -2284,19 +2295,17 @@ RePaintNewmenuFile:
 
 			if ( ((player_mode)&&(citem>0)) || ((demo_mode)&&(citem>=0)) )	{
 				int x = 1;
-				MAC(hide_cursor());
 				#ifdef WINDOWS
 				mouse_set_mode(1);				//re-enable centering mode
-				HideCursorW();
 				#endif
+				mouse_hide_cursor();
 				if (player_mode)
 					x = nm_messagebox( NULL, 2, TXT_YES, TXT_NO, "%s %s?", TXT_DELETE_PILOT, &filenames[citem*14]+((player_mode && filenames[citem*14]=='$')?1:0) );
 				else if (demo_mode)
 					x = nm_messagebox( NULL, 2, TXT_YES, TXT_NO, "%s %s?", TXT_DELETE_DEMO, &filenames[citem*14]+((demo_mode && filenames[citem*14]=='$')?1:0) );
-				MAC(show_cursor());
+				mouse_show_cursor();
 				#ifdef WINDOWS
 				mouse_set_mode(0);				//disenable centering mode
-				ShowCursorW();
 				#endif
  				if (x==0)	{
 					char * p;
@@ -2453,7 +2462,7 @@ RePaintNewmenuFile:
 
 		if (first_item < 0 ) first_item = 0;
 
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 		WIN(Sleep(100));
 		if (mouse_state || mouse2_state) {
 			int w, h, aw;
@@ -2528,8 +2537,7 @@ RePaintNewmenuFile:
 	#else
 		if (ofirst_item != first_item)	{
 	#endif
-			MAC(hide_cursor());
-			WIN(HideCursorW());
+			mouse_hide_cursor();
 			gr_setcolor( BM_XRGB( 0,0,0)  );
 			for (i=first_item; i<first_item+NumFiles_displayed; i++ )	{
 				int w, h, aw, y;
@@ -2566,13 +2574,11 @@ RePaintNewmenuFile:
 					gr_string( box_x + 5, y, (&filenames[i*14])+((player_mode && filenames[i*14]=='$')?1:0)  );
 				}
 			}	 
-			WIN(ShowCursorW());
-			MAC(show_cursor());
+			mouse_show_cursor();
 		} else if ( citem != ocitem )	{
 			int w, h, aw, y;
 
-			MAC(hide_cursor());
-			WIN(HideCursorW());
+			mouse_hide_cursor();
 			i = ocitem;
 			if ( (i>=0) && (i<NumFiles) )	{
 				y = (i-first_item)*(grd_curfont->ft_h+2)+box_y;
@@ -2595,8 +2601,7 @@ RePaintNewmenuFile:
 				gr_rect( box_x, y-1, box_x + box_x - 1, y + h + 1 );
 				gr_string( box_x + 5, y, (&filenames[i*14])+((player_mode && filenames[i*14]=='$')?1:0)  );
 			}
-			WIN(ShowCursorW());
-			MAC(show_cursor());
+			mouse_show_cursor();
 		}
 
 	#ifdef WINDOWS   
@@ -2627,7 +2632,7 @@ RePaintNewmenuFile:
 	}
 
 ExitFileMenuEarly:
-	MAC(hide_cursor());
+	mouse_hide_cursor();
 	if ( citem > -1 )	{
 		strncpy( filename, (&filenames[citem*14])+((player_mode && filenames[citem*14]=='$')?1:0), FILENAME_LEN );
 		exit_value = 1;
@@ -2664,7 +2669,7 @@ ExitFileMenu:
 		free(filenames);
 
 	WIN(mouse_set_mode(1));				//re-enable centering mode
-	WIN(HideCursorW());
+	mouse_hide_cursor();
 
 	return exit_value;
 
@@ -2707,7 +2712,7 @@ int newmenu_listbox1( char * title, int nitems, char * items[], int allow_abort_
 	int width, height, wx, wy, title_height, border_size;
 	int total_width,total_height;
 	bkg bg;
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 	int mx, my, x1, x2, y1, y2, mouse_state, omouse_state;	//, dblclick_flag;
 	int close_x,close_y;
    int simukey=0,show_up_arrow=0,show_down_arrow=0;
@@ -2810,16 +2815,12 @@ RePaintNewmenuListbox:
 
 	first_item = -1;
 
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 	mouse_state = omouse_state = 0;	//dblclick_flag = 0;
 	close_x = wx-border_size;
 	close_y = wy-title_height-border_size;
 	draw_close_box(close_x,close_y);
-	#ifdef MACINTOSH
-		show_cursor();
-   #else
-		ShowCursorW();
-	#endif
+	mouse_show_cursor();
 #endif
 
 	while(!done)	{
@@ -2842,7 +2843,7 @@ RePaintNewmenuListbox:
   
 		ocitem = citem;
 		ofirst_item = first_item;
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 		omouse_state = mouse_state;
 		mouse_state = mouse_button_state(0);
 #endif
@@ -2991,7 +2992,7 @@ RePaintNewmenuListbox:
 #endif
 
 
-#if defined(MACINTOSH) || defined(WINDOWS)
+#ifdef MENU_MOUSE
 		WIN(Sleep(100));
 		if (mouse_state) {
 			int w, h, aw;
@@ -3062,8 +3063,7 @@ RePaintNewmenuListbox:
 #endif
 
 		if ( (ofirst_item != first_item) || redraw)	{
-			MAC(hide_cursor());
-			WIN(HideCursorW());
+			mouse_hide_cursor();
 			WIN(DDGRLOCK(dd_grd_curcanv));
 
 			gr_setcolor( BM_XRGB( 0,0,0)  );
@@ -3110,13 +3110,11 @@ RePaintNewmenuListbox:
 
 
 			WIN(DDGRUNLOCK(dd_grd_curcanv));
-			WIN(ShowCursorW());
-			MAC(show_cursor());
+			mouse_show_cursor();
 		} else if ( citem != ocitem )	{
 			int w, h, aw, y;
 
-			MAC(hide_cursor());
-			WIN(HideCursorW());
+			mouse_hide_cursor();
 
 			WIN(DDGRLOCK(dd_grd_curcanv));
 
@@ -3144,12 +3142,10 @@ RePaintNewmenuListbox:
 			}
 			WIN(DDGRUNLOCK(dd_grd_curcanv));
 
-			WIN(ShowCursorW());
-			MAC(show_cursor());
+			mouse_show_cursor();
 		}
 	}
-	MAC(hide_cursor());
-	WIN(HideCursorW());	
+	mouse_hide_cursor();
 
 	keyd_repeat = old_keyd_repeat;
 

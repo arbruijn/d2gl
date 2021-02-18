@@ -1526,7 +1526,7 @@ void do_ai_frame_all(void)
 	}
 
 	//	(Moved here from do_boss_stuff() because that only gets called if robot aware of player.)
-	if (Boss_dying) {
+	if (Boss_dying && !Current_level_D1) {
 		int	i;
 
 		for (i=0; i<=Highest_object_index; i++)
@@ -1534,6 +1534,7 @@ void do_ai_frame_all(void)
 				if (Robot_info[Objects[i].id].boss_flag)
 					do_boss_dying_frame(&Objects[i]);
 	}
+//printf("path free ptr %d\n", Point_segs_free_ptr-Point_segs);
 }
 
 

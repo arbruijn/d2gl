@@ -19,16 +19,16 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "object.h"
 
 extern int Endlevel_sequence;
-do_endlevel_frame();
-stop_endlevel_sequence();
-start_endlevel_sequence();
+void do_endlevel_frame();
+void stop_endlevel_sequence();
+void start_endlevel_sequence();
 void render_endlevel_frame(fix eye_offset);
 
-#ifdef SHAREWARE
+#ifdef ENDLEVEL
 
-render_external_scene();
-draw_exit_model();
-init_endlevel();
+void render_external_scene();
+void draw_exit_model();
+void init_endlevel();
 
 extern grs_bitmap *terrain_bitmap;	//*satellite_bitmap,*station_bitmap,
 extern int exit_segnum;

@@ -1,3 +1,4 @@
+//#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -282,6 +283,11 @@ void blast_blastable_wall(segment *seg, int side)
 	kill_stuck_objects(seg->sides[side].wall_num);
 	kill_stuck_objects(csegp->sides[Connectside].wall_num);
 
+	if (Current_level_D1) { // in D1 immediately passable
+		Walls[seg->sides[side].wall_num].flags |= WALL_BLASTED;
+		Walls[csegp->sides[Connectside].wall_num].flags |= WALL_BLASTED;
+	}
+
 	//if this is an exploding wall, explode it
 	if (WallAnims[Walls[seg->sides[side].wall_num].clip_num].flags & WCF_EXPLODES)
 		explode_wall(seg-Segments,side);
@@ -364,6 +370,9 @@ void wall_open_door(segment *seg, int side)
 	int Connectside;
 	segment *csegp;
 
+#ifdef VERBOSE
+printf("wall_open_door %d,%d\n", seg-Segments, side);
+#endif
 	Assert(seg->sides[side].wall_num != -1); 	//Opening door on illegal wall
 
 	w = &Walls[seg->sides[side].wall_num];
@@ -400,6 +409,9 @@ void wall_open_door(segment *seg, int side)
 		if (d->time < 0)
 			d->time = 0;
 	
+#ifdef VERBOSE
+printf("wall_open_door reusing time %x\n", d->time);
+#endif
 	}
 	else {											//create new door
 		Assert(w->state == WALL_DOOR_CLOSED);
@@ -676,6 +688,9 @@ int check_poke(int objnum,int segnum,int side)
 {
 	object *obj = &Objects[objnum];
 
+	if ((obj->type==OBJ_WEAPON || obj->type==OBJ_FIREBALL) && !Current_level_D1)
+		return 0;
+
 	//note: don't let objects with zero size block door
 
 	if (obj->size && get_seg_masks(&obj->pos,segnum,obj->size).sidemask & (1<<side))
@@ -700,11 +715,11 @@ is_door_free(segment *seg,int side)
 	//it pokes into the connecting seg
 
 	for (objnum=seg->objects;objnum!=-1;objnum=Objects[objnum].next)
-		if (Objects[objnum].type!=OBJ_WEAPON && Objects[objnum].type!=OBJ_FIREBALL && check_poke(objnum,seg-Segments,side))
+		if (check_poke(objnum,seg-Segments,side))
 			return 0;	//not free
 
 	for (objnum=csegp->objects;objnum!=-1;objnum=Objects[objnum].next)
-		if (Objects[objnum].type!=OBJ_WEAPON && Objects[objnum].type!=OBJ_FIREBALL && check_poke(objnum,csegp-Segments,Connectside))
+		if (check_poke(objnum,csegp-Segments,Connectside))
 			return 0;	//not free
 
 	return 1; 	//doorway is free!
@@ -848,6 +863,10 @@ void do_door_open(int door_num)
 		if (i> n/2) {
 			Walls[seg->sides[side].wall_num].flags |= WALL_DOOR_OPENED;
 			Walls[csegp->sides[Connectside].wall_num].flags |= WALL_DOOR_OPENED;
+			#ifdef VERBOSE
+			printf("wall_door_opened %d %d %d\n", seg-Segments, side, seg->sides[side].wall_num);
+			printf("wall_door_opened %d %d %d\n", csegp-Segments, Connectside, csegp->sides[Connectside].wall_num);
+			#endif
 		}
 	
 		if (i >= n-1) {
@@ -892,6 +911,9 @@ void do_door_close(int door_num)
 	//check for objects in doorway before closing
 	if (w->flags & WALL_DOOR_AUTO)
 		if (!is_door_free(&Segments[w->segnum],w->sidenum)) {
+			if (Current_level_D1)
+				return;
+
 			digi_kill_sound_linked_to_segment(w->segnum,w->sidenum,-1);
 			wall_open_door(&Segments[w->segnum],w->sidenum);		//re-open door
 			return;
@@ -1290,7 +1312,7 @@ void wall_frame_process()
 			w->flags |= WALL_DOOR_OPENED;
 			Walls[d->back_wallnum[0]].flags |= WALL_DOOR_OPENED;
 
-			if (d->time > DOOR_WAIT_TIME && is_door_free(&Segments[w->segnum],w->sidenum)) {
+			if (d->time > DOOR_WAIT_TIME && (Current_level_D1 || is_door_free(&Segments[w->segnum],w->sidenum))) {
 				w->state = WALL_DOOR_CLOSING;
 				d->time = 0;
 			}

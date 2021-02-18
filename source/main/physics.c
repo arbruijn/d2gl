@@ -1,3 +1,8 @@
+//#define debug_objnum 104
+//#define EXTRA_DEBUG_OBJ
+//#define VERBOSE_MIN
+//#define VERBOSE
+int printf(const char*msg,...);
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -16,7 +21,7 @@ static char rcsid[] = "$Id: physics.c 2.35 1996/06/12 16:11:30 matt Exp $";
 #pragma on (unreferenced)
 
 //@@#include <malloc.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 
 #include "joy.h"
@@ -214,7 +219,7 @@ int phys_seglist[MAX_FVI_SEGS],n_phys_segs;
 #define MAX_IGNORE_OBJS 100
 
 #ifndef NDEBUG
-#define EXTRA_DEBUG 1		//no extra debug when NDEBUG is on
+//#define EXTRA_DEBUG 1		//no extra debug when NDEBUG is on
 #endif
 
 #ifdef EXTRA_DEBUG
@@ -383,13 +388,15 @@ if (Dont_move_ai_objects)
 
 //debug_obj = obj;
 
-	#ifdef EXTRA_DEBUG
-	if (obj == debug_obj) {
+	#ifdef debug_objnum
+	if (objnum == debug_objnum) {
 		printf("object %d:\n  start pos = %x %x %x\n",objnum,XYZ(&obj->pos));
-		printf("  thrust = %x %x %x\n",XYZ(&obj->mtype.phys_info.thrust));
-		printf("  sim_time = %x\n",sim_time);
+		printf("  thrust = %x %x %x  vel = %x %x %x\n",XYZ(&obj->mtype.phys_info.thrust),XYZ(&obj->mtype.phys_info.velocity));
+		printf("  sim_time = %x  GameTime = %x\n",sim_time,GameTime);
 	}
+	#endif
 
+	#ifdef EXTRA_DEBUG
 	//check for correct object segment 
 	if(!get_seg_masks(&obj->pos,obj->segnum,0).centermask==0) {
 		#ifndef NDEBUG
@@ -462,8 +469,8 @@ if (Dont_move_ai_objects)
 		}
 	}
 
-	#ifdef EXTRA_DEBUG
-	if (obj == debug_obj)
+	#ifdef EXTRA_DEBUG_OBJ
+	if (objnum == debug_objnum)
 		printf("  velocity = %x %x %x\n",XYZ(&obj->mtype.phys_info.velocity));
 	#endif
 
@@ -473,8 +480,8 @@ if (Dont_move_ai_objects)
 		//Move the object
 		vm_vec_copy_scale(&frame_vec, &obj->mtype.phys_info.velocity, sim_time);
 
-		#ifdef EXTRA_DEBUG
-		if (obj == debug_obj)
+		#ifdef EXTRA_DEBUG_OBJ
+		if (objnum == debug_objnum)
 			printf("  pass %d, frame_vec = %x %x %x\n",count,XYZ(&frame_vec));
 		#endif
 
@@ -494,15 +501,15 @@ if (Dont_move_ai_objects)
 
 		vm_vec_add(&new_pos,&obj->pos,&frame_vec);
 
-		#ifdef EXTRA_DEBUG
-		if (obj == debug_obj)
+		#ifdef EXTRA_DEBUG_OBJ
+		if (objnum == debug_objnum)
 			printf("   desired_pos  = %x %x %x\n",XYZ(&new_pos));
 		#endif
 
 		ignore_obj_list[n_ignore_objs] = -1;
 
-		#ifdef EXTRA_DEBUG
-		if (obj == debug_obj) {
+		#ifdef EXTRA_DEBUG_OBJ
+		if (objnum == debug_objnum) {
 			printf("   FVI parms: p0 = %8x %8x %8x, segnum=%x, size=%x\n",XYZ(&obj->pos),obj->segnum,obj->size);
 			printf("              p1 = %8x %8x %8x\n",XYZ(&new_pos));
 		}
@@ -555,9 +562,9 @@ save_p1 = *fq.p1;
 				phys_seglist[n_phys_segs++] = hit_info.seglist[i++];
 		}
 
-		#ifdef EXTRA_DEBUG
-		if (obj == debug_obj)
-			printf("   fate  = %d, hit_pnt = %8x %8x %8x\n",fate,XYZ(&hit_info.hit_pnt));;
+		#ifdef EXTRA_DEBUG_OBJ
+		if (objnum == debug_objnum)
+			printf("   fate  = %d, hit_pnt = %8x %8x %8x obj %d\n",fate,XYZ(&hit_info.hit_pnt),hit_info.hit_object);;
 		#endif
 
 		ipos = hit_info.hit_pnt;
@@ -591,9 +598,19 @@ save_p1 = *fq.p1;
 		obj->pos = ipos;
 
 		#ifdef EXTRA_DEBUG
-		if (obj == debug_obj)
+		if (objnum == debug_objnum)
 			printf("   new pos = %x %x %x\n",XYZ(&obj->pos));
 		#endif
+#ifdef VERBOSE_MIN
+int o0 = obj->type==OBJ_WEAPON&&obj->orient.rvec.x==F1_0&&!obj->orient.rvec.y&&!obj->orient.rvec.z&&
+	!obj->orient.uvec.x&&obj->orient.uvec.y==F1_0&&!obj->orient.uvec.z&&!obj->orient.fvec.x&&!obj->orient.fvec.y&&obj->orient.fvec.z==F1_0;
+static vms_vector vnull;
+printf("obj %d type %d id %d parent %d "
+ "new pos = %x %x %x orient %x %x %x; %x %x %x; %x %x %x\n",objnum,obj->type,
+ obj->id,obj->type==OBJ_WEAPON ? obj->ctype.laser_info.parent_num : -1,
+ XYZ(&obj->pos),
+ XYZ(o0?&vnull:&obj->orient.rvec), XYZ(o0?&vnull:&obj->orient.uvec), XYZ(o0?&vnull:&obj->orient.fvec));
+#endif 
 
 		if ( iseg != obj->segnum )
 			obj_relink(objnum, iseg );
@@ -634,8 +651,8 @@ save_p1 = *fq.p1;
 
 //*******					mprintf((0,"Obj %d moved backwards\n",obj-Objects));
 
-				#ifdef EXTRA_DEBUG
-				if (obj == debug_obj)
+				#ifdef EXTRA_DEBUG_OBJ
+				if (objnum == debug_objnum)
 					printf("   Warning: moved backwards!\n");
 				#endif
 
@@ -649,7 +666,7 @@ save_p1 = *fq.p1;
 			}
 			else {
 
-				//if (obj == debug_obj)
+				//if (objnum == debug_objnum)
 				//	printf("   moved_vec = %x %x %x\n",XYZ(&moved_vec));
 			
 				attempted_dist = vm_vec_mag(&frame_vec);
@@ -661,8 +678,10 @@ save_p1 = *fq.p1;
 				if (sim_time < 0 || sim_time>old_sim_time) {
 					#ifndef NDEBUG
 					mprintf((0,"Bogus sim_time = %x, old = %x\n",sim_time,old_sim_time));
-					if (obj == debug_obj)
+					#ifdef debug_objnum
+					if (objnum == debug_objnum)
 						printf("   Bogus sim_time = %x, old = %x, attempted_dist = %x, actual_dist = %x\n",sim_time,old_sim_time,attempted_dist,actual_dist);
+					#endif
 					//Int3(); Removed by Rob
 					#endif
 					sim_time = old_sim_time;
@@ -672,8 +691,8 @@ save_p1 = *fq.p1;
 				}
 			}
 
-			#ifdef EXTRA_DEBUG
-			if (obj == debug_obj)
+			#ifdef EXTRA_DEBUG_OBJ
+			if (objnum == debug_objnum)
 				printf("   new sim_time = %x\n",sim_time);
 			#endif
 
@@ -761,12 +780,12 @@ save_p1 = *fq.p1;
 								vm_vec_scale(&obj->mtype.phys_info.velocity,fixdiv(MAX_OBJECT_VEL,vel));
 						}
 
-						if (bounced && obj->type == OBJ_WEAPON)
+						if (bounced && obj->type == OBJ_WEAPON && !Current_level_D1)
 							vm_vector_2_matrix(&obj->orient,&obj->mtype.phys_info.velocity,&obj->orient.uvec,NULL);
 
-						#ifdef EXTRA_DEBUG
-						if (obj == debug_obj) {
-							printf("   sliding - wall_norm %x %x\n",wall_part,XYZ(&hit_info.hit_wallnorm));
+						#ifdef EXTRA_DEBUG_OBJ
+						if (objnum == debug_objnum) {
+							printf("   sliding - wall_norm %x %x %x pos %x %x %x\n",XYZ(&hit_info.hit_wallnorm),XYZ(&obj->pos));
 							printf("   wall_part %x, new velocity = %x %x %x\n",wall_part,XYZ(&obj->mtype.phys_info.velocity));
 						}
 						#endif
@@ -852,7 +871,7 @@ save_p1 = *fq.p1;
 	//I'm not sure why we do this.  I wish there were a comment that
 	//explained it.  I think maybe it only needs to be done if the object
 	//is sliding, but I don't know
-	if (!obj_stopped && !bounced)	{	//Set velocity from actual movement
+	if (!obj_stopped && (!bounced || Current_level_D1))	{	//Set velocity from actual movement
 		vms_vector moved_vec;
 
 		vm_vec_sub(&moved_vec,&obj->pos,&start_pos);
@@ -1020,7 +1039,10 @@ void phys_apply_force(object *obj,vms_vector *force_vec)
 	//Add in acceleration due to force
 	vm_vec_scale_add2(&obj->mtype.phys_info.velocity,force_vec,fixdiv(f1_0,obj->mtype.phys_info.mass));
 
-
+#ifdef debug_objnum
+if (obj-Objects==debug_objnum)
+printf("obj %d force %x,%x,%x\n", obj-Objects, XYZ(force_vec));
+#endif
 }
 
 //	----------------------------------------------------------------
@@ -1105,7 +1127,9 @@ void phys_apply_rot(object *obj,vms_vector *force_vec)
 			if (rate < F1_0/4)
 				rate = F1_0/4;
 			//	Changed by mk, 10/24/95, claw guys should not slow down when attacking!
-			if (!Robot_info[obj->id].thief && !Robot_info[obj->id].attack_type) {
+			if (Current_level_D1) {
+				obj->ctype.ai_info.SKIP_AI_COUNT = 2;
+			} else if (!Robot_info[obj->id].thief && !Robot_info[obj->id].attack_type) {
 				if (obj->ctype.ai_info.SKIP_AI_COUNT * FrameTime < 3*F1_0/4) {
 					fix	tval = fixdiv(F1_0, 8*FrameTime);
 					int	addval;

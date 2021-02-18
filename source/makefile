@@ -322,7 +322,7 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	multi.c cntrlcen.c credits.c config.c kmatrix.c	\
 	paging.c mission.c songs.c bmread.c \
 	escort.c gamepal.c multibot.c state.c \
-	3dmax.c 
+	3dmax.c terrain.c
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
 
@@ -791,20 +791,25 @@ ALL_WINOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
 	fake/fake.obj \
 	novga/novesa.obj win95/smfread.obj
 
-CFLAGS += -DNDOS -DNASM -w -Dfar="" -D_far="" -DKEY_COMMAND=512 -Dnear="" -Dcdecl=""
+CFLAGS += -DNDOS -DNASM -Dfar="" -D_far="" -DKEY_COMMAND=512 -Dnear="" -Dcdecl=""
+CFLAGS += -DENDLEVEL
+CFLAGS += -Wno-implicit-int
 #CFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE
 CFLAGS += -DNETWORK -DNPACK
 CFLAGS += -Ilib -Iincludes -Ipa_null -I2d -I3d -Itexmap \
 	-Ifix -Ivecmat -Ibios -Imem -Icfile -Imisc -Iiff \
 	-Ivga -Idiv -Iarch -Imain
-CFLAGS += -Og -g -m32 -fno-pie
+CFLAGS += -Og -g -m32 -fno-pie -fcf-protection=none
+#CFLAGS += -fpack-struct
+LDFLAGS += --disable-auto-image-base -Wl,--section-start=.text=0x08000000
+CFLAGS += -I../../desrun/deslog
 
 all: descent2
 
 descent2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 	testiface.o sdltest.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
-	myipx.o myvga.o cfile_ext.o
-	$(CC) -m32 -o $@ $^ -lSDL2 -lm
+	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
+	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm
 
 #all: $(ALL_DOSOBJS)
 #	wlink system dos4g $(WLFLAGS) $(addprefix file ,$^) $(addprefix file ,$(subst /,\,$(EXT_LIBS))) name descent2.exe

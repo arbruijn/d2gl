@@ -912,7 +912,8 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 				//	If this is a robot:robot collision, only do it if both of them have attack_type != 0 (eg, green guy)
 				if (Objects[thisobjnum].type == OBJ_ROBOT)
 					if (Objects[objnum].type == OBJ_ROBOT)
-						// -- MK: 11/18/95, 4claws glomming together...this is easy.  -- if (!(Robot_info[Objects[objnum].id].attack_type && Robot_info[Objects[thisobjnum].id].attack_type))
+						// -- MK: 11/18/95, 4claws glomming together...this is easy.  --
+						if (!Current_level_D1 || !(Robot_info[Objects[objnum].id].attack_type && Robot_info[Objects[thisobjnum].id].attack_type))
 							continue;
 
 				if (Objects[thisobjnum].type == OBJ_ROBOT && Robot_info[Objects[thisobjnum].id].attack_type)
@@ -1267,7 +1268,7 @@ void find_hitpoint_uv(fix *u,fix *v,fix *l,vms_vector *pnt,segment *seg,int side
 	//mprintf(0," checkv = %x,%x\n",checkv.i,checkv.j);
 
 	k1 = -fixdiv(cross(&checkp,&vec0) + cross(&vec0,&p1),cross(&vec0,&vec1));
-	if (abs(vec0.i) > abs(vec0.j))
+	if (Current_level_D1 ? vec0.i : abs(vec0.i) > abs(vec0.j))
 		k0 = fixdiv(fixmul(-k1,vec1.i) + checkp.i - p1.i,vec0.i);
 	else
 		k0 = fixdiv(fixmul(-k1,vec1.j) + checkp.j - p1.j,vec0.j);

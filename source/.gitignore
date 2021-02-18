@@ -34,3 +34,7 @@ input_*
 descent2
 descent2.*
 descent.cfg
+game2
+*.256
+*.mn2
+lst

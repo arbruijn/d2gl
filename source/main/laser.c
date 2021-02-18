@@ -1,3 +1,7 @@
+#include <stdio.h>
+#define XYZ(v) (v)->x,(v)->y,(v)->z
+#define debug_obj_num 104
+int printf(const char *msg,...);
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -160,7 +164,7 @@ int laser_are_related( int o1, int o2 )
 			//	o1 is a weapon, o2 is the parent of 1, so if o1 is PROXIMITY_BOMB and o2 is player, they are related only if o1 < 2.0 seconds old
 			if ((Objects[o1].id == PHOENIX_ID && (GameTime > Objects[o1].ctype.laser_info.creation_time + F1_0/4)) || 
 			   (Objects[o1].id == GUIDEDMISS_ID && (GameTime > Objects[o1].ctype.laser_info.creation_time + F1_0*2)) || 
-				(((Objects[o1].id == PROXIMITY_ID) || (Objects[o1].id == SUPERPROX_ID)) && (GameTime > Objects[o1].ctype.laser_info.creation_time + F1_0*4))) {
+				(((Objects[o1].id == PROXIMITY_ID) || (Objects[o1].id == SUPERPROX_ID)) && (GameTime > Objects[o1].ctype.laser_info.creation_time + F1_0*(Current_level_D1 ? 2 : 4)))) {
 				return 0;
 			} else
 				return 1;
@@ -198,6 +202,9 @@ int laser_are_related( int o1, int o2 )
 		 Objects[o1].id == PROXIMITY_ID || Objects[o2].id == PROXIMITY_ID ||
 		 Objects[o1].id == SUPERPROX_ID || Objects[o2].id == SUPERPROX_ID ||
 		 Objects[o1].id == PMINE_ID || Objects[o2].id == PMINE_ID)
+		return 0;
+
+	if (Current_level_D1)
 		return 0;
 
 	return 1;
@@ -641,7 +648,10 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 			else
 				obj->ctype.laser_info.multiplier = 4*F1_0;
 
-		} else if ((weapon_type >= LASER_ID && weapon_type <= MAX_SUPER_LASER_LEVEL) && (Players[Objects[parent].id].flags & PLAYER_FLAGS_QUAD_LASERS))
+		} else if ((Current_level_D1 ?
+			weapon_type == LASER_ID :
+			weapon_type >= LASER_ID && weapon_type <= MAX_SUPER_LASER_LEVEL) &&
+			(Players[Objects[parent].id].flags & PLAYER_FLAGS_QUAD_LASERS))
 			obj->ctype.laser_info.multiplier = F1_0*3/4;
 		else if (weapon_type == GUIDEDMISS_ID) {
 			if (parent==Players[Player_num].objnum) {
@@ -728,7 +738,8 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	// Move 1 frame, so that the end-tip of the laser is touching the gun barrel.
 	// This also jitters the laser a bit so that it doesn't alias.
 	//	Don't do for weapons created by weapons.
-	if ((Objects[parent].type == OBJ_PLAYER) && (Weapon_info[weapon_type].render_type != WEAPON_RENDER_NONE) && (weapon_type != FLARE_ID)) {
+	if ((Current_level_D1 ? Objects[parent].type != OBJ_WEAPON : Objects[parent].type == OBJ_PLAYER) &&
+		(Weapon_info[weapon_type].render_type != WEAPON_RENDER_NONE) && (weapon_type != FLARE_ID)) {
 		vms_vector	end_pos;
 		int			end_segnum;
 
@@ -770,7 +781,10 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	if (Weapon_info[obj->id].thrust != 0)
 		weapon_speed /= 2;
 
-	vm_vec_copy_scale( &obj->mtype.phys_info.velocity, direction, weapon_speed + parent_speed );
+#ifdef debug_obj_num
+if (obj-Objects==debug_obj_num)printf("obj %d set vel dir %x %x %x wsp %d psp %d\n", obj-Objects,XYZ(direction), weapon_speed, parent_speed);
+#endif
+  	vm_vec_copy_scale( &obj->mtype.phys_info.velocity, direction, weapon_speed + parent_speed );
 
 	//	Set thrust 
 	if (Weapon_info[weapon_type].thrust != 0) {
@@ -890,7 +904,7 @@ int object_is_trackable(int track_goal, object *tracker, fix *dot)
 	vm_vec_normalize_quick(&vector_to_goal);
 	*dot = vm_vec_dot(&vector_to_goal, &tracker->orient.fvec);
 
-	if ((*dot < Min_trackable_dot) && (*dot > F1_0*9/10)) {
+	if ((*dot < Min_trackable_dot) && (*dot > F1_0*9/10) && !Current_level_D1) {
 		// -- mprintf((0, "."));
 		vm_vec_normalize(&vector_to_goal);
 		*dot = vm_vec_dot(&vector_to_goal, &tracker->orient.fvec);
@@ -956,7 +970,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 	else {
 		int	cur_min_trackable_dot;
 
-		cur_min_trackable_dot = MIN_TRACKABLE_DOT;
+		cur_min_trackable_dot = Current_level_D1 ? MIN_TRACKABLE_DOT_D1 : MIN_TRACKABLE_DOT;
 		if ((tracker->type == OBJ_WEAPON) && (tracker->id == OMEGA_ID))
 			cur_min_trackable_dot = OMEGA_MIN_TRACKABLE_DOT;
 
@@ -1026,7 +1040,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 								best_objnum = objnum;
 							}
 						}
-					} else if (dot > F1_0 - (F1_0 - cur_min_trackable_dot)*2) {
+					} else if (dot > F1_0 - (F1_0 - cur_min_trackable_dot)*2 && !Current_level_D1) {
 						vm_vec_normalize(&vec_to_curobj);
 						dot = vm_vec_dot(&vec_to_curobj, &tracker->orient.fvec);
 						if (dot > cur_min_trackable_dot) {
@@ -1066,7 +1080,7 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 	Assert((Weapon_info[tracker->id].homing_flag) || (tracker->id == OMEGA_ID));
 
 	max_trackable_dist = MAX_TRACKABLE_DIST;
-	min_trackable_dot = MIN_TRACKABLE_DOT;
+	min_trackable_dot = Current_level_D1 ? MIN_TRACKABLE_DOT_D1 : MIN_TRACKABLE_DOT;
 
 	if (tracker->id == OMEGA_ID) {
 		max_trackable_dist = OMEGA_MAX_TRACKABLE_DIST;
@@ -1080,7 +1094,8 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 		object		*curobjp = &Objects[objnum];
 
 		if ((curobjp->type != track_obj_type1) && (curobjp->type != track_obj_type2))
-			if ((curobjp->type == OBJ_WEAPON) && ((curobjp->id == PROXIMITY_ID) || (curobjp->id == SUPERPROX_ID))) {
+			if ((curobjp->type == OBJ_WEAPON) && ((curobjp->id == PROXIMITY_ID) || (curobjp->id == SUPERPROX_ID)) &&
+				!Current_level_D1) {
 				if (curobjp->ctype.laser_info.parent_signature != tracker->ctype.laser_info.parent_signature)
 					is_proximity = 1;
 				else
@@ -1152,7 +1167,7 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 int track_track_goal(int track_goal, object *tracker, fix *dot)
 {
 	//	Every 8 frames for each object, scan all objects.
-	if (object_is_trackable(track_goal, tracker, dot) && ((((tracker-Objects) ^ FrameCount) % 8) != 0)) {
+	if (object_is_trackable(track_goal, tracker, dot) && ((((tracker-Objects) ^ FrameCount) % 8) != 0 || Current_level_D1)) {
 		//mprintf((0, "ttg: QO"));
 		return track_goal;
 	} else if ((((tracker-Objects) ^ FrameCount) % 4) == 0) {
@@ -1221,7 +1236,8 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	vms_matrix	m;
 	int			objnum;
 
-	create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
+	if (!Current_level_D1)
+		create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
 
 	// Find the initial position of the laser
 	pnt = &Player_ship->gun_points[gun_num];
@@ -1244,7 +1260,7 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	fq.rad					= 0x10;
 	fq.thisobjnum			= obj-Objects;
 	fq.ignore_obj_list	= NULL;
-	fq.flags					= FQ_CHECK_OBJS | FQ_IGNORE_POWERUPS;
+	fq.flags					= FQ_CHECK_OBJS | (Current_level_D1 ? 0 : FQ_IGNORE_POWERUPS);
 
 	Fate = find_vector_intersection(&fq, &hit_data);
 
@@ -1398,7 +1414,7 @@ void homing_missile_turn_towards_velocity(object *objp, vms_vector *norm_vel)
 
 	new_fvec = *norm_vel;
 
-	vm_vec_scale(&new_fvec, FrameTime*HOMING_MISSILE_SCALE);
+	vm_vec_scale(&new_fvec, FrameTime*(Current_level_D1 ? 8 : HOMING_MISSILE_SCALE));
 	vm_vec_add2(&new_fvec, &objp->orient.fvec);
 	vm_vec_normalize_quick(&new_fvec);
 
@@ -1519,8 +1535,9 @@ void Laser_do_weapon_sequence(object *obj)
 						speed = max_speed;
 				}
 
-				// -- dot = vm_vec_dot(&temp_vec, &vector_to_object);
-//mprintf((0, " dot=%5.2f ", f2fl(dot)));
+				if (Current_level_D1)
+					dot = vm_vec_dot(&temp_vec, &vector_to_object);
+				//mprintf((0, " dot=%5.2f ", f2fl(dot)));
 				vm_vec_add2(&temp_vec, &vector_to_object);
 				//	The boss' smart children track better...
 				if (Weapon_info[obj->id].render_type != WEAPON_RENDER_POLYMODEL)
@@ -1528,6 +1545,12 @@ void Laser_do_weapon_sequence(object *obj)
 				vm_vec_normalize_quick(&temp_vec);
 				obj->mtype.phys_info.velocity = temp_vec;
 				vm_vec_scale(&obj->mtype.phys_info.velocity, speed);
+#ifdef debug_obj_num
+if (obj-Objects==debug_obj_num)
+	printf("obj %d set homing vel %x %x %x\n", obj-Objects,XYZ(&obj->mtype.phys_info.velocity));
+#endif
+				if (Current_level_D1) // d1 erroneously uses scaled vector in turn_towards
+					temp_vec = obj->mtype.phys_info.velocity;
 
 				//	Subtract off life proportional to amount turned.
 				//	For hardest turn, it will lose 2 seconds per second.
@@ -1536,9 +1559,19 @@ void Laser_do_weapon_sequence(object *obj)
 				
 					absdot = abs(F1_0 - dot);
 				
-					lifelost = fixmul(absdot*32, FrameTime);
-					obj->lifeleft -= lifelost;
-					// -- mprintf((0, "Missile %3i, dot = %7.3f life lost = %7.3f, life left = %7.3f\n", obj-Objects, f2fl(dot), f2fl(lifelost), f2fl(obj->lifeleft)));
+
+					if (Current_level_D1) {
+						if (absdot > F1_0/8) {
+							if (absdot > F1_0/4)
+								absdot = F1_0/4;
+							lifelost = fixmul(absdot*16, FrameTime);
+							obj->lifeleft -= lifelost;
+						}
+					} else {
+						lifelost = fixmul(absdot*32, FrameTime);
+						obj->lifeleft -= lifelost;
+						// -- mprintf((0, "Missile %3i, dot = %7.3f life lost = %7.3f, life left = %7.3f\n", obj-Objects, f2fl(dot), f2fl(lifelost), f2fl(obj->lifeleft)));
+					}
 				}
 
 				//	Only polygon objects have visible orientation, so only they should turn.
@@ -1551,7 +1584,7 @@ void Laser_do_weapon_sequence(object *obj)
 	}
 
 	//	Make sure weapon is not moving faster than allowed speed.
-	{
+	if (!Current_level_D1 || Weapon_info[obj->id].thrust != 0) {
 		fix	weapon_speed;
 
 		weapon_speed = vm_vec_mag_quick(&obj->mtype.phys_info.velocity);
@@ -1816,11 +1849,15 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 {
 	object	*objp = &Objects[objnum];
 
+	if (Current_level_D1) // D1 does this for every weapon
+		Laser_offset = ((F1_0*2)*(psrand()%10))/10;
+	
 	switch (weapon_num) {
 		case LASER_INDEX: {
 			int weapon_num;
 
-			Laser_offset = ((F1_0*2)*(psrand()%8))/8;
+			if (!Current_level_D1)
+				Laser_offset = ((F1_0*2)*(psrand()%8))/8;
 
 			if (level <= MAX_LASER_LEVEL)
 				weapon_num = LASER_ID + level;
@@ -1842,10 +1879,8 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			int	make_sound = 1;
 			//if (rand() > 24576)
 			//	make_sound = 1;
-			Laser_player_fire_spread( objp, VULCAN_ID, 6,
-						 psrand()/8 - 32767/16,
-						 psrand()/8 - 32767/16,
-						 make_sound, 0);
+			fix spreadr = psrand()/8 - PSRAND_MAX/16, spreadu = psrand()/8 - PSRAND_MAX/16;
+			Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, make_sound, 0);
 			if (nfires > 1) {
 				Laser_player_fire_spread( objp, VULCAN_ID, 6,
 							 psrand()/8 - 32767/16,
@@ -1860,18 +1895,20 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			}
 			break;
 		}
-		case SPREADFIRE_INDEX:
+		case SPREADFIRE_INDEX: {
+			#define SPREADFIRE_ID_D1 20
+			int id = Current_level_D1 ? SPREADFIRE_ID_D1 : SPREADFIRE_ID;
 			if (flags & LASER_SPREADFIRE_TOGGLED) {
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, F1_0/16, 0, 0, 0);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, -F1_0/16, 0, 0, 0);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, 0, 1, 0);
+				Laser_player_fire_spread( objp, id, 6, F1_0/16, 0, 0, 0);
+				Laser_player_fire_spread( objp, id, 6, -F1_0/16, 0, 0, 0);
+				Laser_player_fire_spread( objp, id, 6, 0, 0, 1, 0);
 			} else {
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, F1_0/16, 0, 0);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, -F1_0/16, 0, 0);
-				Laser_player_fire_spread( objp, SPREADFIRE_ID, 6, 0, 0, 1, 0);
+				Laser_player_fire_spread( objp, id, 6, 0, F1_0/16, 0, 0);
+				Laser_player_fire_spread( objp, id, 6, 0, -F1_0/16, 0, 0);
+				Laser_player_fire_spread( objp, id, 6, 0, 0, 1, 0);
 			}
 			break;
-
+		}
 		case PLASMA_INDEX:
 			Laser_player_fire( objp, PLASMA_ID, 0, 1, 0);
 			Laser_player_fire( objp, PLASMA_ID, 1, 0, 0);
@@ -2122,6 +2159,10 @@ void create_smart_children(object *objp, int num_smart_children)
 		if (objp->type == OBJ_WEAPON) {
 			blob_id = Weapon_info[objp->id].children;
 			Assert(blob_id != -1);		//	Hmm, missing data in bitmaps.tbl.  Need "children=NN" parameter.
+
+			if (Current_level_D1 && // D1 uses same id for player+robot smart missile
+				blob_id == PLAYER_SMART_HOMING_ID && parent_type != OBJ_PLAYER)
+				blob_id = ROBOT_SMART_HOMING_ID;
 		} else {
 			Assert(objp->type == OBJ_ROBOT);
 			blob_id = ROBOT_SMART_HOMING_ID;

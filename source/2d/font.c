@@ -1381,9 +1381,11 @@ grs_font * gr_init_font( char * fontname )
 
 	//set curcanv vars
 
-	FONT        = font;
-	FG_COLOR    = 0;
-	BG_COLOR    = 0;
+	if (grd_curcanv) {
+		FONT        = font;
+		FG_COLOR    = 0;
+		BG_COLOR    = 0;
+	}
 
 	return font;
 

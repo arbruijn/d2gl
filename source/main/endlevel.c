@@ -198,6 +198,9 @@ int start_endlevel_movie()
    int r;
 	ubyte save_pal[768];
 
+	if (Current_mission_num != 0)
+		return 0;
+
 	Assert(Current_mission_num == 0);		//only play movie for built-in mission
 
 	Assert(N_MOVIES >= Last_level);
@@ -240,7 +243,7 @@ int start_endlevel_movie()
 
 }
 
-#ifdef SHAREWARE
+#ifdef ENDLEVEL
 void
 free_endlevel_data()
 {
@@ -272,13 +275,13 @@ init_endlevel()
 //!!	exit_modelnum = load_polygon_model("exit01.pof",1,exit_bitmap_list,NULL);
 //!!	destroyed_exit_modelnum = load_polygon_model("exit01d.pof",1,exit_bitmap_list,NULL);
 
-	generate_starfield();
+	//generate_starfield(); // broken in D1 1.4+
 
 	atexit(free_endlevel_data);
 
 	terrain_bm_instance.bm_data = satellite_bm_instance.bm_data = NULL;
 }
-#endif	//SHAREWARE
+#endif	//ENDLEVEL
 
 object external_explosion;
 int ext_expl_playing,mine_destroyed;
@@ -337,14 +340,14 @@ start_endlevel_sequence()
 		#endif
 	}
 
-	if (Current_mission_num == 0) {		//only play movie for built-in mission
+	//if (Current_mission_num == 0) {		//only play movie for built-in mission
 
 		//try playing movie.  If it plays, great. if not, do rendered ending
 		
 		if (!(Game_mode & GM_MULTI))
 			movie_played = start_endlevel_movie();
 		
-		#ifdef SHAREWARE
+		#ifdef ENDLEVEL
 		if (movie_played == MOVIE_NOT_PLAYED) {		//don't have movie.  Do rendered sequence
 		#ifndef WINDOWS
 			start_rendered_endlevel_sequence();
@@ -353,14 +356,14 @@ start_endlevel_sequence()
 		}
 		#endif
 
-	}
-	else
-		gr_palette_fade_out(gr_palette, 32, 0);
+	//}
+	//else
+	//	gr_palette_fade_out(gr_palette, 32, 0);
 
 	PlayerFinishedLevel(0);		//done with level
 }
 
-#ifndef SHAREWARE
+#ifndef ENDLEVEL
 
 do_endlevel_frame() {Int3();}
 stop_endlevel_sequence() {Int3();}
@@ -562,15 +565,18 @@ get_angs_to_object(vms_angvec *av,vms_vector *targ_pos,vms_vector *cur_pos)
 	vm_extract_angles_vector(av,&tv);
 }
 
+#define SOUND_TUNNEL_EXPLOSION SOUND_EXPLODING_WALL
+#define SOUND_BIG_ENDLEVEL_EXPLOSION SOUND_EXPLODING_WALL
+
+fix explosion_wait1=0;
+fix explosion_wait2=0;
 do_endlevel_frame()
 {
-	#ifdef SHAREWARE
+	#ifdef ENDLEVEL
 	static fix timer;
 	static fix bank_rate;
 	#endif
 	vms_vector save_last_pos;
-	static fix explosion_wait1=0;
-	static fix explosion_wait2=0;
 	static fix ext_expl_halflife;
 
 	save_last_pos = ConsoleObject->last_pos;	//don't let move code change this
@@ -713,7 +719,7 @@ do_endlevel_frame()
 
 			if (ConsoleObject->segnum == transition_segnum) {
 
-				#ifndef SHAREWARE
+				#ifndef ENDLEVEL
 					start_endlevel_movie();
 					stop_endlevel_sequence();
 				#else
@@ -754,7 +760,7 @@ do_endlevel_frame()
 		}
 
 
-#ifdef SHAREWARE
+#ifdef ENDLEVEL
 		case EL_LOOKBACK: {
 
 			do_endlevel_flythrough(0);
@@ -1179,7 +1185,7 @@ void render_endlevel_frame(fix eye_offset)
 
 	if (Endlevel_sequence < EL_OUTSIDE)
 		endlevel_render_mine(eye_offset);
-	#ifdef SHAREWARE
+	#ifdef ENDLEVEL
 	else
 		render_external_scene(eye_offset);
 	#endif
@@ -1496,13 +1502,14 @@ try_again:
 
 	if (!ifile) {
 
-		convert_ext(filename,"TXB");
+		convert_ext(filename,"txb");
 
 		ifile = cfopen(filename,"rb");
 
 		if (!ifile)
 			if (level_num==1) {
-				Error("Cannot load file text of binary version of <%s>",filename);
+				//Error("Cannot load file text of binary version of <%s>",filename);
+				return;
 			}
 			else {
 				level_num = 1;

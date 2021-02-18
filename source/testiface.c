@@ -19,10 +19,6 @@
 #include "piggy.h"
 #include "timer.h"
 
-int inferno_init(int argc,char **argv);
-void function_loop();
-int inferno_done();
-
 char *hog_data, *pig_data;
 int hog_len, pig_len;
 
@@ -73,32 +69,6 @@ void init_data_files() {
 		printf("hog %s pig %s\n", hog_data ? "ok" : "failed", pig_data ? "ok" : "failed");
 }
 
-int test_main(int argc, char **argv) {
-	init_data_files();
-	//for (int i = 0; i < N_TEXT_STRINGS; i++)
-	//	asprintf(&Text_string[i], "%d", i);
-	Text_string[514] = "done";
-	Text_string[516] = "CHEATER!";
-	Text_string[517] = "Loading Data";
-	Text_string[521] = "Concussion";
-	Text_string[522] = "Homing";
-	Text_string[523] = "ProxBomb";
-
-	inferno_init(argc, argv);
-	for (;;) {
-		function_loop();
-		break;
-		extern void show_order_form();
-		extern int main_menu_choice;
-		show_order_form();
-		Function_mode = FMODE_MENU;
-		main_menu_choice = 0;
-                show_title_screen( "iplogo1.pcx", 1,0 );
-                show_title_screen( "logo.pcx", 1,0 );
-	}
-	inferno_done();
-	return 0;
-}
 
 void hmp_set_volume(int vol) {
 }
@@ -143,7 +113,6 @@ uint32_t *get_screen() {
 }
 */
 
-#define gr_visible_pal gr_palette
 void copy_screen_to_texture(uint32_t *texture) {
 	uint32_t pal[256];
 	extern ubyte gr_visible_pal[256 * 3];
@@ -243,13 +212,13 @@ int filelength(int fd) {
 void _mprintf_at( int n, int row, int col, char * format, ... ) {
 	va_list vp;
 	va_start(vp, format);
-	vprintf(format, vp);
+	vfprintf(stderr, format, vp);
 	va_end(vp);
 }
 void _mprintf( int n, char * format, ... ) {
 	va_list vp;
 	va_start(vp, format);
-	vprintf(format, vp);
+	vfprintf(stderr, format, vp);
 	va_end(vp);
 }
 
@@ -408,9 +377,40 @@ void timer_delay(fix time) { SDL_Delay(fixmul(time, 1000)); }
 void delay(int ms) { SDL_Delay(ms); }
 
 #include "findfile.h"
-int FileFindFirst(char *search_str, FILEFINDSTRUCT *ffstruct) { return -1; }
-int FileFindNext(FILEFINDSTRUCT *ffstruct) { return -1; }
-int FileFindClose(void) {}
+#include <dirent.h>
+#include <fnmatch.h>
+static char ff_search_str[13];
+static DIR *ff_dir;
+int FileFindFirst(char *search_str, FILEFINDSTRUCT *ffstruct) {
+	char path[PATH_MAX], *p;
+	if (ff_dir)
+		return -1;
+	if ((p = strchr(search_str, '/'))) {
+		memcpy(path, search_str, p - search_str);
+		path[p - search_str] = 0;
+		p++;
+	} else {
+		strcpy(path, ".");
+		p = search_str;
+	}
+	strcpy(ff_search_str, p);
+	if (!(ff_dir = opendir(path)))
+		return -1;
+	return FileFindNext(ffstruct);
+}
+int FileFindNext(FILEFINDSTRUCT *ffstruct) {
+	struct dirent *d;
+	do {
+		if (!(d = readdir(ff_dir)))
+			return -1;
+	} while (fnmatch(ff_search_str, d->d_name, FNM_PATHNAME | FNM_NOESCAPE) != 0);
+	strcpy(ffstruct->name, d->d_name);
+	return 0;
+}
+int FileFindClose(void) {
+	closedir(ff_dir);
+	ff_dir = NULL;
+}
 int GetFileDateTime(int filehandle, FILETIMESTRUCT *ftstruct) { return -1; }
 int SetFileDateTime(int filehandle, FILETIMESTRUCT *ftstruct) { return -1; }
 int GetDiskFree () { return -1; }
@@ -432,7 +432,7 @@ void close_subtitles() {}
 #include "joy.h"
 //ConfigInfo gConfigInfo;
 ubyte Config_master_volume;
-int CybermouseActive() { return -1; }
+ubyte CybermouseActive;
 int descent_critical_deverror() { return -1; }
 int digi_is_channel_playing(int ch) { return -1; }
 void digi_stop_all_channels() { }
@@ -478,7 +478,9 @@ int digi_set_master_volume() { return -1; }
 int gr_ibitblt_create_mask_pa() { return -1; }
 //int joydefs_config() { return -1; }
 int joy_have_firebird() { return -1; }
+#if 0
 int mouse_get_pos() { return -1; }
+#endif
 int pa_render_end() { return -1; }
 int RBAMountDisk() { return -1; }
 int receive_netplayers_packet() { return -1; }
@@ -504,11 +506,11 @@ void vfx_center_headset(){}
 int CD_blast_mixer(){ return -1; }
 
 #undef mprintf
-extern void mprintf( int n, char * format, ... ) { va_list vp; va_start(vp, format); vprintf(format, vp); va_end(vp); }
+extern void mprintf( int n, char * format, ... ) { va_list vp; va_start(vp, format); vfprintf(stderr, format, vp); va_end(vp); }
 void WinInt3() { asm volatile("int $3"); }
 
 void digi_debug(){}
 void mopen(int n, int row, int col, int width, int height, char * title ){}
 void mclose(int n){}
 #undef mprintf_at
-void mprintf_at(int n, int row, int col, char * format, ...){va_list vp; va_start(vp, format); vprintf(format, vp); va_end(vp);}
+void mprintf_at(int n, int row, int col, char * format, ...){va_list vp; va_start(vp, format); vfprintf(stderr, format, vp); va_end(vp);}

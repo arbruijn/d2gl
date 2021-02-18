@@ -608,7 +608,8 @@ void init_model_sub(ubyte *p)
 				Assert(nv > 2);		//must have 3 or more points
 
 				int c = w(p+28);
-				c = uninit_flag ? interp_color_table[c].rgb15 : find_color_index_pal(c);
+				extern int N_polygon_models;
+				c = uninit_flag ? interp_color_table[c].rgb15 : N_polygon_models>85 ? find_color_index(c) : find_color_index_pal(c);
 				*wp(p+28) = c;
 
 				p += 30 + ((nv&~1)+1)*2;

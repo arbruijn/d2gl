@@ -184,11 +184,11 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 
 			//	If colliding with a claw type robot, do damage proportional to FrameTime because you can collide with those
 			//	bots every frame since they don't move.
-			if ( (other_obj->type == OBJ_ROBOT) && (Robot_info[other_obj->id].attack_type) )
+			if ( (other_obj->type == OBJ_ROBOT) && (Robot_info[other_obj->id].attack_type) && !Current_level_D1)
 				damage = fixmul(damage, FrameTime*2);
 
 			//	Make trainee easier.
-			if (Difficulty_level == 0)
+			if (Difficulty_level == 0 && !Current_level_D1)
 				damage /= 2;
 
 			apply_damage_to_player(obj,other_obj,damage);
@@ -420,7 +420,7 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 			if (d > 0) {
 				fix damage = fixmul(d,FrameTime);
 
-				if (Difficulty_level == 0)
+				if (Difficulty_level == 0 && !Current_level_D1)
 					damage /= 2;
 
 				if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE))
@@ -434,8 +434,10 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 				PALETTE_FLASH_ADD(f2i(damage*4), 0, 0);	//flash red
 			}
 
-			obj->mtype.phys_info.rotvel.x = (psrand() - 16384)/2;
-			obj->mtype.phys_info.rotvel.z = (psrand() - 16384)/2;
+			if (!Current_level_D1) { // D1 does this after bump
+				obj->mtype.phys_info.rotvel.x = (psrand() - 16384)/2;
+				obj->mtype.phys_info.rotvel.z = (psrand() - 16384)/2;
+			}
 		}
 
 		return (d>0)?1:2;
@@ -486,6 +488,11 @@ void scrape_object_on_wall(object *obj, short hitseg, short hitside, vms_vector 
 					vm_vec_scale_add2(&hit_dir, &rand_vec, F1_0/8);
 					vm_vec_normalize_quick(&hit_dir);
 					bump_one_object(obj, &hit_dir, F1_0*8);
+
+					if (Current_level_D1) { // D2 does this in check_volatile_wall
+						obj->mtype.phys_info.rotvel.x = (psrand() - 16384)/2;
+						obj->mtype.phys_info.rotvel.z = (psrand() - 16384)/2;
+					}
 				}
 
 				//@@} else {
@@ -747,6 +754,9 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		//@@#endif
 	#endif
 
+        if (Current_level_D1 && (weapon->mtype.phys_info.flags & PF_BOUNCE))
+                return;
+
 	if ((weapon->mtype.phys_info.velocity.x == 0) && (weapon->mtype.phys_info.velocity.y == 0) && (weapon->mtype.phys_info.velocity.z == 0)) {
 		Int3();	//	Contact Matt: This is impossible.  A weapon with 0 velocity hit a wall, which doesn't move.
 		return;
@@ -800,10 +810,10 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		digi_link_sound_to_pos( SOUND_VOLATILE_WALL_HIT,hitseg, 0, hitpt, 0, F1_0 );
 
 		//for most weapons, use volatile wall hit.  For mega, use its special vclip
-		vclip = (weapon->id == MEGA_ID)?Weapon_info[weapon->id].robot_hit_vclip:VCLIP_VOLATILE_WALL_HIT;
+		vclip = (weapon->id == MEGA_ID && !Current_level_D1)?Weapon_info[weapon->id].robot_hit_vclip:VCLIP_VOLATILE_WALL_HIT;
 
 		//	New by MK: If powerful badass, explode as badass, not due to lava, fixes megas being wimpy in lava.
-		if (wi->damage_radius >= VOLATILE_WALL_DAMAGE_RADIUS/2) {
+		if (wi->damage_radius >= VOLATILE_WALL_DAMAGE_RADIUS/2 && !Current_level_D1) {
 			// -- mprintf((0, "Big weapon doing badass in lava instead.\n"));
 			explode_badass_weapon(weapon,hitpt);
 		} else {
@@ -1019,12 +1029,14 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 	int	steal_attempt = 0;
 	int	collision_seg;
 
-	if (robot->flags&OF_EXPLODING)
-		return;
+	if (!Current_level_D1) {
+		if (robot->flags&OF_EXPLODING)
+			return;
 
-	collision_seg = find_point_seg(collision_point, playerobj->segnum);
-	if (collision_seg != -1)
-		object_create_explosion( collision_seg, collision_point, Weapon_info[0].impact_size, Weapon_info[0].wall_hit_vclip );
+		collision_seg = find_point_seg(collision_point, playerobj->segnum);
+		if (collision_seg != -1)
+			object_create_explosion( collision_seg, collision_point, Weapon_info[0].impact_size, Weapon_info[0].wall_hit_vclip );
+	}
 
 	if (playerobj->id == Player_num) {
 		if (Robot_info[robot->id].companion)	//	Player and companion don't collide.
@@ -1194,7 +1206,8 @@ void maybe_kill_weapon(object *weapon, object *other_obj)
 
 	//	Changed, 10/12/95, MK: Make weapon-weapon collisions always kill both weapons if not persistent.
 	//	Reason: Otherwise you can't use proxbombs to detonate incoming homing missiles (or mega missiles).
-	if (weapon->mtype.phys_info.flags & PF_PERSISTENT) {
+	if ((weapon->mtype.phys_info.flags & PF_PERSISTENT) ||
+		(Current_level_D1 && other_obj->type == OBJ_WEAPON)) {
 		//	Weapons do a lot of damage to weapons, other objects do much less.
 		if (!(weapon->mtype.phys_info.flags & PF_PERSISTENT)) {
 			if (other_obj->type == OBJ_WEAPON)
@@ -1344,8 +1357,10 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 
 	if (robot->shields < 0 ) return 0;	//robot already dead...
 
-	if (Robot_info[robot->id].boss_flag)
+	if (Robot_info[robot->id].boss_flag) {
 		Boss_hit_time = GameTime;
+		Boss_been_hit = 1;
+	}
 
 	//	Buddy invulnerable on level 24 so he can give you his important messages.  Bah.
 	//	Also invulnerable if his cheat for firing weapons is in effect.
@@ -1573,6 +1588,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 			return;
 
 	if (Robot_info[robot->id].boss_flag) {
+		Boss_hit_this_frame = 1;
 		Boss_hit_time = GameTime;
 		if (Robot_info[robot->id].boss_flag >= BOSS_D2) {
 			damage_flag = do_boss_weapon_collision(robot, weapon, collision_point);
@@ -2386,11 +2402,17 @@ void collide_weapon_and_weapon( object * weapon1, object * weapon2, vms_vector *
 
 		if (Weapon_info[weapon1->id].destroyable)
 			if (maybe_detonate_weapon(weapon1, weapon2, collision_point))
-				maybe_detonate_weapon(weapon2,weapon1, collision_point);
+				if (Current_level_D1)
+					maybe_kill_weapon(weapon2,weapon1);
+				else
+					maybe_detonate_weapon(weapon2,weapon1, collision_point);
 
 		if (Weapon_info[weapon2->id].destroyable)
 			if (maybe_detonate_weapon(weapon2, weapon1, collision_point))
-				maybe_detonate_weapon(weapon1,weapon2, collision_point);
+				if (Current_level_D1)
+					maybe_kill_weapon(weapon1,weapon2);
+				else
+					maybe_detonate_weapon(weapon1,weapon2, collision_point);
 
 	}
 

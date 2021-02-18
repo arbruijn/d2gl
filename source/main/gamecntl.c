@@ -290,7 +290,7 @@ void ReadControls()
 				#ifdef WINDOWS
 					controls_read_all_win();
 				#else
-					controls_read_all();		//NOTE LINK TO ABOVE!!!
+					my_controls_read_all();		//NOTE LINK TO ABOVE!!!
 				#endif
 
 		check_rear_view();
@@ -2224,7 +2224,7 @@ void FinalCheats(int key)
    {
 	 	if (Players[Player_num].shields < MAX_SHIELDS) {
 	 		fix boost = 3*F1_0 + 3*F1_0*(NDL - Difficulty_level);
-	 		if (Difficulty_level == 0)
+	 		if (Difficulty_level == 0 && !Current_level_D1)
 	 			boost += boost/2;
 	 		Players[Player_num].shields += boost;
 	 		if (Players[Player_num].shields > MAX_SHIELDS)

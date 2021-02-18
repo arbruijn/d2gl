@@ -945,7 +945,7 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	load_palette(Current_level_palette,1,1);		//don't change screen
 
-	#ifdef SHAREWARE
+	#ifdef ENDLEVEL
 	load_endlevel_data(level_num);
 	#endif
 
@@ -1165,6 +1165,7 @@ void DoEndLevelScoreGlitz(int network)
 
 	Assert(c <= N_GLITZITEMS);
 
+#if 0
 	gr_palette_fade_out(gr_palette, 32, 0);
 
 	mprintf((0,"doing menu\n"));
@@ -1177,6 +1178,7 @@ void DoEndLevelScoreGlitz(int network)
 		newmenu_do2(NULL, title, c, m, NULL, 0, STARS_BACKGROUND);
 
 	mprintf((0,"done DoEndLevelScoreGlitz\n"));
+#endif	
 }
 
 //give the player the opportunity to save his game
@@ -1205,7 +1207,7 @@ void StartSecretLevel()
 	Do_appearance_effect = 1;
 
 	ai_reset_all_paths();
-	// -- NO? -- reset_time();
+	my_reset_time();
 
 	reset_rear_view();
 	Auto_fire_fusion_cannon_time = 0;
@@ -1642,7 +1644,8 @@ void AdvanceLevel(int secret_flag)
 		if (!(Game_mode & GM_MULTI))
 			DoEndlevelMenu(); // Let use save their game
 
-		StartNewLevel(Next_level_num, 0);
+		//StartNewLevel(Next_level_num, 0);
+		my_StartNewLevelSub(Next_level_num, 1, 0);
 
 	}
 }
@@ -2265,11 +2268,11 @@ void copy_defaults_to_robot(object *objp)
 				default:	break;
 			}
 		}
-	} else if (robptr->boss_flag)	//	MK, 01/16/95, make boss shields lower on lower diff levels.
+	} else if (robptr->boss_flag && !Current_level_D1)	//	MK, 01/16/95, make boss shields lower on lower diff levels.
 		objp->shields = objp->shields/(NDL+3) * (Difficulty_level+4);
 
 	//	Additional wimpification of bosses at Trainee
-	if ((robptr->boss_flag) && (Difficulty_level == 0))
+	if ((robptr->boss_flag) && (Difficulty_level == 0) && !Current_level_D1)
 		objp->shields /= 2;
 }
 
@@ -2332,7 +2335,7 @@ void StartLevel(int random_flag)
 	init_ai_objects();
 	#endif
 
-	reset_time();
+	my_reset_time();
 
 	reset_rear_view();
 	Auto_fire_fusion_cannon_time = 0;

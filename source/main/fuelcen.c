@@ -1,3 +1,4 @@
+//#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -361,7 +362,10 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 
 	create_n_segment_path(obj, 6, -1);		//	Create a 6 segment path from creation point.
 
-	Ai_local_info[objnum].mode = ai_behavior_to_mode(default_behavior);
+	if (!Current_level_D1)
+		Ai_local_info[objnum].mode = ai_behavior_to_mode(default_behavior);
+	else if (default_behavior == AIB_RUN_FROM)
+                Ai_local_info[objnum].mode = AIM_RUN_FROM_OBJECT;
 
 	return obj;
 }
@@ -392,6 +396,9 @@ void robotmaker_proc( FuelCenter * robotcen )
 			robotcen->Enabled = 0;
 		}
 	}
+#ifdef VERBOSE
+printf("robotcen %d flag %d timer %x\n", robotcen-Station,robotcen->Flag,robotcen->Timer);
+#endif
 
 	// mprintf((0, "Capacity of robot maker #%i is %i\n", robotcen - Station, robotcen->Capacity));
 
@@ -455,6 +462,10 @@ void robotmaker_proc( FuelCenter * robotcen )
 		}
 
  		// mprintf( (0, "Time between morphs %d seconds, dist_to_player = %7.3f\n", f2i(top_time), f2fl(dist_to_player) ));
+		#ifdef VERBOSE
+		printf("Time between morphs %x seconds, dist_to_player = %x\n", top_time, dist_to_player);
+		#endif
+
 
 		if (robotcen->Timer > top_time )	{
 			int	count=0;
@@ -464,9 +475,12 @@ void robotmaker_proc( FuelCenter * robotcen )
 			//	Make sure this robotmaker hasn't put out its max without having any of them killed.
 			for (i=0; i<=Highest_object_index; i++)
 				if (Objects[i].type == OBJ_ROBOT)
-					if ((Objects[i].matcen_creator^0x80) == my_station_num)
+					if ((byte)(Objects[i].matcen_creator^0x80) == my_station_num)
 						count++;
-			if (count > Difficulty_level + 3) {
+			#ifdef VERBOSE
+			printf("robotmaker_proc: mycount=%d\n", count);
+			#endif
+  			if (count > Difficulty_level + 3) {
 				mprintf((0, "Cannot morph: center %i has already put out %i robots.\n", my_station_num, count));
 				robotcen->Timer /= 2;
 				return;

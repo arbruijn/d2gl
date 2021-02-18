@@ -268,7 +268,7 @@ void flash_frame()
 		flash_ang += fixmul(Flash_rate,FrameTime);
 		fix_fastsincos(flash_ang,&flash_scale,NULL);
 		flash_scale = (flash_scale + f1_0)/2;
-		if (Difficulty_level == 0)
+		if (Difficulty_level == 0 && !Current_level_D1)
 			flash_scale = (flash_scale+F1_0*3)/4;
 	}
 

@@ -138,6 +138,9 @@ void init_ai_object(int objnum, int behavior, int hide_segment)
 	ai_local		*ailp = &Ai_local_info[objnum];
 	robot_info	*robptr = &Robot_info[objp->id];
 
+	if (Current_level_D1 && (behavior == 0x82 || behavior == 0x84)) // AIB_HIDE / AIB_FOLLOW_PATH
+		Error("Robot %d using obsolete behavior %x", objnum, behavior);
+
 	if (behavior == 0) {
 		// mprintf((0, "Behavior of 0 for object #%i, bashing to AIB_NORMAL.\n", objnum));
 		behavior = AIB_NORMAL;
@@ -168,7 +171,7 @@ void init_ai_object(int objnum, int behavior, int hide_segment)
 		ailp->mode = AIM_THIEF_WAIT;
 	}
 
-	if (robptr->attack_type) {
+	if (robptr->attack_type && !Current_level_D1) {
 		aip->behavior = AIB_NORMAL;
 		ailp->mode = ai_behavior_to_mode(aip->behavior);
 	}
@@ -274,7 +277,8 @@ if (size_check)
 		fix			boss_size_save;
 
 		boss_size_save = boss_objp->size;
-		// -- Causes problems!!	-- boss_objp->size = fixmul((F1_0/4)*3, boss_objp->size);
+		if (Current_level_D1) // D2: -- Causes problems!!	-- 
+			boss_objp->size = fixmul((F1_0/4)*3, boss_objp->size);
 		original_boss_seg = boss_objp->segnum;
 		original_boss_pos = boss_objp->pos;
 		head = 0;
@@ -972,6 +976,11 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	fix			aim, dot;
 	int			count;
 
+	if (Current_level_D1) {
+		ai_fire_laser_at_player_d1(obj, fire_point);
+		return;
+	}
+
 	Assert(robptr->attack_type == 0);	//	We should never be coming here for the green guy, as he has no laser!
 
 	//	If this robot is only awake because a camera woke it up, don't fire.
@@ -1248,7 +1257,7 @@ void move_around_player(object *objp, vms_vector *vec_to_player, int fast_flag)
 	pptr->velocity.z += evade_vector.z;
 
 	speed = vm_vec_mag_quick(&pptr->velocity);
-	if ((objp-Objects != 1) && (speed > robptr->max_speed[Difficulty_level])) {
+	if ((objp-Objects != 1 || Current_level_D1) && (speed > robptr->max_speed[Difficulty_level])) {
 		pptr->velocity.x = (pptr->velocity.x*3)/4;
 		pptr->velocity.y = (pptr->velocity.y*3)/4;
 		pptr->velocity.z = (pptr->velocity.z*3)/4;
@@ -1508,8 +1517,7 @@ void do_ai_robot_hit(object *objp, int type)
 				{
 					int	r;
 
-					if (Current_level_D1) {
-						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
+					if (Current_level_D1) { // D1 incorrectly used case AIM_STILL
 						break;
 					}
 
@@ -1837,7 +1845,7 @@ int ai_door_is_openable(object *objp, segment *segp, int sidenum)
 		if (wall_num != -1)
 			if ((wallp->type == WALL_DOOR) && (wallp->keys == KEY_NONE) && !(wallp->flags & WALL_DOOR_LOCKED))
 				return 1;
-			else if (wallp->keys != KEY_NONE) {	//	Allow bots to open doors to which player has keys.
+			else if (wallp->keys != KEY_NONE && !Current_level_D1) {	//	Allow bots to open doors to which player has keys.
 				if (wallp->keys & Players[Player_num].flags)
 					return 1;
 			}
@@ -2197,7 +2205,7 @@ int do_robot_dying_frame(object *objp, fix start_time, fix roll_duration, byte *
 	if (digi_sample_rate)
 		sound_duration = fixdiv(GameSounds[digi_xlat_sound(death_sound)].length,digi_sample_rate);
 	else
-		sound_duration = F1_0;
+		sound_duration = Current_level_D1 ? 0x2ae14 : F1_0;
 
 	if (start_time + roll_duration - sound_duration < GameTime) {
 		if (!*dying_sound_playing) {
@@ -2455,7 +2463,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 		//	Above comment corrected.  Date changed from 1994, to 1995.  Should fix some very subtle bugs, as well as not cause me to wonder, in the future, why I was writing AI code for onearm ten months before he existed.
 		if (!object_animates || ready_to_fire(robptr, ailp)) {
 			dot = vm_vec_dot(&obj->orient.fvec, vec_to_player);
-			if ((dot >= 7*F1_0/8) || ((dot > F1_0/4) &&  robptr->boss_flag)) {
+			if ((dot >= 7*F1_0/8) || ((dot > F1_0/4) &&  robptr->boss_flag && !Current_level_D1)) {
 
 				if (gun_num < Robot_info[obj->id].n_guns) {
 					if (robptr->attack_type == 1) {
@@ -2498,7 +2506,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 						 && (aip->behavior != AIB_STILL)
 						 && (aip->behavior != AIB_SNIPE)
 						 && (aip->behavior != AIB_FOLLOW)
-						 && (!robptr->attack_type)
+						 && (!robptr->attack_type || Current_level_D1)
 						 && ((ailp->mode == AIM_FOLLOW_PATH) || (ailp->mode == AIM_STILL)))
 						ailp->mode = AIM_CHASE_OBJECT;
 				}
@@ -2518,7 +2526,8 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 	} else if (!robptr->attack_type && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1) || ((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))) {
 		//	Robots which fire homing weapons might fire even if they don't have a bead on the player.
 		if (((!object_animates) || (ailp->achieved_state[aip->CURRENT_GUN] == AIS_FIRE))
-			 && (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
+			 && (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0 || Current_level_D1)) ||
+			 	((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
 			 && (vm_vec_dist_quick(&Hit_pos, &obj->pos) > F1_0*40)) {
 			if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION))
 				return;

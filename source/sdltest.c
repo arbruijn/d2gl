@@ -8,6 +8,8 @@
 #include <time.h>
 
 #include "fix.h"
+#include "effects.h"
+#include "deslog.h"
 
 
 //#define SDL_Window SDL_Surface
@@ -35,8 +37,8 @@ extern void copy_screen_to_texture(uint32_t *texture);
 int last_time;
 int sdl_time_start;
 int time_speed = 1;
-int play_speed = 8;
-int play_show = 0;
+int play_speed = 4;
+int play_show = 1;
 
 FILE *log_file = NULL;
 int is_record = 1;
@@ -235,6 +237,7 @@ extern int modes[][2];
 extern char Ai_cloak_info[8 * 16];
 extern int Last_gate_time;
 #endif
+extern int explosion_wait1, explosion_wait2;
 player *Player = &Players[0];
 int *pDifficulty_level = &Difficulty_level;
 int *pGameTime = &GameTime;
@@ -250,17 +253,24 @@ extern unsigned int d_rand_seed;
 unsigned int *pRandNext = &d_rand_seed;
 int Num_awareness_events;
 int *pNum_awareness_events = &Num_awareness_events;
+extern int Laser_offset;
+extern int Missile_gun;
 
 int level = 1;
-void load_stat(FILE *f) {
+int skipped_levels = 0;
+int end_level = 0;
+void load_stat(FILE *f, int have_level) {
     char line[256], *p, *arg;
-    if (!fgets(line, sizeof(line), f))
-        line[0] = 0;
-    if ((p = strchr(line, '\n')))
-        *p = 0;
-    if (strcmp(line, "!newlevel") != 0) {
-        fprintf(stderr, "missing !newlevel on new level: %s\n", line);
-        abort();
+
+    if (!have_level) {
+        if (!fgets(line, sizeof(line), f))
+            exit(0);
+        if ((p = strchr(line, '\n')))
+            *p = 0;
+        if (strcmp(line, "!newlevel") != 0) {
+            fprintf(stderr, "missing !newlevel on new level: %s\n", line);
+            abort();
+        }
     }
     //*pLastGateTime = *pLastTeleportTime = *pBossCloakEndTime = 0;
 
@@ -272,6 +282,8 @@ void load_stat(FILE *f) {
         *arg++ = 0;
         if (strcmp(line, "level") == 0)
             level = (int)strtol(arg, NULL, 10);
+        if (strcmp(line, "difficulty") == 0)
+            *pDifficulty_level = (int)strtol(arg, NULL, 10);
         if (strcmp(line, "seed") == 0)
             *pRandNext = (int)strtoul(arg, NULL, 16);
         if (strcmp(line, "time") == 0)
@@ -286,10 +298,16 @@ void load_stat(FILE *f) {
             Player->shields = (int)strtoul(arg, NULL, 16);
         if (strcmp(line, "lives") == 0)
             Player->lives = (int)strtol(arg, NULL, 10);
+        if (strcmp(line, "laser_level") == 0)
+            Player->laser_level = (int)strtol(arg, NULL, 10);
         if (strcmp(line, "primary_flags") == 0)
             Player->primary_weapon_flags = (int)strtoul(arg, NULL, 16);
         if (strcmp(line, "secondary_flags") == 0)
             Player->secondary_weapon_flags = (int)strtoul(arg, NULL, 16);
+        if (strcmp(line, "primary_ammo") == 0)
+            parse_ammo(arg, Player->primary_ammo);
+        if (strcmp(line, "secondary_ammo") == 0)
+            parse_ammo(arg, Player->secondary_ammo);
         if (strcmp(line, "score") == 0)
             Player->score = (int)strtol(arg, NULL, 10);
         if (strcmp(line, "time_total") == 0)
@@ -304,6 +322,14 @@ void load_stat(FILE *f) {
             Primary_weapon = (char)strtol(arg, NULL, 10);
         if (strcmp(line, "secondary_weapon") == 0)
             Secondary_weapon = (char)strtol(arg, NULL, 10);
+        if (strcmp(line, "laser_offset") == 0)
+            Laser_offset = (int)strtoul(arg, NULL, 16);
+        if (strcmp(line, "explosion_wait1") == 0)
+            explosion_wait1 = (int)strtoul(arg, NULL, 16);
+        if (strcmp(line, "explosion_wait2") == 0)
+            explosion_wait2 = (int)strtoul(arg, NULL, 16);
+        if (strcmp(line, "missile_gun") == 0)
+            Missile_gun = (int)strtol(arg, NULL, 10);
     }
     if ((p = strchr(line, '\n')))
         *p = 0;
@@ -315,8 +341,12 @@ void load_stat(FILE *f) {
 
 void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     level = arg_level;
-    if (is_play)
-        load_stat(log_file);
+    if (is_play) {
+        if (level == end_level)
+            exit(0);
+        load_stat(log_file, skipped_levels);
+        skipped_levels = 0;
+    }
 
     // clear AI globals
     memset(pAi_local_info, 0, 184 * 350);
@@ -326,13 +356,17 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     
     *pFuelcen_seconds_left = 0;
 
+    init_special_effects();
+    for (int i = 0; i < Num_effects; i++)
+        Effects[i].frame_count = 0;
+
     call_reg3(StartNewLevelSub, level, flag, secret);
 }
 
 
 void init_data_files();
 int test_main2(int argc, char **argv) {
-	init_data_files();
+	//init_data_files();
 	
 	cfile_init("descent2.hog");
 	load_text();
@@ -341,7 +375,6 @@ int test_main2(int argc, char **argv) {
 	#define SM_320x200C 0
 	#define SM_640x480V 14
 	#define VR_NONE 0
-	Cockpit_mode = CM_FULL_SCREEN;
 	#if 0
 	int screen_mode = !is_play || play_show ? SM_640x480V : SM_320x200C;
 	int screen_width = modes[screen_mode][0];
@@ -351,7 +384,8 @@ int test_main2(int argc, char **argv) {
 	int use_double_buffer = 0;
 	call_reg5(game_init_render_buffers, screen_mode, screen_width, screen_height, 0, 0); //use_double_buffer, vr_mode, screen_compatible );
 	#endif
-	set_display_mode(!is_play || play_show ? 1 : 0);
+	int display_mode = !is_play || play_show ? 1 : 0;
+	set_display_mode(display_mode);
 
 	int ret = call_reg0(gr_init);
 	(void)ret;
@@ -365,7 +399,7 @@ int test_main2(int argc, char **argv) {
 	//goto err;
 	call_reg1(gr_use_palette_table, "default.256");
 	gamefont_init();
-	bm_init();
+	bm_init(1);
 
 	//call_reg2(show_title_screen, (int)"iplogo1.pcx", 1);
 	//call_reg2(show_title_screen, (int)"logo.pcx", 1);
@@ -384,11 +418,23 @@ int test_main2(int argc, char **argv) {
 	call_reg1(set_detail_level_parameters, 4);
 	//set_detail_level_parameters(4);
 	//RegisterPlayer();
-	call_reg1(load_mission, 0);
+	//build_mission_list(0);
+	//read_mission_file("d2.mn2", 0, ML_CURDIR);
+	read_mission_file("descent.mn2", 1, ML_CURDIR);
+	call_reg1(load_mission, 1);
 	Function_mode = 2; // FMODE_GAME
 	#ifndef Skip_briefing_screens
 	Skip_briefing_screens = 1;
 	#endif
+
+	read_player_file();
+	Cockpit_mode = CM_FULL_SCREEN;
+	extern int Missile_view_enabled;
+	Missile_view_enabled = 0;
+	write_player_file();
+	//extern int Current_display_mode;
+	//Current_display_mode = display_mode;
+
 	init_player_stats_game();
 
 
@@ -410,36 +456,13 @@ int test_main2(int argc, char **argv) {
 	#endif
 
 	//call_reg2(StartNewLevelSub, start_level, 1);
-	my_StartNewLevelSub(1, 1, 0);
+	my_StartNewLevelSub(level, 1, 0);
 
 	
 	game();
     
 	return 0;
 }
-
-
-int init_play_record(int argc, char **argv) {
-    if (argc <= 1) {
-        is_record = 1;
-        char fn[64];
-        snprintf(fn, sizeof(fn), "input_%ld", time(NULL));
-        log_file = fopen(fn, "wb");
-    } else {
-        is_record = 0;
-        is_play = 1;
-        time_speed = play_speed;
-        //time_factor = play_speed;
-        log_file = fopen(argv[1], "rb");
-        if (!log_file) {
-            perror("opening file");
-            return 1;
-        }
-        //start_level = strstr(argv[1], "level3") ? 3 : 1;
-    }
-    return 0;
-}
-
 
 int main(int argc, char **argv) {
     if (init_play_record(argc, argv))
@@ -560,6 +583,8 @@ void my_controls_read_all() {
             p++;
             switch (line[0]) {
                 case 't':
+                    if (line[1] != 'h')
+                        break;
                     for (int i = 0; i < 6; i++) {
                         controls->thrust[i] = (int)strtol(p, &p, 16);
                         if (*p++ != ',')
@@ -572,6 +597,7 @@ void my_controls_read_all() {
                         if (*p++ != ',')
                             break;
                     }
+                    controls->buttons[8] = controls->buttons[9] = 0; // disable automap
                     break;
                 case 'k':
                     game_key = strtol(p, NULL, 10);
@@ -614,17 +640,20 @@ void my_game_render_frame() {
     game_render_frame();
     last_time += 65536/32;
     draw();
+    printf("%d\n", Players[0].shields / 65536);
 }
 
+#if 0
 int psrand_pal() {
     return 12345;
 }
+#endif
 
 
 void print_stat(FILE *f) {
     fprintf(f, "!newlevel\n");
-    fprintf(f, "difficulty=%d\n", *pDifficulty_level);
     fprintf(f, "level=%d\n", *pCurrent_level_num);
+    fprintf(f, "difficulty=%d\n", *pDifficulty_level);
     fprintf(f, "seed=%x\n", *pRandNext);
     fprintf(f, "time=%x\n", *pGameTime);
     fprintf(f, "framecount=%d\n", FrameCount);
@@ -647,6 +676,10 @@ void print_stat(FILE *f) {
     fprintf(f, "hours_total=%d\n", Player->hours_total);
     fprintf(f, "primary_weapon=%d\n", Primary_weapon);
     fprintf(f, "secondary_weapon=%d\n", Secondary_weapon);
+    fprintf(f, "laser_offset=%x\n", Laser_offset);
+    fprintf(f, "explosion_wait1=%x\n", explosion_wait1);
+    fprintf(f, "explosion_wait2=%x\n", explosion_wait2);
+    fprintf(f, "missile_gun=%d\n", Missile_gun);
 }
 
 
@@ -667,3 +700,12 @@ void my_reset_time() {
 void inferno_init() {}
 void inferno_done() {}
 void inferno_loop() {}
+
+void my_start_player_death_sequence(object *obj) {
+    printf("player died");
+    exit(1);
+}
+
+void mouse_show_cursor() {}
+void mouse_hide_cursor() {}
+void mouse_get_pos(int *x, int *y) {}

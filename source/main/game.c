@@ -1255,14 +1255,24 @@ void calc_frame_time()
 
 	//	Set value to determine whether homing missile can see target.
 	//	The lower frametime is, the more likely that it can see its target.
-	if (FrameTime <= F1_0/64)
-		Min_trackable_dot = MIN_TRACKABLE_DOT;	// -- 3*(F1_0 - MIN_TRACKABLE_DOT)/4 + MIN_TRACKABLE_DOT;
-	else if (FrameTime < F1_0/32)
-		Min_trackable_dot = MIN_TRACKABLE_DOT + F1_0/64 - 2*FrameTime;	// -- fixmul(F1_0 - MIN_TRACKABLE_DOT, F1_0-4*FrameTime) + MIN_TRACKABLE_DOT;
-	else if (FrameTime < F1_0/4)
-		Min_trackable_dot = MIN_TRACKABLE_DOT + F1_0/64 - F1_0/16 - FrameTime;	// -- fixmul(F1_0 - MIN_TRACKABLE_DOT, F1_0-4*FrameTime) + MIN_TRACKABLE_DOT;
-	else
-		Min_trackable_dot = MIN_TRACKABLE_DOT + F1_0/64 - F1_0/8;
+	if (Current_level_D1) {
+		fix HomingFrameTime = FrameTime;
+		if (HomingFrameTime <= F1_0/16)
+			Min_trackable_dot = 3*(F1_0 - MIN_TRACKABLE_DOT_D1)/4 + MIN_TRACKABLE_DOT_D1;
+		else if (HomingFrameTime < F1_0/4)
+			Min_trackable_dot = fixmul(F1_0 - MIN_TRACKABLE_DOT_D1, F1_0-4*HomingFrameTime) + MIN_TRACKABLE_DOT_D1;
+		else
+			Min_trackable_dot = MIN_TRACKABLE_DOT_D1;
+	} else {
+		if (FrameTime <= F1_0/64)
+			Min_trackable_dot = MIN_TRACKABLE_DOT;	// -- 3*(F1_0 - MIN_TRACKABLE_DOT)/4 + MIN_TRACKABLE_DOT;
+		else if (FrameTime < F1_0/32)
+			Min_trackable_dot = MIN_TRACKABLE_DOT + F1_0/64 - 2*FrameTime;	// -- fixmul(F1_0 - MIN_TRACKABLE_DOT, F1_0-4*FrameTime) + MIN_TRACKABLE_DOT;
+		else if (FrameTime < F1_0/4)
+			Min_trackable_dot = MIN_TRACKABLE_DOT + F1_0/64 - F1_0/16 - FrameTime;	// -- fixmul(F1_0 - MIN_TRACKABLE_DOT, F1_0-4*FrameTime) + MIN_TRACKABLE_DOT;
+		else
+			Min_trackable_dot = MIN_TRACKABLE_DOT + F1_0/64 - F1_0/8;
+	}
 
 }
 
@@ -2789,6 +2799,8 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 				return;
 
 			fuelcen_update_all();
+			if (Current_level_D1)
+				do_countdown_frame();
 
 			do_ai_frame_all();
 
@@ -2807,8 +2819,8 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 
 					Global_laser_firing_count = 0;
 
-					ConsoleObject->mtype.phys_info.rotvel.x += (rand() - 16384)/8;
-					ConsoleObject->mtype.phys_info.rotvel.z += (rand() - 16384)/8;
+					ConsoleObject->mtype.phys_info.rotvel.x += (psrand() - 16384)/8;
+					ConsoleObject->mtype.phys_info.rotvel.z += (psrand() - 16384)/8;
 					make_random_vector(&rand_vec);
 
 					bump_amount = F1_0*4;

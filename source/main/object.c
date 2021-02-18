@@ -1356,6 +1356,7 @@ int obj_create(ubyte type,ubyte id,int segnum,vms_vector *pos,
 	if (obj->type == OBJ_DEBRIS)
 		Debris_object_count++;
 
+printf("obj_create %d type %d id %d sig %d\n", objnum, obj->type, obj->id, obj->signature);
 	return objnum;
 }
 
@@ -1403,6 +1404,8 @@ void obj_delete(int objnum)
 	Assert(objnum != 0 );
 	Assert(obj->type != OBJ_NONE);
 	Assert(obj != ConsoleObject);
+
+printf("obj_delete %d\n", objnum);
 
 	if (obj->type==OBJ_WEAPON && obj->id==GUIDEDMISS_ID) {
 		pnum=Objects[obj->ctype.laser_info.parent_num].id;
@@ -1788,7 +1791,7 @@ void obj_delete_all_that_should_be_dead()
 			if (objp->type==OBJ_PLAYER) {
 				if ( objp->id == Player_num ) {
 					if (local_dead_player_object == -1) {
-						start_player_death_sequence(objp);
+						my_start_player_death_sequence(objp);
 						local_dead_player_object = objp-Objects;
 					} else
 						Int3();	//	Contact Mike: Illegal, killed player twice in this frame!
@@ -2395,6 +2398,9 @@ extern int Ai_last_missile_camera;
 void wake_up_rendered_objects(object *viewer, int window_num)
 {
 	int	i;
+
+	if (Current_level_D1)
+		return;
 
 	//	Make sure that we are processing current data.
 	if (FrameCount != Window_rendered_data[window_num].frame) {

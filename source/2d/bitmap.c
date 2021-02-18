@@ -257,9 +257,27 @@ void gr_remap_bitmap_good( grs_bitmap * bmp, ubyte * palette, int transparent_co
 	if ( (transparent_color>=0) && (transparent_color<=255))
 		colormap[transparent_color] = TRANSPARENCY_COLOR;
 
-	if (bmp->bm_w == bmp->bm_rowsize)
+	if (bmp->bm_flags & BM_FLAG_RLE) {
+		int size = *(int *)bmp->bm_data;
+		ubyte *p = bmp->bm_data + 4 + bmp->bm_h * (bmp->bm_flags & BM_FLAG_RLE_BIG ? 2 : 1);
+		ubyte *pend = bmp->bm_data + size;
+		while (p < pend) {
+			ubyte c = *p;
+			if (c == 0xe0) { // eol
+				p++;
+			} else if (c >= 0xe1) {
+				p[1] = colormap[p[1]];
+				p += 2;
+			} else {
+				c = colormap[c];
+				*p++ = c < 0xe0 ? c : 0;
+			}
+		}
+		// assume TRANS flags already set
+		return;
+	} else if (bmp->bm_w == bmp->bm_rowsize) {
 		decode_data_asm(bmp->bm_data, bmp->bm_w * bmp->bm_h, colormap, freq );
-	else {
+	} else {
 		int y;
 		ubyte *p = bmp->bm_data;
 		for (y=0;y<bmp->bm_h;y++,p+=bmp->bm_rowsize)

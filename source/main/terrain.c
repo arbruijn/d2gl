@@ -32,6 +32,7 @@ static char rcsid[] = "$Id: terrain.c 2.1 1995/04/19 15:28:07 samir Exp $";
 #include "object.h"
 #include "endlevel.h"
 #include "fireball.h"
+#include "render.h"
 
 #define GRID_MAX_SIZE	64
 #define GRID_SCALE	i2f(2*20)
@@ -64,7 +65,7 @@ extern fix g3_get_surface_dotprod(g3s_point **list);
 
 int terrain_outline=0;
 
-void render_mine(int start_seg_num,fix eye_offset);
+//void render_mine(int start_seg_num,fix eye_offset);
 
 int org_i,org_j;
 
@@ -133,7 +134,7 @@ void draw_cell(int i,int j,g3s_point *p0,g3s_point *p1,g3s_point *p2,g3s_point *
 		mine_tiles_drawn |= 8;
 	
 	if (mine_tiles_drawn == 0xf) {
-		render_mine(exit_segnum,0);
+		render_mine(exit_segnum,0,0);
 		//draw_exit_model();
 		mine_tiles_drawn=-1;
 		//if (ext_expl_playing)

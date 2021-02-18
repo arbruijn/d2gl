@@ -96,7 +96,10 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 			//	Weapons used to be affected by badass explosions, but this introduces serious problems.
 			//	When a smart bomb blows up, if one of its children goes right towards a nearby wall, it will
 			//	blow up, blowing up all the children.  So I remove it.  MK, 09/11/94
-			if ( (obj0p!=objp) && !(obj0p->flags&OF_SHOULD_BE_DEAD) && ((obj0p->type==OBJ_WEAPON && (obj0p->id==PROXIMITY_ID || obj0p->id==SUPERPROX_ID || obj0p->id==PMINE_ID)) || (obj0p->type == OBJ_CNTRLCEN) || (obj0p->type==OBJ_PLAYER) || ((obj0p->type==OBJ_ROBOT) && ((Objects[parent].type != OBJ_ROBOT) || (Objects[parent].id != obj0p->id))))) {
+			if ( (obj0p!=objp) && !(obj0p->flags&OF_SHOULD_BE_DEAD) &&
+				((obj0p->type==OBJ_WEAPON && (obj0p->id==PROXIMITY_ID || obj0p->id==SUPERPROX_ID || obj0p->id==PMINE_ID) && !Current_level_D1) ||
+				(obj0p->type == OBJ_CNTRLCEN) || (obj0p->type==OBJ_PLAYER) ||
+				((obj0p->type==OBJ_ROBOT) && ((Objects[parent].type != OBJ_ROBOT) || (Objects[parent].id != obj0p->id))))) {
 				dist = vm_vec_dist_quick( &obj0p->pos, &obj->pos );
 				// Make damage be from 'maxdamage' to 0.0, where 0.0 is 'maxdistance' away;
 				if ( dist < maxdistance ) {
@@ -221,7 +224,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 
 								phys_apply_force(obj0p,&vforce);
 								phys_apply_rot(obj0p,&vforce2);
-								if (Difficulty_level == 0)
+								if (Difficulty_level == 0 && !Current_level_D1)
 									damage /= 4;
 								if ( obj0p->shields >= 0 )
 									apply_damage_to_player(obj0p, killer, damage );
@@ -286,7 +289,8 @@ object *explode_badass_weapon(object *obj,vms_vector *pos)
 
 	digi_link_sound_to_object(SOUND_BADASS_EXPLOSION, obj-Objects, 0, F1_0);
 
-	return object_create_badass_explosion( obj, obj->segnum, pos, 
+	return object_create_badass_explosion( obj, obj->segnum,
+					Current_level_D1 ? &obj->pos : pos,
 					wi->impact_size, 
 					wi->robot_hit_vclip, 
 					wi->strength[Difficulty_level], 
@@ -363,12 +367,15 @@ object *object_create_debris(object *parent, int subobj_num)
 
 	vm_vec_add2(&obj->mtype.phys_info.velocity,&parent->mtype.phys_info.velocity);
 
-	// -- used to be: Notice, not random! vm_vec_make(&obj->mtype.phys_info.rotvel,10*0x2000/3,10*0x4000/3,10*0x7000/3);
-	vm_vec_make(&obj->mtype.phys_info.rotvel, psrand() + 0x1000,
-		    psrand()*2 + 0x4000, psrand()*3 + 0x2000);
+	if (Current_level_D1)
+		vm_vec_make(&obj->mtype.phys_info.rotvel,10*0x2000/3,10*0x4000/3,10*0x7000/3);
+	else
+		vm_vec_make(&obj->mtype.phys_info.rotvel, psrand() + 0x1000,
+			    psrand()*2 + 0x4000, psrand()*3 + 0x2000);
 	vm_vec_zero(&obj->mtype.phys_info.rotthrust);
 
-	obj->lifeleft = 3*DEBRIS_LIFE/4 + fixmul(psrand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
+	obj->lifeleft = Current_level_D1 ? DEBRIS_LIFE :
+		3*DEBRIS_LIFE/4 + fixmul(psrand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
 
 	obj->mtype.phys_info.mass = fixmuldiv(parent->mtype.phys_info.mass,obj->size,parent->size);
 	obj->mtype.phys_info.drag = 0; //fl2f(0.2);		//parent->mtype.phys_info.drag;
@@ -719,7 +726,8 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 	}
 
 	//	Don't drop vulcan ammo if player maxed out.
-	if (((weapon_index == VULCAN_INDEX) || (del_obj->contains_id == POW_VULCAN_AMMO)) && (Players[Player_num].primary_ammo[VULCAN_INDEX] >= VULCAN_AMMO_MAX))
+	if (((weapon_index == VULCAN_INDEX) || (del_obj->contains_id == POW_VULCAN_AMMO)) &&
+		(Players[Player_num].primary_ammo[VULCAN_INDEX] >= (Current_level_D1 ? VULCAN_AMMO_MAX_D1 : VULCAN_AMMO_MAX)))
 		del_obj->contains_count = 0;
 	else if (((weapon_index == GAUSS_INDEX) || (del_obj->contains_id == POW_VULCAN_AMMO)) && (Players[Player_num].primary_ammo[VULCAN_INDEX] >= VULCAN_AMMO_MAX))
 		del_obj->contains_count = 0;
@@ -734,6 +742,8 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 				} else {
 					del_obj->contains_id = POW_ENERGY;
 				}
+			} else if (Current_level_D1) {
+				del_obj->contains_count = 0;
 			} else {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_SHIELD_BOOST;
@@ -744,6 +754,8 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 			if (psrand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_ENERGY;
+			} else if (Current_level_D1) {
+				del_obj->contains_count = 0;
 			} else {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_SHIELD_BOOST;
@@ -887,7 +899,9 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 //				new_pos.y += (rand()-16384)*7;
 //				new_pos.z += (rand()-16384)*6;
 
-				objnum = obj_create(OBJ_ROBOT, id, segnum, &new_pos, &vmd_identity_matrix, Polygon_models[Robot_info[id].model_num].rad, CT_AI, MT_PHYSICS, RT_POLYOBJ);
+				objnum = obj_create(OBJ_ROBOT, id, segnum, &new_pos, &vmd_identity_matrix,
+					Polygon_models[Robot_info[Current_level_D1 ? 1 : id].model_num].rad,
+					CT_AI, MT_PHYSICS, RT_POLYOBJ);
 
 				if ( objnum < 0 ) {
 					mprintf((1, "Can't create object in object_create_egg, robots.  Aborting.\n"));
@@ -939,7 +953,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 			}
 
 			//	At JasenW's request, robots which contain robots sometimes drop shields.
-			if (psrand() > 16384)
+			if (!Current_level_D1 && psrand() > 16384)
 				drop_powerup(OBJ_POWERUP, POW_SHIELD_BOOST, 1, init_vel, pos, segnum);
 
 			break;
@@ -958,7 +972,7 @@ int object_create_egg(object *objp)
 {
 	int	rval;
 
-	if (!(Game_mode & GM_MULTI) & (objp->type != OBJ_PLAYER))
+	if (!(Game_mode & GM_MULTI) & (objp->type != OBJ_PLAYER) && !Current_level_D1)
 		if (objp->contains_type == OBJ_POWERUP)
 			if (objp->contains_id == POW_SHIELD_BOOST) {
 				if (Players[Player_num].shields >= i2f(100)) {

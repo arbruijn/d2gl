@@ -1842,7 +1842,7 @@ void init_gauge_canvases()
 	PAGE_IN_GAUGE( GAUGE_AFTERBURNER );
 
 	Canv_LeftEnergyGauge = gr_create_canvas( LEFT_ENERGY_GAUGE_W, LEFT_ENERGY_GAUGE_H );
-	Canv_SBEnergyGauge = gr_create_canvas( SB_ENERGY_GAUGE_W, SB_ENERGY_GAUGE_H );
+	Canv_SBEnergyGauge = gr_create_canvas( SB_ENERGY_GAUGE_W, Current_level_D1 && !Current_display_mode ? 41 : SB_ENERGY_GAUGE_H );
 	Canv_SBAfterburnerGauge = gr_create_canvas( SB_AFTERBURNER_GAUGE_W, SB_AFTERBURNER_GAUGE_H );
 	Canv_RightEnergyGauge = gr_create_canvas( RIGHT_ENERGY_GAUGE_W, RIGHT_ENERGY_GAUGE_H );
 	Canv_NumericalGauge = gr_create_canvas( NUMERICAL_GAUGE_W, NUMERICAL_GAUGE_H );
@@ -2067,6 +2067,9 @@ void draw_afterburner_bar(int afterburner)
 {
 	int not_afterburner;
 	int y;
+
+	if (Current_level_D1)
+		return;
 
 	// Draw afterburner bar
 	gr_set_current_canvas( Canv_AfterburnerGauge );
@@ -2710,6 +2713,9 @@ void sb_draw_afterburner()
 {
 	int erase_height, w, h, aw;
 	char ab_str[3] = "AB";
+
+	if (Current_level_D1)
+		return;
 
 	gr_set_current_canvas( Canv_SBAfterburnerGauge );
 	PAGE_IN_GAUGE( SB_GAUGE_AFTERBURNER );

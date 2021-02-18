@@ -257,6 +257,7 @@ extern byte				Boss_dying, Boss_dying_sound_playing;
 extern fix				Boss_hit_time;
 // -- extern int				Boss_been_hit;
 //	---------- John: End of variables which must be saved as part of gamesave. ----------
+extern int Boss_hit_this_frame;
 
 extern int	ai_evaded;
 
@@ -334,5 +335,6 @@ extern void buddy_message(char * format, ... );
 extern void special_reactor_stuff(void);
 
 void do_ai_frame_d1(object *obj);
+void ai_fire_laser_at_player_d1(object *obj, vms_vector *fire_point);
 
 #endif

@@ -221,7 +221,7 @@ int pick_up_energy(void)
 	if (Players[Player_num].energy < MAX_ENERGY) {
 		fix boost;
 		boost = 3*F1_0 + 3*F1_0*(NDL - Difficulty_level);
-		if (Difficulty_level == 0)
+		if (Difficulty_level == 0 && !Current_level_D1)
 			boost += boost/2;
 		Players[Player_num].energy += boost;
 		if (Players[Player_num].energy > MAX_ENERGY)
@@ -243,7 +243,7 @@ int pick_up_vulcan_ammo(void)
 		powerup_basic(7, 14, 21, VULCAN_AMMO_SCORE, "%s!", TXT_VULCAN_AMMO);
 		used = 1;
 	} else {
-		max = Primary_ammo_max[VULCAN_INDEX];
+		max = Current_level_D1 ? VULCAN_AMMO_MAX_D1 : Primary_ammo_max[VULCAN_INDEX];
 		if (Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK)
 			max *= 2;
 		HUD_init_message("%s %d %s!",TXT_ALREADY_HAVE,f2i((unsigned) VULCAN_AMMO_SCALE * (unsigned) max),TXT_VULCAN_ROUNDS);
@@ -293,7 +293,7 @@ int do_powerup(object *obj)
 		case POW_SHIELD_BOOST:
 			if (Players[Player_num].shields < MAX_SHIELDS) {
 				fix boost = 3*F1_0 + 3*F1_0*(NDL - Difficulty_level);
-				if (Difficulty_level == 0)
+				if (Difficulty_level == 0 && !Current_level_D1)
 					boost += boost/2;
 				Players[Player_num].shields += boost;
 				if (Players[Player_num].shields > MAX_SHIELDS)

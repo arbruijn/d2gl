@@ -51,6 +51,8 @@ color_record Computed_colors[MAX_COMPUTED_COLORS];
 ubyte gr_palette[256*3];
 ubyte gr_current_pal[256*3];
 ubyte gr_fade_table[256*34];
+ubyte gr_visible_pal[256*3];
+
 
 // ushort gr_palette_selector;
 // ushort gr_fade_table_selector;
@@ -126,7 +128,7 @@ void add_computed_color(int r, int g, int b, int color_num)
 		add_index = Num_computed_colors;
 		Num_computed_colors++;
 	} else
-		add_index = (psrand() * MAX_COMPUTED_COLORS) >> 15;
+		add_index = (psrand_pal() * MAX_COMPUTED_COLORS) >> 15;
 
 	Computed_colors[add_index].r = r;
 	Computed_colors[add_index].g = g;
@@ -261,14 +263,17 @@ void gr_palette_step_up( int r, int g, int b )
 		if (temp<0) temp=0;
 		else if (temp>63) temp=63;
 		outp( 0x3c9, temp );
+		gr_visible_pal[i*3] = temp;
 		temp = (int)(*p++) + g + gr_palette_gamma;
 		if (temp<0) temp=0;
 		else if (temp>63) temp=63;
 		outp( 0x3c9, temp );
+		gr_visible_pal[i*3+1] = temp;
 		temp = (int)(*p++) + b + gr_palette_gamma;
 		if (temp<0) temp=0;
 		else if (temp>63) temp=63;
 		outp( 0x3c9, temp );
+		gr_visible_pal[i*3+2] = temp;
 	}
 }
 
@@ -300,18 +305,21 @@ void gr_palette_step_up_vr( int r, int g, int b, int white_index, int black_inde
 		if ( i==white_index )	temp = 63;
 		else if ( i==black_index ) temp = 0;
 		outp( 0x3c9, temp );
+		gr_visible_pal[i*3] = temp;
 		temp = (int)(*p++) + g + gr_palette_gamma;
 		if (temp<0) temp=0;
 		else if (temp>63) temp=63;
 		if ( i==white_index )	temp = 63;
 		else if ( i==black_index ) temp = 0;
 		outp( 0x3c9, temp );
+		gr_visible_pal[i*3+1] = temp;
 		temp = (int)(*p++) + b + gr_palette_gamma;
 		if (temp<0) temp=0;
 		else if (temp>63) temp=63;
 		if ( i==white_index )	temp = 63;
 		else if ( i==black_index ) temp = 0;
 		outp( 0x3c9, temp );
+		gr_visible_pal[i*3+2] = temp;
 	}
 }
 
@@ -324,6 +332,7 @@ void gr_palette_clear()
 	outp( 0x3c8, 0 );
 	for (i=0; i<768; i++ )	{
 		outp( 0x3c9, 0 );
+		gr_visible_pal[i] = 0;
 	}
 #endif
 	gr_palette_faded_out = 1;
@@ -341,6 +350,7 @@ void gr_palette_load( ubyte * pal )
 		if ( c > 63 ) c = 63;
 		outp( 0x3c9,c);
  		gr_current_pal[i] = pal[i];
+		gr_visible_pal[i] = c;
 	}
 #else
 	for (i=0; i<768; i++ )  {
@@ -395,6 +405,7 @@ int gr_palette_fade_out(ubyte *pal, int nsteps, int allow_keys )
 			c = f2i(fade_palette[i]);
 			if ( c > 63 ) c = 63;
 			outp( 0x3c9, c );								
+			gr_visible_pal[i] = c;
 		}
 	}
 	gr_palette_faded_out = 1;
@@ -441,6 +452,7 @@ int gr_palette_fade_in(ubyte *pal, int nsteps, int allow_keys)
 			c = f2i(fade_palette[i]);
 			if ( c > 63 ) c = 63;
 			outp( 0x3c9, c );								
+			gr_visible_pal[i] = c;
 		}
 	}
 	gr_palette_faded_out = 0;
@@ -478,7 +490,7 @@ void gr_palette_read(ubyte * palette)
 	outp( 0x3c6, 0xff );
 	outp( 0x3c7, 0 );
 	for (i=0; i<768; i++ )	{
-		*palette++ = inp( 0x3c9 );
+		*palette++ = gr_visible_pal[i]; //inp( 0x3c9 );
 	}
 #endif
 

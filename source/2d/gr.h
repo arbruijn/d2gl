@@ -247,7 +247,7 @@ void gr_use_palette_table(char * filename );
 // Drawing functions:
 
 // For solid, XOR, or other fill modes.
-gr_set_drawmode(int mode);
+void gr_set_drawmode(int mode);
 
 // Sets the color in the current canvas.  should be a macro
 // Use: gr_setcolor(int color);
@@ -259,8 +259,8 @@ void gr_setcolor(int color);
 // but not necessarily shaded as a concave polygon. It shouldn't hang.
 // probably good solution is to shade from minx to maxx on each scan line.
 // int should really be fix
-gr_poly(int nverts,int *verts);
-gr_upoly(int nverts,int *verts);
+void gr_poly(int nverts,int *verts);
+void gr_upoly(int nverts,int *verts);
 
 
 // Draws a point into the current canvas in the current color and drawmode.

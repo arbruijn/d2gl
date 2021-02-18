@@ -385,6 +385,5 @@ void digi_max_channels() {}
 void digi_pause_midi() {}
 void digi_resume_midi() {}
 void digi_set_channel_volume(int ch, int vol) {}
-char gr_visible_pal[768];
 void function_loop() {}
 

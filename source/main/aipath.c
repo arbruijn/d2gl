@@ -109,6 +109,11 @@ void insert_center_points(point_seg *psegs, int *num_points)
 		count++;
 	}
 
+	if (Current_level_D1) {
+		*num_points = count;
+		return;
+	}
+
 	//	Now, remove unnecessary center points.
 	//	A center point is unnecessary if it is close to the line between the two adjacent points.
 	//	MK, OPTIMIZE!  Can get away with about half the math since every vector gets computed twice.
@@ -307,6 +312,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 //	}
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	memset(depth, 0, sizeof(depth[0])*(Highest_segment_index+1));
+	memset(seg_queue - 2, 0, sizeof(seg_queue[0]) * 2); // make oob access predictable...
 
 	//	If there is a segment we're not allowed to visit, mark it.
 	if (avoid_seg != -1) {
@@ -328,7 +334,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 	while (cur_seg != end_seg) {
 		segment	*segp = &Segments[cur_seg];
 
-		if (random_flag)
+		if (random_flag && !Current_level_D1)
 			if (psrand() < 8192)
 				create_random_xlate(random_xlate);
 
@@ -487,6 +493,8 @@ cpp_done1: ;
 #endif
 
 	*num_points = l_num_points;
+printf("create_path_points obj %d start %d end %d idx %d len %d\n",
+	objp-Objects,start_seg,end_seg,psegs-Point_segs,*num_points);
 	return 0;
 }
 
@@ -506,7 +514,7 @@ int polish_path(object *objp, point_seg *psegs, int num_points)
 {
 	int	i, first_point=0;
 
-	if (num_points <= 4)
+	if (num_points <= 4 || Current_level_D1)
 		return num_points;
 
 	//	Prevent the buddy from polishing his path twice in one frame, which can cause him to get hung up.  Pretty ugly, huh?
@@ -636,46 +644,46 @@ void validate_all_paths(void)
 }
 #endif
 
-// -- //	-------------------------------------------------------------------------------------------------------
-// -- //	Creates a path from the objects current segment (objp->segnum) to the specified segment for the object to
-// -- //	hide in Ai_local_info[objnum].goal_segment.
-// -- //	Sets	objp->ctype.ai_info.hide_index,		a pointer into Point_segs, the first point_seg of the path.
-// -- //			objp->ctype.ai_info.path_length,		length of path
-// -- //			Point_segs_free_ptr				global pointer into Point_segs array
-// -- void create_path(object *objp)
-// -- {
-// -- 	ai_static	*aip = &objp->ctype.ai_info;
-// -- 	ai_local		*ailp = &Ai_local_info[objp-Objects];
-// -- 	int			start_seg, end_seg;
-// -- 
-// -- 	start_seg = objp->segnum;
-// -- 	end_seg = ailp->goal_segment;
-// -- 
-// -- 	if (end_seg == -1)
-// -- 		create_n_segment_path(objp, 3, -1);
-// -- 
-// -- 	if (end_seg == -1) {
-// -- 		; //mprintf((0, "Object %i, hide_segment = -1, not creating path.\n", objp-Objects));
-// -- 	} else {
-// -- 		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, -1, 0, 0, -1);
-// -- 		aip->hide_index = Point_segs_free_ptr - Point_segs;
-// -- 		aip->cur_path_index = 0;
-// -- #if PATH_VALIDATION
-// -- 		validate_path(5, Point_segs_free_ptr, aip->path_length);
-// -- #endif
-// -- 		Point_segs_free_ptr += aip->path_length;
-// -- 		if (Point_segs_free_ptr - Point_segs + MAX_PATH_LENGTH*2 > MAX_POINT_SEGS) {
-// -- 			//Int3();	//	Contact Mike: This is curious, though not deadly. /eip++;g
-// -- 			//force_dump_ai_objects_all("Error in create_path");
-// -- 			ai_reset_all_paths();
-// -- 		}
-// -- 		aip->PATH_DIR = 1;		//	Initialize to moving forward.
-// -- 		aip->SUBMODE = AISM_HIDING;		//	Pretend we are hiding, so we sit here until bothered.
-// -- 	}
-// -- 
-// -- 	maybe_ai_path_garbage_collect();
-// -- 
-// -- }
+//	-------------------------------------------------------------------------------------------------------
+//	Creates a path from the objects current segment (objp->segnum) to the specified segment for the object to
+//	hide in Ai_local_info[objnum].goal_segment.
+//	Sets	objp->ctype.ai_info.hide_index,		a pointer into Point_segs, the first point_seg of the path.
+//			objp->ctype.ai_info.path_length,		length of path
+//			Point_segs_free_ptr				global pointer into Point_segs array
+void create_path_d1(object *objp)
+{
+	ai_static	*aip = &objp->ctype.ai_info;
+	ai_local		*ailp = &Ai_local_info[objp-Objects];
+	int			start_seg, end_seg;
+
+	start_seg = objp->segnum;
+	end_seg = ailp->goal_segment;
+
+	if (end_seg == -1)
+		create_n_segment_path(objp, 3, -1);
+
+	if (end_seg == -1) {
+		; //mprintf((0, "Object %i, hide_segment = -1, not creating path.\n", objp-Objects));
+	} else {
+		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, -1, 0, 0, -1);
+		aip->hide_index = Point_segs_free_ptr - Point_segs;
+		aip->cur_path_index = 0;
+#if PATH_VALIDATION
+		validate_path(5, Point_segs_free_ptr, aip->path_length);
+#endif
+		Point_segs_free_ptr += aip->path_length;
+		if (Point_segs_free_ptr - Point_segs + MAX_PATH_LENGTH*2 > MAX_POINT_SEGS) {
+			//Int3();	//	Contact Mike: This is curious, though not deadly. /eip++;g
+			//force_dump_ai_objects_all("Error in create_path");
+			ai_reset_all_paths();
+		}
+		aip->PATH_DIR = 1;		//	Initialize to moving forward.
+		//aip->SUBMODE = AISM_HIDING;		//	Pretend we are hiding, so we sit here until bothered.
+	}
+
+	maybe_ai_path_garbage_collect();
+
+}
 
 //	-------------------------------------------------------------------------------------------------------
 //	Creates a path from the objects current segment (objp->segnum) to the specified segment for the object to
@@ -695,7 +703,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 		max_length = MAX_DEPTH_TO_SEARCH_FOR_PLAYER;
 
 	ailp->time_player_seen = GameTime;			//	Prevent from resetting path quickly.
-	ailp->goal_segment = Believed_player_seg;
+	ailp->goal_segment = Current_level_D1 ? ConsoleObject->segnum : Believed_player_seg;
 
 	start_seg = objp->segnum;
 	end_seg = ailp->goal_segment;
@@ -851,7 +859,7 @@ void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 
 	//	If this robot is visible (player_visibility is not available) and it's running away, move towards outside with
 	//	randomness to prevent a stream of bots from going away down the center of a corridor.
-	if (Ai_local_info[objp-Objects].previous_visibility) {
+	if (Ai_local_info[objp-Objects].previous_visibility && !Current_level_D1) {
 		if (aip->path_length) {
 			int	t_num_points = aip->path_length;
 			move_towards_outside(&Point_segs[aip->hide_index], &t_num_points, objp, 1);
@@ -901,28 +909,33 @@ void move_object_to_goal(object *objp, vms_vector *goal_point, int goal_seg)
 
 	Assert(aip->path_length >= 2);
 
+	if (Current_level_D1)
+		aip->cur_path_index += aip->PATH_DIR;
+
 	if (aip->cur_path_index <= 0) {
 		if (aip->behavior == AIB_STATION) {
 			// mprintf((0, "Object #%i, creating path back to station.\n", objp-Objects));
 			create_path_to_station(objp, 15);
 			return;
 		}
-		aip->cur_path_index = 1;
+		aip->cur_path_index = Current_level_D1 ? 0 : 1;
 		aip->PATH_DIR = 1;
-	} else if (aip->cur_path_index >= aip->path_length - 1) {
+	} else if (aip->cur_path_index >= aip->path_length - (Current_level_D1 ? 0 : 1)) {
 		if (aip->behavior == AIB_STATION) {
 			// mprintf((0, "Object #%i, creating path back to station.\n", objp-Objects));
 			create_path_to_station(objp, 15);
-			if (aip->path_length == 0) {
+			if (aip->path_length == 0 && !Current_level_D1) {
 				ai_local		*ailp = &Ai_local_info[objp-Objects];
 				ailp->mode = AIM_STILL;
 			}
 			return;
 		}
 		Assert(aip->path_length != 0);
-		aip->cur_path_index = aip->path_length-2;
+		aip->cur_path_index = Current_level_D1 ?
+			aip->path_length-1 :
+			aip->path_length-2;
 		aip->PATH_DIR = -1;
-	} else
+	} else if (!Current_level_D1)
 		aip->cur_path_index += aip->PATH_DIR;
 
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
@@ -994,6 +1007,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			create_n_segment_path(objp, 5, -1);
 			//--Int3_if((aip->path_length != 0));
 			ailp->mode = AIM_RUN_FROM_OBJECT;
+		} else if (Current_level_D1) {
+			create_path_d1(objp);
 		} else {
 			// -- mprintf((0, "Object %i creating path for no apparent reason.\n", objp-Objects));
 			create_n_segment_path(objp, 5, -1);
@@ -1001,7 +1016,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		}
 
 	if ((aip->hide_index + aip->path_length > Point_segs_free_ptr - Point_segs) && (aip->path_length>0)) {
-		Int3();	//	Contact Mike: Bad.  Path goes into what is believed to be free space.
+		// trigged in D1 emulation because of missing CT_MORPH in ai_path_garbage_collect...
+		//Int3();	//	Contact Mike: Bad.  Path goes into what is believed to be free space.
 		//	This is debugging code.  Figure out why garbage collection
 		//	didn't compress this object's path information.
 		ai_path_garbage_collect();
@@ -1028,7 +1044,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			}
 		} else if (robptr->companion == 0) {
 			ailp->mode = AIM_STILL;
-			aip->path_length = 0;
+			if (!Current_level_D1)
+				aip->path_length = 0;
 			return;
 		}
 	}
@@ -1188,7 +1205,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			} else if (aip->behavior == AIB_STATION) {
 				// mprintf((0, "Object %i reached end of line, creating path back to station.\n", objp-Objects));
 				create_path_to_station(objp, 15);
-				if ((aip->hide_segment != Point_segs[aip->hide_index+aip->path_length-1].segnum) || (aip->path_length == 0)) {
+				if ((aip->hide_segment != Point_segs[aip->hide_index+aip->path_length-1].segnum) ||
+					(aip->path_length == 0 && !Current_level_D1)) {
 					ailp->mode = AIM_STILL;
 				} else {
 					//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
@@ -1196,7 +1214,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 				return;
 			} else if (ailp->mode == AIM_FOLLOW_PATH) {
 				create_path_to_player(objp, 10, 1);
-				if (aip->hide_segment != Point_segs[aip->hide_index+aip->path_length-1].segnum) {
+				if (aip->hide_segment != Point_segs[aip->hide_index+aip->path_length-1].segnum && !Current_level_D1) {
 					ailp->mode = AIM_STILL;
 					return;
 				} else {
@@ -1205,7 +1223,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			} else if (ailp->mode == AIM_RUN_FROM_OBJECT) {
 				create_n_segment_path(objp, AVOID_SEG_LENGTH, ConsoleObject->segnum);
 				ailp->mode = AIM_RUN_FROM_OBJECT;	//	It gets bashed in create_n_segment_path
-				if (aip->path_length < 1) {
+				if (aip->path_length < 1 && !Current_level_D1) {
 					create_n_segment_path(objp, AVOID_SEG_LENGTH, ConsoleObject->segnum);
 					ailp->mode = AIM_RUN_FROM_OBJECT;	//	It gets bashed in create_n_segment_path
 					if (aip->path_length < 1) {
@@ -1253,7 +1271,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 					aip->cur_path_index = opposite_end_index;
 				} else {
 					aip->PATH_DIR = -aip->PATH_DIR;
-					aip->cur_path_index += aip->PATH_DIR;
+					if (!Current_level_D1)
+						aip->cur_path_index += aip->PATH_DIR;
 				}
 				//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 			}
@@ -1394,7 +1413,8 @@ void ai_path_garbage_collect(void)
 	for (objnum=0; objnum <= Highest_object_index; objnum++) {
 		object	*objp = &Objects[objnum];
 
-		if ((objp->type == OBJ_ROBOT) && ((objp->control_type == CT_AI) || (objp->control_type == CT_MORPH))) {
+		if ((objp->type == OBJ_ROBOT) &&
+			((objp->control_type == CT_AI) || (objp->control_type == CT_MORPH && !Current_level_D1))) {
 			ai_static	*aip = &objp->ctype.ai_info;
 
 			if (aip->path_length) {

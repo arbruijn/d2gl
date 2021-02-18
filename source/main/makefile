@@ -54,7 +54,7 @@ DESCENT2_SRCS = cdmix32.c game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	multi.c cntrlcen.c credits.c config.c kmatrix.c	\
 	paging.c mission.c songs.c bmread.c \
 	escort.c gamepal.c multibot.c state.c \
-	3dmax.c 
+	3dmax.c
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
 

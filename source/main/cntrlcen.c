@@ -52,6 +52,7 @@ int	Control_center_been_hit;
 int	Control_center_player_been_seen;
 int	Control_center_next_fire_time;
 int	Control_center_present;
+int	Control_center_segnum;
 
 vms_vector	Gun_pos[MAX_CONTROLCEN_GUNS], Gun_dir[MAX_CONTROLCEN_GUNS];
 
@@ -135,7 +136,7 @@ void do_controlcen_dead_frame(void)
 		if (psrand() < FrameTime*4)
 			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0, 1);
 
-	if (Control_center_destroyed && !Endlevel_sequence)
+	if (Control_center_destroyed && !Endlevel_sequence && !Current_level_D1) // D1 after object_move_all
 		do_countdown_frame();
 }
 
@@ -160,13 +161,13 @@ void do_countdown_frame()
 	#endif
    
 	//	Control center destroyed, rock the player's ship.
-	fc = Countdown_seconds_left;
+	fc = Current_level_D1 && Countdown_timer == i2f(Total_countdown_time) ? 0 : Countdown_seconds_left;
 	if (fc > 16)
 		fc = 16;
 
 	//	At Trainee, decrease rocking of ship by 4x.
 	div_scale = 1;
-	if (Difficulty_level == 0)
+	if (Difficulty_level == 0 && !Current_level_D1)
 		div_scale = 4;
 
 	ConsoleObject->mtype.phys_info.rotvel.x += (fixmul(psrand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
@@ -189,14 +190,15 @@ void do_countdown_frame()
 
 	if (Countdown_timer > 0) {
 		fix size,old_size;
-		size = (i2f(Total_countdown_time)-Countdown_timer) / fl2f(0.65);
+		fix timer = i2f(Total_countdown_time)-Countdown_timer;
+		size = timer / fl2f(0.65);
 		old_size = (i2f(Total_countdown_time)-old_time) / fl2f(0.65);
-		if (size != old_size && (Countdown_seconds_left < (Total_countdown_time-5) ))		{			// Every 2 seconds!
-			//@@if (Dead_controlcen_object_num != -1) {
-			//@@	vms_vector vp;	//,v,c;
-			//@@	compute_segment_center(&vp, &Segments[Objects[Dead_controlcen_object_num].segnum]);
-			//@@	object_create_explosion( Objects[Dead_controlcen_object_num].segnum, &vp, size*10, VCLIP_SMALL_EXPLOSION);
-			//@@}
+		if (size != old_size &&	(Current_level_D1 ? timer > i2f(5) : f2i(timer) > 5))		{			// Every 2 seconds!
+			if (Current_level_D1 && Control_center_segnum != -1) {
+				vms_vector vp;
+				compute_segment_center(&vp, &Segments[Control_center_segnum]);
+				object_create_explosion( Control_center_segnum, &vp, size*10, VCLIP_SMALL_EXPLOSION);
+			}
 
 			digi_play_sample( SOUND_CONTROL_CENTER_WARNING_SIREN, F3_0 );
 		}
@@ -257,7 +259,9 @@ void do_controlcen_destroyed_stuff(object *objp)
 		mprintf((0, "Deleting secret.sgc, return value = %i\n", rval));
 	}
 
-	if (Base_control_center_explosion_time != DEFAULT_CONTROL_CENTER_EXPLOSION_TIME)
+	if (Current_level_D1)
+		Total_countdown_time = 30 + (NDL-Difficulty_level-1)*5;
+	else if (Base_control_center_explosion_time != DEFAULT_CONTROL_CENTER_EXPLOSION_TIME)
 		Total_countdown_time = Base_control_center_explosion_time + Base_control_center_explosion_time * (NDL-Difficulty_level-1)/2;
 	else
 		Total_countdown_time = Alan_pavlish_reactor_times[Difficulty_level];
@@ -332,7 +336,7 @@ void do_controlcen_frame(object *obj)
 	}
 
 	//	Periodically, make the reactor fall asleep if player not visible.
-	if (Control_center_been_hit || Control_center_player_been_seen) {
+	if ((Control_center_been_hit || Control_center_player_been_seen) && !Current_level_D1) {
 		if ((Last_time_cc_vis_check + F1_0*5 < GameTime) || (Last_time_cc_vis_check > GameTime)) {
 			vms_vector	vec_to_player;
 			fix			dist_to_player;
@@ -385,11 +389,12 @@ void do_controlcen_frame(object *obj)
 			//	some of time, based on level, fire another thing, not directly at player, so it might hit him if he's constantly moving.
 			rand_prob = F1_0/(abs(Current_level_num)/4+2);
 			count = 0;
-			while ((psrand() > rand_prob) && (count < 4)) {
+			while (Current_level_D1 ? !count && psrand() < PSRAND_MAX / 4 :
+				(psrand() > rand_prob) && (count < 4)) {
 				vms_vector	randvec;
 
 				make_random_vector(&randvec);
-				vm_vec_scale_add2(&vec_to_goal, &randvec, F1_0/6);
+				vm_vec_scale_add2(&vec_to_goal, &randvec, Current_level_D1 ? F1_0/4 : F1_0/6);
 				vm_vec_normalize_quick(&vec_to_goal);
 				#ifdef NETWORK
 				if (Game_mode & GM_MULTI)
@@ -400,7 +405,7 @@ void do_controlcen_frame(object *obj)
 			}
 
 			delta_fire_time = (NDL - Difficulty_level) * F1_0/4;
-			if (Difficulty_level == 0)
+			if (Difficulty_level == 0 && !Current_level_D1)
 				delta_fire_time += F1_0/2;
 
 			if (Game_mode & GM_MULTI) // slow down rate of fire in multi player
@@ -449,6 +454,9 @@ void init_controlcen_for_level(void)
 		return;
 	}
 #endif
+
+	// For D1 controlcen explosions even with boss
+	Control_center_segnum = cntrlcen_objnum != -1 ? Objects[cntrlcen_objnum].segnum : -1;
 
 	if ( (boss_objnum != -1) && !((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_ROBOTS)) ) {
 		if (cntrlcen_objnum != -1) {

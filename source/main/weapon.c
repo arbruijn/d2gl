@@ -461,6 +461,21 @@ void auto_select_weapon(int weapon_type)
 			}
 		}
 
+	} else if (Current_level_D1) {
+		if (Secondary_weapon != PROXIMITY_INDEX) {
+			if (!(player_has_weapon(Secondary_weapon, 1) == HAS_ALL)) {
+				if (Secondary_weapon > SMART_INDEX)
+					if (player_has_weapon(SMART_INDEX, 1) == HAS_ALL) {
+						select_weapon(SMART_INDEX, 1, 1, 1);
+						goto weapon_selected;
+					}
+				if (player_has_weapon(HOMING_INDEX, 1) == HAS_ALL)
+					select_weapon(HOMING_INDEX, 1, 1, 1);
+				else if (player_has_weapon(CONCUSSION_INDEX, 1) == HAS_ALL)
+					select_weapon(CONCUSSION_INDEX, 1, 1, 1);
+weapon_selected: ;
+			}
+		}
 	} else {
 
 		Assert(weapon_type==1);
@@ -742,7 +757,9 @@ int pick_up_ammo(int class_flag,int weapon_index,int ammo_count)
 
 	Assert(class_flag==CLASS_PRIMARY && weapon_index==VULCAN_INDEX);
 
-	max = Primary_ammo_max[weapon_index];
+	max = Current_level_D1 && weapon_index == VULCAN_INDEX ?
+		VULCAN_AMMO_MAX_D1 :
+		Primary_ammo_max[weapon_index];
 	if (Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK)
 		max *= 2;
 

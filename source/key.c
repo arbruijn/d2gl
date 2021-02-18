@@ -303,8 +303,6 @@ int key_checkch()
 
 int key_inkey()
 {
-	gr_sync_display();
-
 	int key = 0;
 
 	_disable();
@@ -316,6 +314,7 @@ int key_inkey()
 		key_data.keyhead = add_one(key_data.keyhead);
 	}
 	_enable();
+	if (!key) gr_sync_display();
 	return key;
 }
 
@@ -333,6 +332,7 @@ int key_inkey_time(fix * time)
 		key_data.keyhead = add_one(key_data.keyhead);
 	}
 	_enable();
+	if (!key) gr_sync_display();
 	return key;
 }
 

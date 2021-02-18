@@ -629,7 +629,6 @@ fix fixmuldiv(fix a,fix b,fix c)
 
 #endif
 
-
 //computes the square root of a long, returning a short
 ushort long_sqrt(int a)
 {
@@ -638,16 +637,22 @@ ushort long_sqrt(int a)
 	if (a<=0)
 		return 0;
 
-	if (a & 0xff000000)
+	int idx;
+	if (a & 0xff000000) {
+		idx = a >> 24;
 		cnt=12;
-	else if (a & 0xff0000)
+	} else if (a & 0xff0000) {
+		idx = a >> 16;
 		cnt=8;
-	else if (a & 0xff00)
+	} else if (a & 0xff00) {
+		idx = a >> 8;
 		cnt=4;
-	else
+	} else {
+		idx = a;
 		cnt=0;
+	}
 	
-	r = guess_table[(a>>cnt)&0xff]<<cnt;
+	r = guess_table[idx]<<cnt;
 
 	//the loop nearly always executes 3 times, so we'll unroll it 2 times and
 	//not do any checking until after the third time.  By my calcutations, the
@@ -674,7 +679,7 @@ ushort long_sqrt(int a)
 
 	} while (!(r==t || r==old_r));
 
-	if (a % r)
+	if (a % old_r)
 		r++;
 
 	return r;

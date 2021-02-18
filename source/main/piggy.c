@@ -56,6 +56,8 @@ static char rcsid[] = "$Id: piggy.c 2.102 1996/12/04 18:28:09 matt Exp $";
 #include "newmenu.h"
 #include "byteswap.h"
 #include "findfile.h"
+#include "gauges.h"
+#include "weapon.h"
 
 #ifndef MACINTOSH
 	#include "unarj.h"
@@ -299,6 +301,14 @@ int Pigfile_initialized=0;
 #define PIGFILE_ID              'GIPP'          //PPIG
 #define PIGFILE_VERSION         2
 
+#define HAMFILE_ID              '!MAH'          //HAM!
+#define HAMFILE_VERSION 3
+//version 1 -> 2:  save marker_model_num
+//version 2 -> 3:  removed sound files
+
+#define SNDFILE_ID              'DNSD'          //DSND
+#define SNDFILE_VERSION 1
+
 extern char CDROM_dir[];
 
 int request_cd(void);
@@ -523,15 +533,125 @@ CFILE *copy_pigfile_from_cd(char *filename)
 
 #endif // end of ifdef MAC around copy_pigfile_from_cd
 
+void read_bitmap_header(CFILE *fp, grs_bitmap *bm, char *temp_name, int *offset, int is_d1)
+{
+	char temp_name_read[16];
+	DiskBitmapHeader bmh;
+
+#ifndef NPACK
+	cfread( &bmh, sizeof(DiskBitmapHeader), 1, fp );
+#else
+	cfread(bmh.name, 8, 1, fp);
+	bmh.dflags = cfile_read_byte(fp);
+	bmh.width = cfile_read_byte(fp);
+	bmh.height = cfile_read_byte(fp);
+	bmh.wh_extra = is_d1 ? bmh.dflags & 128 ? 1 : 0 : cfile_read_byte(fp);
+	bmh.flags = cfile_read_byte(fp);
+	bmh.avg_color = cfile_read_byte(fp);
+	bmh.offset = cfile_read_int(fp);
+#endif
+	memcpy( temp_name_read, bmh.name, 8 );
+	temp_name_read[8] = 0;
+	if ( bmh.dflags & DBM_FLAG_ABM )
+		sprintf( temp_name, "%s#%d", temp_name_read, bmh.dflags & 63 );
+	else
+		strcpy( temp_name, temp_name_read );
+	memset( bm, 0, sizeof(*bm) );
+	bm->bm_w = bm->bm_rowsize = bmh.width + ((short) (bmh.wh_extra&0x0f)<<8);
+	bm->bm_h = bmh.height + ((short) (bmh.wh_extra&0xf0)<<4);
+	bm->bm_flags = bmh.flags;
+	bm->avg_color = bmh.avg_color;
+	*offset = bmh.offset;
+}
+
+void piggy_read_d2_bitmaps(CFILE *fp, int count, bitmap_index d2_bmis[], bitmap_index game_bmis[], int data_start, ubyte *pal)
+{
+	int offsets[MAX_GAUGE_BMS];
+	for (int i = 0; i < count; i++) {
+		bitmap_index game_bmi;
+		char temp_name[16];
+		int offset;
+		grs_bitmap bm;
+		cfseek( fp, 12 + (d2_bmis[i].index - 1) * 18, SEEK_SET );
+		read_bitmap_header( fp, &bm, temp_name, &offsets[i], 0 );
+		game_bmi.index = Num_bitmap_files;
+		GameBitmapFlags[game_bmi.index] = bm.bm_flags;
+		GameBitmapOffset[game_bmi.index] = 0; // prevent page out
+		piggy_register_bitmap( &bm, temp_name, 1 );
+		game_bmis[i] = game_bmi;
+	}
+	for (int i = 0; i < count; i++) {
+		cfseek( fp, data_start + offsets[i], SEEK_SET );
+		grs_bitmap *bm = &GameBitmaps[game_bmis[i].index];
+		int size = bm->bm_flags & BM_FLAG_RLE ? cfile_read_int(fp) : bm->bm_w * bm->bm_h;
+		char *p = bm->bm_data = malloc(size);
+		if (bm->bm_flags & BM_FLAG_RLE) {
+			memcpy(p, &size, sizeof(size));
+			p += sizeof(size);
+			size -= 4;
+		}
+		cfread(p, size, 1, fp);
+		gr_remap_bitmap_good( bm, pal, bm->bm_flags & BM_FLAG_TRANSPARENT ? 255 : -1,
+			bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT ? 254 : -1 );
+	}
+}
+
+int d2_cockpit_start, d2_cockpit_count;
+
+void piggy_read_d2_cockpit_data()
+{
+	bitmap_index gauges_hires[MAX_GAUGE_BMS], cockpit_bms[N_COCKPIT_BITMAPS];
+	bitmap_index weapon_hires[20], weapon_hires_cur[20];
+	int n_gauges_hires, n_cockpit_bms, n_weapon_hires;
+	void bm_read_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_gauges_hires, bitmap_index cockpit_bms[], int *n_cockpit_bms,
+		bitmap_index weapon_hires[], int *n_weapon_hires);
+	CFILE *fp = cfopen( DEFAULT_HAMFILE, "rb");
+	if (!fp || cfile_read_int(fp) != HAMFILE_ID || cfile_read_int(fp) != HAMFILE_VERSION)
+		Error("Invalid ham file " DEFAULT_HAMFILE);
+	bm_read_gauges_hires(fp, gauges_hires, &n_gauges_hires, cockpit_bms, &n_cockpit_bms, weapon_hires, &n_weapon_hires);
+	cfclose(fp);
+	
+	ubyte pal[768];
+	char name[16], *p;
+	strcpy(name, DEFAULT_PIGFILE);
+	if ((p = strchr(name, '.')))
+		strcpy(p, ".256");
+	if (!(fp = cfopen(name, "rb")))
+		Error("Opening %s", name);
+	cfread(pal, sizeof(pal), 1, fp);
+	cfclose(fp);
+
+	fp = cfopen(DEFAULT_PIGFILE, "rb");
+	if (!fp || cfile_read_int(fp) != PIGFILE_ID || cfile_read_int(fp) != PIGFILE_VERSION)
+		Error("Invalid pig file " DEFAULT_PIGFILE);
+	int n_bitmaps = cfile_read_int(fp);
+	int bmi_start = Num_bitmap_files;
+	int data_start = 12 + n_bitmaps * 18;
+
+	d2_cockpit_start = Num_bitmap_files;
+	piggy_read_d2_bitmaps(fp, n_gauges_hires, gauges_hires, Gauges_hires, data_start, pal);
+	piggy_read_d2_bitmaps(fp, n_cockpit_bms/2, cockpit_bms + n_cockpit_bms/2, cockpit_bitmap + n_cockpit_bms/2, data_start, pal);
+	piggy_read_d2_bitmaps(fp, n_weapon_hires, weapon_hires, weapon_hires_cur, data_start, pal);
+	
+	int pic_idx = 0;
+	for (int i = 0; i < N_weapon_types; i++)
+		if (Weapon_info[i].picture.index)
+			Weapon_info[i].hires_picture = weapon_hires_cur[pic_idx++];
+
+	d2_cockpit_count = Num_bitmap_files - d2_cockpit_start;
+
+	cfclose(fp);
+
+	Num_cockpits = N_COCKPIT_BITMAPS;
+}
+
 //initialize a pigfile, reading headers
 //returns the size of all the bitmap data
 void piggy_init_pigfile(char *filename)
 {
 	int i;
 	char temp_name[16];
-	char temp_name_read[16];
 	grs_bitmap temp_bitmap;
-	DiskBitmapHeader bmh;
 	int header_size, N_bitmaps, data_size, data_start;
 	char name[255];		// filename + path for the mac
 
@@ -606,39 +726,16 @@ void piggy_init_pigfile(char *filename)
 	Num_bitmap_files = 1;
 
 	for (i=0; i<N_bitmaps; i++ )    {
-#ifndef NPACK
-		cfread( &bmh, sizeof(DiskBitmapHeader), 1, Piggy_fp );
-#else
-		cfread(bmh.name, 8, 1, Piggy_fp);
-		bmh.dflags = cfile_read_byte(Piggy_fp);
-		bmh.width = cfile_read_byte(Piggy_fp);
-		bmh.height = cfile_read_byte(Piggy_fp);
-		bmh.wh_extra = is_d1 ? 0 : cfile_read_byte(Piggy_fp);
-		bmh.flags = cfile_read_byte(Piggy_fp);
-		bmh.avg_color = cfile_read_byte(Piggy_fp);
-		bmh.offset = cfile_read_int(Piggy_fp);
-#endif
-		memcpy( temp_name_read, bmh.name, 8 );
-		temp_name_read[8] = 0;
-		if ( bmh.dflags & DBM_FLAG_ABM )        
-			sprintf( temp_name, "%s#%d", temp_name_read, bmh.dflags & 63 );
-		else
-			strcpy( temp_name, temp_name_read );
-		memset( &temp_bitmap, 0, sizeof(grs_bitmap) );
-		temp_bitmap.bm_w = temp_bitmap.bm_rowsize = bmh.width + ((short) (bmh.wh_extra&0x0f)<<8);
-		temp_bitmap.bm_h = bmh.height + ((short) (bmh.wh_extra&0xf0)<<4);
+		int offset;
+		read_bitmap_header( Piggy_fp, &temp_bitmap, temp_name, &offset, is_d1 );
+		
+		GameBitmapFlags[i+1] = temp_bitmap.bm_flags &
+			(BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | 
+			BM_FLAG_NO_LIGHTING | BM_FLAG_RLE | BM_FLAG_RLE_BIG);
 		temp_bitmap.bm_flags = BM_FLAG_PAGED_OUT;
-		temp_bitmap.avg_color = bmh.avg_color;
 		temp_bitmap.bm_data = Piggy_bitmap_cache_data;
 
-		GameBitmapFlags[i+1] = 0;
-		if ( bmh.flags & BM_FLAG_TRANSPARENT ) GameBitmapFlags[i+1] |= BM_FLAG_TRANSPARENT;
-		if ( bmh.flags & BM_FLAG_SUPER_TRANSPARENT ) GameBitmapFlags[i+1] |= BM_FLAG_SUPER_TRANSPARENT;
-		if ( bmh.flags & BM_FLAG_NO_LIGHTING ) GameBitmapFlags[i+1] |= BM_FLAG_NO_LIGHTING;
-		if ( bmh.flags & BM_FLAG_RLE ) GameBitmapFlags[i+1] |= BM_FLAG_RLE;
-		if ( bmh.flags & BM_FLAG_RLE_BIG ) GameBitmapFlags[i+1] |= BM_FLAG_RLE_BIG;
-
-		GameBitmapOffset[i+1] = bmh.offset + data_start;
+		GameBitmapOffset[i+1] = offset + data_start;
 		Assert( (i+1) == Num_bitmap_files );
 		piggy_register_bitmap( &temp_bitmap, temp_name, 1 );
 	}
@@ -662,6 +759,9 @@ void piggy_init_pigfile(char *filename)
 	#if defined(MACINTOSH) && defined(SHAREWARE)
 //	load_exit_models();
 	#endif
+
+	if (is_d1)
+		piggy_read_d2_cockpit_data();
 
 	Pigfile_initialized=1;  
 }
@@ -750,25 +850,8 @@ void piggy_new_pigfile(char *pigname)
 		data_size = cfilelength(Piggy_fp) - data_start;
 	
 		for (i=1; i<=N_bitmaps; i++ )   {
-#ifndef NPACK
-			cfread( &bmh, sizeof(DiskBitmapHeader), 1, Piggy_fp );
-#else
-			cfread(bmh.name, 8, 1, Piggy_fp);
-			bmh.dflags = cfile_read_byte(Piggy_fp);
-			bmh.width = cfile_read_byte(Piggy_fp);
-			bmh.height = cfile_read_byte(Piggy_fp);
-			bmh.wh_extra = cfile_read_byte(Piggy_fp);
-			bmh.flags = cfile_read_byte(Piggy_fp);
-			bmh.avg_color = cfile_read_byte(Piggy_fp);
-			bmh.offset = cfile_read_int(Piggy_fp);
-#endif
-			memcpy( temp_name_read, bmh.name, 8 );
-			temp_name_read[8] = 0;
-	
-			if ( bmh.dflags & DBM_FLAG_ABM )        
-				sprintf( temp_name, "%s#%d", temp_name_read, bmh.dflags & 63 );
-			else
-				strcpy( temp_name, temp_name_read );
+			int offset;
+			read_bitmap_header( Piggy_fp, &temp_bitmap, temp_name, &offset, 0 );
 	
 			//Make sure name matches
 			if (strcmp(temp_name,AllBitmaps[i].name)) {
@@ -778,23 +861,13 @@ void piggy_new_pigfile(char *pigname)
 	
 			strcpy(AllBitmaps[i].name,temp_name);
 
-			memset( &temp_bitmap, 0, sizeof(grs_bitmap) );
-	
-			temp_bitmap.bm_w = temp_bitmap.bm_rowsize = bmh.width + ((short) (bmh.wh_extra&0x0f)<<8);
-			temp_bitmap.bm_h = bmh.height + ((short) (bmh.wh_extra&0xf0)<<4);
+			GameBitmapFlags[i+1] = temp_bitmap.bm_flags &
+				(BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | 
+				BM_FLAG_NO_LIGHTING | BM_FLAG_RLE | BM_FLAG_RLE_BIG);
 			temp_bitmap.bm_flags = BM_FLAG_PAGED_OUT;
-			temp_bitmap.avg_color = bmh.avg_color;
 			temp_bitmap.bm_data = Piggy_bitmap_cache_data;
 	
-			GameBitmapFlags[i] = 0;
-	
-			if ( bmh.flags & BM_FLAG_TRANSPARENT ) GameBitmapFlags[i] |= BM_FLAG_TRANSPARENT;
-			if ( bmh.flags & BM_FLAG_SUPER_TRANSPARENT ) GameBitmapFlags[i] |= BM_FLAG_SUPER_TRANSPARENT;
-			if ( bmh.flags & BM_FLAG_NO_LIGHTING ) GameBitmapFlags[i] |= BM_FLAG_NO_LIGHTING;
-			if ( bmh.flags & BM_FLAG_RLE ) GameBitmapFlags[i] |= BM_FLAG_RLE;
-			if ( bmh.flags & BM_FLAG_RLE_BIG ) GameBitmapFlags[i] |= BM_FLAG_RLE_BIG;
-	
-			GameBitmapOffset[i] = bmh.offset + data_start;
+			GameBitmapOffset[i] = offset + data_start;
 	
 			GameBitmaps[i] = temp_bitmap;
 		}
@@ -961,13 +1034,6 @@ digi_sound bogus_sound;
 
 extern void bm_read_all(CFILE * fp, int is_d1);
 
-#define HAMFILE_ID              '!MAH'          //HAM!
-#define HAMFILE_VERSION 3
-//version 1 -> 2:  save marker_model_num
-//version 2 -> 3:  removed sound files
-
-#define SNDFILE_ID              'DNSD'          //DSND
-#define SNDFILE_VERSION 1
 
 int read_hamfile()
 {
@@ -1189,6 +1255,7 @@ int piggy_init(int is_d1)
 	mprintf ((0,"HamOk=%d SndOk=%d\n",ham_ok,snd_ok));
 	return (ham_ok && snd_ok);               //read ok
 }
+
 
 int piggy_is_needed(int soundnum)
 {
@@ -1660,6 +1727,12 @@ void piggy_close()
 	hashtable_free( &AllBitmapsNames );
 	hashtable_free( &AllDigiSndNames );
 
+	while (d2_cockpit_count) {
+		d2_cockpit_count--;
+		free(GameBitmaps[d2_cockpit_start + d2_cockpit_count].bm_data);
+		GameBitmaps[d2_cockpit_start + d2_cockpit_count].bm_data = NULL;
+		GameBitmaps[d2_cockpit_start + d2_cockpit_count].bm_flags = BM_FLAG_PAGED_OUT;
+	}
 }
 
 int piggy_does_bitmap_exist_slow( char * name )

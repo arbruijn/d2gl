@@ -1,3 +1,5 @@
+#define VERBOSE
+#define debug_objnum 75
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -578,6 +580,7 @@ static int ai_behavior_to_mode(int behavior)
 }
 #endif
 
+#if 0
 // ---------------------------------------------------------------------------------------------------------------------
 //	Call every time the player starts a new ship.
 void ai_init_boss_for_ship_d1(void)
@@ -604,8 +607,8 @@ void init_ai_object_d1(int objnum, int behavior, int hide_segment)
 		}
 #endif
 
-	if (behavior == 0x84) // AIB_FOLLOW_PATH
-		Error("Robot %d using obsolete behavior AIB_FOLLOW_PATH", objnum);
+	if (behavior == 0x82 || behavior == 0x84) // AIB_HIDE / AIB_FOLLOW_PATH
+		Error("Robot %d using obsolete behavior %x", objnum, behavior);
 
 	if (behavior == 0) {
 		// mprintf((0, "Behavior of 0 for object #%i, bashing to AIB_NORMAL.\n", objnum));
@@ -718,6 +721,7 @@ static void set_rotvel_and_saturate(fix *dest, fix delta)
 		*dest = delta;
 	}
 }
+#endif
 
 //--debug-- #ifndef NDEBUG
 //--debug-- int	Total_turns=0;
@@ -877,6 +881,7 @@ static int player_is_visible_from_object(object *objp, vms_vector *pos, fix fiel
 }
 #endif
 
+void set_next_fire_time(object *objp, ai_local *ailp, robot_info *robptr, int gun_num);
 #if 0
 // ------------------------------------------------------------------------------------------------------------------
 //	Return 1 if animates, else return 0
@@ -1114,7 +1119,7 @@ static void do_ai_robot_hit_attack(object *robot, object *player, vms_vector *co
 					collide_player_and_nasty_robot( player, robot, collision_point );
 
 			robot->ctype.ai_info.GOAL_STATE = AIS_RECO;
-			set_next_fire_time(ailp, robptr);
+			set_next_fire_time(objp, ailp, robptr, 0);
 		}
 	}
 
@@ -1127,7 +1132,7 @@ extern int Player_exploded;
 //	Note: Parameter vec_to_player is only passed now because guns which aren't on the forward vector from the
 //	center of the robot will not fire right at the player.  We need to aim the guns at the player.  Barring that, we cheat.
 //	When this routine is complete, the parameter vec_to_player should not be necessary.
-static void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
+void ai_fire_laser_at_player_d1(object *obj, vms_vector *fire_point)
 {
 	int			objnum = obj-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
@@ -1157,7 +1162,7 @@ static void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
 
 		if (GameTime - cloak_time > CLOAK_TIME_MAX/4)
 			if (psrand() > fixdiv(GameTime - cloak_time, CLOAK_TIME_MAX)/2) {
-				set_next_fire_time(ailp, robptr);
+				set_next_fire_time(obj, ailp, robptr, 0);
 				return;
 			}
 	}
@@ -1237,7 +1242,7 @@ static void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
 
 	create_awareness_event(obj, PA_NEARBY_ROBOT_FIRED);
 
-	set_next_fire_time(ailp, robptr);
+	set_next_fire_time(obj, ailp, robptr, 0);
 
 	//	If the boss fired, allow him to teleport very soon (right after firing, cool!), pending other factors.
 	if (robptr->boss_flag)
@@ -2264,6 +2269,7 @@ static void teleport_boss(object *objp)
 	#ifndef NDEBUG
 	mprintf((0, "Boss teleported to segment %i\n", rand_segnum));
 	#endif
+	printf("Boss teleported to segment %i\n", rand_segnum);
 
 	//	After a teleport, boss can fire right away.
 	Ai_local_info[objp-Objects].next_fire = 0;
@@ -2665,6 +2671,7 @@ void do_ai_frame_d1(object *obj)
 	// -- 	ailp->wait_time -= FrameTime;
 	if (ailp->next_fire > -F1_0*8)
 		ailp->next_fire -= FrameTime;
+	ailp->next_fire2 = F1_0 * 8;
 	if (ailp->time_since_processed < F1_0*256)
 		ailp->time_since_processed += FrameTime;
 	previous_visibility = ailp->previous_visibility;	//	Must get this before we toast the master copy!
@@ -2954,7 +2961,7 @@ void do_ai_frame_d1(object *obj)
 			} else if (ailp->mode != AIM_STILL) {
 				int	r;
 
-				r = openable_doors_in_segment(obj);
+				r = openable_doors_in_segment(obj->segnum);
 				if (r != -1) {
 					ailp->mode = AIM_OPEN_DOOR;
 					aip->GOALSIDE = r;
@@ -3439,6 +3446,10 @@ void do_ai_frame_d1(object *obj)
 			aip->CURRENT_GUN = 0;
 	}
 
+#ifdef VERBOSE
+	if (objnum==debug_objnum)
+		printf("obj %d ai mode %d cur %d goal %d plen %d\n", objnum, ailp->mode, aip->CURRENT_STATE, aip->GOAL_STATE, aip->path_length);
+#endif
 }
 
 //--mk, 121094 -- // ----------------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -338,6 +339,9 @@ int HUD_init_message(char * format, ... )
 	vsprintf(message,format,args);
 	va_end(args);
 	// -- mprintf((0, "Hud_message: [%s]\n", message));
+	#ifdef VERBOSE
+	printf("%s\n", message);
+	#endif
 
 	// Added by Leighton 
    

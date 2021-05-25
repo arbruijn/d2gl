@@ -214,9 +214,7 @@ extern ubyte Stolen_items[MAX_STOLEN_ITEMS];
 extern fix	Escort_last_path_created;
 extern int	Escort_goal_object, Escort_special_goal, Escort_goal_index;
 
-#ifndef NDEBUG
 extern void create_buddy_bot(void);
-#endif
 
 extern int	Max_escort_length;
 
@@ -305,7 +303,7 @@ extern void do_firing_stuff(object *obj, int player_visibility, vms_vector *vec_
 extern int maybe_ai_do_actual_firing_stuff(object *obj, ai_static *aip);
 extern void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robot_info *robptr, vms_vector *vec_to_player, fix dist_to_player, vms_vector *gun_point, int player_visibility, int object_animates, int gun_num);
 //extern void do_super_boss_stuff(object *objp, fix dist_to_player, int player_visibility);
-//extern void do_boss_stuff(object *objp, int player_visibility);
+extern void do_boss_stuff(object *objp, int player_visibility);
 // -- unused, 08/07/95 -- extern void ai_turn_randomly(vms_vector *vec_to_player, object *obj, fix rate, int previous_visibility);
 extern void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player, vms_vector *vec_to_player, fix circle_distance, int evade_only, int player_visibility);
 extern void move_away_from_player(object *objp, vms_vector *vec_to_player, int attack_type);

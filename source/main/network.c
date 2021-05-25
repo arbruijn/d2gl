@@ -272,6 +272,35 @@ int TTSent[100],TTRecv[100];
 
 extern int Final_boss_is_dead;
 
+void network_send_objects(void);
+void network_send_rejoin_sync(int player_num);
+void network_dump_player(ubyte * server, ubyte *node, int why);
+void network_update_netgame(void);
+void network_send_endlevel_short_sub(int from_player_num,int to_player);
+void network_send_game_info(sequence_packet *their);
+void network_read_endlevel_packet( ubyte *data );
+void network_read_endlevel_short_packet( ubyte *data );
+void network_read_object_packet( ubyte *data );
+void network_read_sync_packet( netgame_info * sp, int rsinit);
+void network_count_powerups_in_mine(void);
+void network_AdjustMaxDataSize ();
+void network_do_big_wait(int choice);
+void network_flush();
+void network_listen();
+void network_process_pdata (char *data);
+void network_read_pdata_packet(frame_info *pd );
+void network_read_pdata_short_packet(short_frame_info *pd );
+void SetAllAllowablesTo (int on);
+void network_more_game_options ();
+void network_ping (ubyte flag,int pnum);
+void network_handle_ping_return (ubyte pnum);
+void DoRefuseStuff (sequence_packet *their);
+void network_send_extras ();
+void ClipRank (signed char *rank);
+void network_check_for_old_version (char pnum);
+void network_process_names_return (char *data);
+void network_send_player_names (sequence_packet *their);
+
 // following is network stuff for appletalk
 
 void network_dump_appletalk_player(ubyte node, ushort net, ubyte socket, int why);

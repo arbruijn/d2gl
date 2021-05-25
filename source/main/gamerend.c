@@ -64,6 +64,8 @@ extern int LinearSVGABuffer;
 extern int Current_display_mode;
 extern int framerate_on;
 
+void draw_guided_crosshair(void);
+void show_extra_views();
 
 #ifdef WINDOWS
 cockpit_span_line win_cockpit_mask[480];
@@ -938,7 +940,6 @@ extern ubyte * Game_cockpit_copy_code;
 extern ubyte Game_cockpit_copy_code;
 #endif
 
-void draw_guided_crosshair(void);
 
 #ifdef MACINTOSH
 // special code to render a frame w/hw acceleration

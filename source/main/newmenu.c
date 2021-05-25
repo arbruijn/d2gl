@@ -76,6 +76,7 @@ static char rcsid[] = "$Id: newmenu.c 2.133 1997/01/24 17:48:48 jeremy Exp $";
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "mouse_ext.h"
 
 #define MAXDISPLAYABLEITEMS 15
 
@@ -121,6 +122,7 @@ ubyte SurfingNet=0;
 char Pauseable_menu=0;
 char already_showing_info=0;
 
+void show_extra_netgame_info(int choice);
 
 void newmenu_close()	{
 	if ( nm_background.bm_data )
@@ -686,7 +688,7 @@ int check_button_press()
 	return 0;
 }
 
-extern int network_request_player_names(int);
+extern void network_request_player_names(int);
 extern int RestoringMenu;
 
 #ifdef MENU_MOUSE

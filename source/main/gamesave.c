@@ -257,7 +257,7 @@ int Gamesave_num_players=0;
 int N_save_pof_names;
 char Save_pof_names[MAX_POLYGON_MODELS][FILENAME_LEN];
 
-check_and_fix_matrix(vms_matrix *m);
+void check_and_fix_matrix(vms_matrix *m);
 
 void verify_object( object * obj, int fileinfo_version )	{
 

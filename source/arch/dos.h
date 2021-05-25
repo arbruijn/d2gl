@@ -6,3 +6,5 @@
 typedef struct find_t { char name[256]; } find_t;
 #define _A_VOLID 8
 
+void _splitpath( const char *path, char *node, char *dir, char *fname, char *ext );
+void delay(int);

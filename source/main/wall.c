@@ -1180,7 +1180,7 @@ void reset_walls()
 		}
 }
 
-do_cloaking_wall_frame(int cloaking_wall_num)
+void do_cloaking_wall_frame(int cloaking_wall_num)
 {
 	cloaking_wall *d;
 	wall *wfront,*wback;
@@ -1237,7 +1237,7 @@ do_cloaking_wall_frame(int cloaking_wall_num)
 
 }
 
-do_decloaking_wall_frame(int cloaking_wall_num)
+void do_decloaking_wall_frame(int cloaking_wall_num)
 {
 	cloaking_wall *d;
 	wall *wfront,*wback;

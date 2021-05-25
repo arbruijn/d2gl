@@ -140,6 +140,8 @@ extern int robot_send_pending[MAX_ROBOTS_CONTROLLED];
 extern int robot_fired[MAX_ROBOTS_CONTROLLED];
 extern byte robot_fire_buf[MAX_ROBOTS_CONTROLLED][18+3];
 
+extern void reset_player_object(void);
+void compute_all_static_light(void);
 
 #if defined(WINDOWS) || defined(MACINTOSH)
 extern ubyte Hack_DblClick_MenuMode;

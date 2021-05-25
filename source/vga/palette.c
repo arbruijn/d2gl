@@ -29,6 +29,7 @@ char palette_rcsid[] = "$Id: palette.c 1.51 1996/10/30 11:33:00 jason Exp $";
 #include "mono.h"
 #include "fix.h"
 #include "key.h"
+#include "palette.h"
 
 #if defined(POLY_ACC)
 #include "poly_acc.h"
@@ -63,6 +64,11 @@ ubyte gr_palette_faded_out = 1;
 
 //to speed up development
 int grd_fades_disabled=0;
+
+#ifdef NDOS
+#define inp(x) 0
+#define outp(x,y)
+#endif
 
 void gr_palette_set_gamma( int gamma )
 {

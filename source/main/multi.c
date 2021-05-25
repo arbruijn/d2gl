@@ -239,6 +239,53 @@ int message_length[MULTI_MAX_TYPE+1] = {
 char PowerupsInMine[MAX_POWERUP_TYPES],MaxPowerupsAllowed[MAX_POWERUP_TYPES];
 extern fix ThisLevelTime;
 
+void multi_reset_player_object(object *objp);
+void multi_reset_object_texture (object *objp);
+void multi_cap_objects ();
+void multi_adjust_remote_cap (int pnum);
+void multi_apply_goal_textures();
+void bash_to_shield (int i,char *s);
+void multi_set_robot_ai(void);
+void multi_save_game(ubyte slot, uint id, char *desc);
+void multi_restore_game(ubyte slot, uint id);
+void extract_netplayer_stats( netplayer_stats *ps, player * pd );
+void use_netplayer_stats( player * ps, netplayer_stats *pd );
+void multi_do_drop_weapon (char *buf);
+void multi_do_guided (char *buf);
+void multi_do_stolen_items (char *buf);
+void multi_do_wall_status (char *buf);
+void multi_do_kill_goal_counts(char *buf);
+void multi_send_heartbeat ();
+void multi_do_heartbeat (char *buf);
+void multi_do_seismic (char *buf);
+void multi_do_light (char *buf);
+void multi_do_flags (char *buf);
+void multi_do_drop_blob (char *buf);
+void multi_send_powerup_update ();
+void multi_do_powerup_update (char *buf);
+void multi_do_active_door (char *buf);
+void multi_do_sound_function (char *buf);
+void multi_do_capture_bonus(char *buf);
+void multi_do_orb_bonus(char *buf);
+void multi_do_got_flag (char *buf);
+void multi_do_got_orb (char *buf);
+void multi_send_drop_flag (int objnum,int seed);
+void multi_do_drop_flag (char *buf);
+void multi_bad_restore ();
+extern void network_send_naked_packet (char *,short,int);
+void multi_do_robot_controls(char *buf);
+void multi_do_finish_game (char *buf);
+void multi_do_start_trigger (char *buf);
+void multi_add_lifetime_kills ();
+void multi_add_lifetime_killed ();
+void multi_send_ranking ();
+void multi_do_ranking (char *buf);
+void multi_send_modem_ping ();
+void multi_send_modem_ping_return ();
+void  multi_do_modem_ping_return ();
+void multi_send_play_by_play (int num,int spnum,int dpnum);
+void multi_do_play_by_play (char *buf);
+
 //
 //  Functions that replace what used to be macros
 //              
@@ -1186,7 +1233,7 @@ extern fix StartingShields;
 fix PingLaunchTime,PingReturnTime;
 
 extern void network_send_ping (ubyte);
-extern network_dump_player(ubyte * server, ubyte *node, int why);
+extern void network_dump_player(ubyte * server, ubyte *node, int why);
 extern int network_who_is_master();
 extern void network_send_netgame_update();
 extern char NameReturning;

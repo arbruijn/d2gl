@@ -102,6 +102,7 @@ char gameseq_rcsid[] = "$Id: gameseq.c 2.180 1997/01/27 16:27:02 matt Exp $";
 #include "gamepal.h"
 #include "movie.h"
 #include "controls.h"
+#include "kmatrix.h"
 
 #if defined(POLY_ACC)
 #include "poly_acc.h"
@@ -161,6 +162,14 @@ extern void HUD_clear_messages(); // From hud.c
 //	Extra prototypes declared for the sake of LINT
 void init_player_stats_new_ship(void);
 void copy_defaults_to_robot_all(void);
+void InitPlayerPosition(int random_flag);
+void AdvanceLevel(int secret_flag);
+void StartNewLevelSecret(int level_num, int page_in_textures);
+void DoEndGame(void);
+void returning_to_level_message(void);
+void advancing_to_level_message(void);
+void filter_objects_from_level();
+void load_stars();
 
 int	Do_appearance_effect=0;
 
@@ -727,7 +736,7 @@ try_again:
 #endif
 
 //Inputs the player's name, without putting up the background screen
-RegisterPlayer()
+void RegisterPlayer()
 {
 	int i,j;
 	char filename[14];
@@ -787,7 +796,7 @@ do_menu_again:
 
 	WriteConfigFile();		// Update lastplr
 
-	return 1;
+	return;
 }
 
 extern void change_filename_extension( char *dest, char *src, char *new_ext );
@@ -806,7 +815,7 @@ typedef struct DiskBitmapHeader {
 	int offset;
 } DiskBitmapHeader;
 
-load_bitmap_replacements(char *level_name)
+void load_bitmap_replacements(char *level_name)
 {
 	char ifile_name[FILENAME_LEN];
 	CFILE *ifile;
@@ -1187,6 +1196,7 @@ void DoEndlevelMenu()
 //No between level saves......!!!	state_save_all(1);
 }
 
+void my_reset_time();
 //	-----------------------------------------------------------------------------------------------------
 //called when the player is starting a level (new game or new ship)
 void StartSecretLevel()
@@ -1645,6 +1655,7 @@ void AdvanceLevel(int secret_flag)
 			DoEndlevelMenu(); // Let use save their game
 
 		//StartNewLevel(Next_level_num, 0);
+		void my_StartNewLevelSub(int, int, int);
 		my_StartNewLevelSub(Next_level_num, 1, 0);
 
 	}

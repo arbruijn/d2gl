@@ -137,6 +137,15 @@ static char rcsid[] = "$Id: gamecntl.c 1.211 1997/01/24 18:19:42 jeremy Exp $";
 extern void full_palette_save(void);
 extern void object_goto_prev_viewer(void);
 
+void HandleDeathKey(int key);
+void HandleDemoKey(int key);
+void HandleTestKey(int key);
+void HandleVRKey(int key);
+void HandleEndlevelKey(int key);
+void update_vcr_state(void);
+void do_show_netgame_help();
+void do_weapon_stuff(void);
+
 // Global Variables -----------------------------------------------------------
 
 int	redbook_volume = 255;
@@ -260,6 +269,7 @@ void transfer_energy_to_shield(fix time)
 
 }
 
+void my_controls_read_all();
 void ReadControls()
 {
 	int key;

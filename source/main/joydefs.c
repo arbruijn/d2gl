@@ -46,6 +46,8 @@ static char rcsid[] = "$Id: joydefs.c 2.29 1996/05/30 15:16:03 champaign Exp $";
 
 int joydefs_calibrate_flag = 0;
 
+void joydefs_calibrate2();
+
 #ifdef MACINTOSH
 ubyte joydefs_calibrating = 0;		// stupid hack all because of silly mouse cursor emulation
 #endif

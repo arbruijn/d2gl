@@ -101,7 +101,7 @@ object *endlevel_camera;
 
 #define FLY_SPEED i2f(50)
 
-start_endlevel_flythrough(int n,object *obj,fix speed);
+void start_endlevel_flythrough(int n,object *obj,fix speed);
 
 #ifdef D2_OEM
 char movie_table[] =	{	'a','a','a','a','d','d','d','d' };
@@ -158,7 +158,8 @@ vms_matrix mine_exit_orient;
 
 int outside_mine;
 
-start_endlevel_flythrough(int n,object *obj,fix speed);
+void start_endlevel_flythrough(int n,object *obj,fix speed);
+void start_rendered_endlevel_sequence();
 
 grs_bitmap terrain_bm_instance;
 grs_bitmap satellite_bm_instance;
@@ -254,7 +255,7 @@ free_endlevel_data()
 		free(satellite_bm_instance.bm_data);
 }
 
-init_endlevel()
+void init_endlevel()
 {
 	//##satellite_bitmap = bm_load("earth.bbm");
 	//##terrain_bitmap = bm_load("moon.bbm");
@@ -295,7 +296,7 @@ vms_matrix surface_orient;
 int endlevel_data_loaded=0;
 extern char last_palette_loaded[];
 
-start_endlevel_sequence()
+void start_endlevel_sequence()
 {
 	int	i;
 	int movie_played;
@@ -365,15 +366,15 @@ start_endlevel_sequence()
 
 #ifndef ENDLEVEL
 
-do_endlevel_frame() {Int3();}
-stop_endlevel_sequence() {Int3();}
+void  do_endlevel_frame() {Int3();}
+void stop_endlevel_sequence() {Int3();}
 void render_endlevel_frame(fix eye_offset) {Int3();}
 
 #else
 
 static int cockpit_mode_save;
 
-start_rendered_endlevel_sequence()
+void start_rendered_endlevel_sequence()
 {
 	int last_segnum,exit_side,tunnel_length;
 
@@ -537,7 +538,7 @@ int chase_angles(vms_angvec *cur_angles,vms_angvec *desired_angles)
 	return mask;
 }
 
-stop_endlevel_sequence()
+void stop_endlevel_sequence()
 {
 	Interpolation_method = 0;
 
@@ -570,7 +571,7 @@ get_angs_to_object(vms_angvec *av,vms_vector *targ_pos,vms_vector *cur_pos)
 
 fix explosion_wait1=0;
 fix explosion_wait2=0;
-do_endlevel_frame()
+void do_endlevel_frame()
 {
 	#ifdef ENDLEVEL
 	static fix timer;
@@ -954,7 +955,7 @@ do_endlevel_frame()
 #define MIN_D 0x100
 
 //find which side to fly out of
-find_exit_side(object *obj)
+int find_exit_side(object *obj)
 {
 	int i;
 	vms_vector prefvec,segcenter,sidevec;
@@ -994,7 +995,7 @@ extern fix Render_zoom;							//the player's zoom factor
 
 extern vms_vector Viewer_eye;	//valid during render
 
-draw_exit_model()
+void draw_exit_model()
 {
 	vms_vector model_pos;
 	int f=15,u=0;	//21;
@@ -1014,7 +1015,7 @@ fix satellite_size = i2f(400);
 #define SATELLITE_WIDTH		satellite_size
 #define SATELLITE_HEIGHT	((satellite_size*9)/4)		//((satellite_size*5)/2)
 
-render_external_scene(fix eye_offset)
+void render_external_scene(fix eye_offset)
 {
 
 	Viewer_eye = Viewer->pos;
@@ -1216,7 +1217,7 @@ fixang interp_angle(fixang dest,fixang src,fixang step);
 #define MIN_D 0x100
 
 //if speed is zero, use default speed
-start_endlevel_flythrough(int n,object *obj,fix speed)
+void start_endlevel_flythrough(int n,object *obj,fix speed)
 {
 	flydata = &fly_objects[n];
 
@@ -1476,7 +1477,7 @@ int convert_ext( char *dest, char *ext )
 }
 
 //called for each level to load & setup the exit sequence
-load_endlevel_data(int level_num)
+void load_endlevel_data(int level_num)
 {
 	char filename[13];
 	char line[LINE_LEN],*p;

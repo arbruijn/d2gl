@@ -48,6 +48,7 @@ static char rcsid[] = "$Id: powerup.c 2.51 1996/10/29 15:12:11 jason Exp $";
 
 #include "newdemo.h"
 #include "ai.h"
+#include "multi.h"
 
 #ifdef EDITOR
 #include "gr.h"	//	for powerup outline drawing
@@ -256,7 +257,7 @@ int pick_up_vulcan_ammo(void)
 
 extern void invalidate_escort_goal(void);
 extern char GetKeyValue(char);
-extern void check_to_use_primary(int);
+extern int check_to_use_primary(int);
 extern void multi_send_got_flag (char);
 
 int Headlight_active_default=1;	//is headlight on when picked up?
@@ -405,7 +406,7 @@ int do_powerup(object *obj)
 					powerup_basic(7, 14, 21, VULCAN_AMMO_SCORE, "%s!", TXT_VULCAN_AMMO);
 					special_used = 1;
 					id = POW_VULCAN_AMMO;		//set new id for making sound at end of this function 
-					if (obj->ctype.powerup_info.count == 0)
+					if (obj->ctype.powerup_info.count == 0 || Current_level_D1)
 						used = 1;		//say used if all ammo taken
 				}
 			}

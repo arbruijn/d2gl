@@ -231,6 +231,10 @@ extern int multi_defining_message;
 extern void multi_message_input_sub( int key );
 extern void multi_send_message_start();
 
+extern void multi_send_sound_function (char whichfunc,char sound);
+extern void multi_send_got_orb (char pnum);
+extern void multi_send_orb_bonus (char pnum);
+
 extern int control_invul_time;
 
 #define N_PLAYER_SHIP_TEXTURES 6
@@ -407,6 +411,7 @@ void change_playernum_to(int new_pnum);
 #define MISSILE_ADJUST	100
 #define FLARE_ADJUST		127
 
+extern void multi_add_lifetime_kills ();
 
 #endif
 

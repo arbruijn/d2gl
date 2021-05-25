@@ -1,3 +1,4 @@
+#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -50,6 +51,7 @@ int validate_path(int debug_flag, point_seg* psegs, int num_points);
 void validate_all_paths(void);
 void ai_path_set_orient_and_vel(object *objp, vms_vector* goal_point, int player_visibility, vms_vector *vec_to_player);
 void maybe_ai_path_garbage_collect(void);
+void ai_path_garbage_collect(void);
 
 
 //	------------------------------------------------------------------------
@@ -493,8 +495,10 @@ cpp_done1: ;
 #endif
 
 	*num_points = l_num_points;
+#ifdef VERBOSE
 printf("create_path_points obj %d start %d end %d idx %d len %d\n",
 	objp-Objects,start_seg,end_seg,psegs-Point_segs,*num_points);
+#endif	
 	return 0;
 }
 

@@ -199,6 +199,7 @@ static fix ViewDist=0;
 void adjust_segment_limit(int SegmentLimit);
 void draw_all_edges(void);
 void automap_build_edge_list(void);
+void modex_printf(int x,int y,char *s,grs_font *font,int color);
 
 #define	MAX_DROP_MULTI		2
 #define	MAX_DROP_SINGLE	9

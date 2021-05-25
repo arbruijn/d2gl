@@ -120,6 +120,8 @@ typedef struct box {
 #endif
 #endif
 
+void gr_bm_bitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * src, grs_bitmap * dest);
+
 //if filename passed is NULL, show normal credits
 void credits_show(char *credits_filename)
 {

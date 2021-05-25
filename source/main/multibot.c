@@ -70,6 +70,10 @@ byte robot_fire_buf[MAX_ROBOTS_CONTROLLED][18+3];
 extern void multi_send_stolen_items();
 extern int multi_powerup_is_allowed (int);
 
+void multi_delete_controlled_robot(int objnum);
+void multi_send_release_robot(int objnum);
+void multi_send_robot_position_sub(int objnum);
+
 //#define MULTI_ROBOT_PRIORITY(objnum, pnum) multi_robot_priority(objnum, pnum)
 //int multi_robot_priority(int objnum, int pnum)
 //{

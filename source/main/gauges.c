@@ -778,6 +778,11 @@ gauge_box gauge_boxes[] = {
 
 int	Color_0_31_0 = -1;
 
+extern int Game_window_y;
+void fill_background(void);
+extern void draw_guided_crosshair(void);
+void draw_ammo_info(int x,int y,int ammo_count,int primary);
+
 //copy a box from the off-screen buffer to the visible page
 #ifdef WINDOWS
 void copy_gauge_box(gauge_box *box,dd_grs_canvas *cv)
@@ -3520,9 +3525,6 @@ void update_laser_weapon_info(void)
 			old_weapon[0][VR_current_page] = -1;
 }
 
-extern int Game_window_y;
-void fill_background(void);
-extern void draw_guided_crosshair(void);
 
 int SW_drawn[2], SW_x[2], SW_y[2], SW_w[2], SW_h[2];
 

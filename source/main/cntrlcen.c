@@ -56,6 +56,8 @@ int	Control_center_segnum;
 
 vms_vector	Gun_pos[MAX_CONTROLCEN_GUNS], Gun_dir[MAX_CONTROLCEN_GUNS];
 
+void do_countdown_frame();
+
 //	-----------------------------------------------------------------------------
 //return the position & orientation of a gun on the control center object 
 void calc_controlcen_gun_point(vms_vector *gun_point,vms_vector *gun_dir,object *obj,int gun_num)

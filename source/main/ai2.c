@@ -2135,7 +2135,7 @@ int boss_fits_in_seg(object *boss_objp, int segnum)
 }
 
 // --------------------------------------------------------------------------------------------------------------------
-void teleport_boss(object *objp)
+teleport_boss(object *objp)
 {
 	int			rand_segnum, rand_index;
 	vms_vector	boss_dir;

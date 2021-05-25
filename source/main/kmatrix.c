@@ -71,6 +71,10 @@ int Kmatrix_nomovie_message=0;
 extern char MaxPowerupsAllowed[],PowerupsInMine[];
 extern void network_send_endlevel_sub(int);
 
+void kmatrix_reactor (char *message);
+void kmatrix_phallic ();
+void kmatrix_redraw_coop();
+
 #define LHX(x)		((x)*(MenuHires?2:1))
 #define LHY(y)		((y)*(MenuHires?2.4:1))
  
@@ -726,7 +730,7 @@ void kmatrix_view(int network)
 						);
 				    multi_leave_game();
 			       Kmatrix_nomovie_message=0;
-			       longjmp(LeaveGame, 0); 
+			       DoLeaveGame(); //longjmp(LeaveGame, 0); 
                 return;
                }
               else

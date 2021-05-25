@@ -19,7 +19,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "pstypes.h"
 #include "gr.h"
 
+#ifdef NASM
+void gr_rle_decode( ubyte * src, ubyte * dest );
+#else
 void gr_rle_decode( ubyte * src, ubyte * dest, int dest_len );
+#endif
 int gr_rle_encode( int org_size, ubyte *src, ubyte *dest );
 int gr_rle_getsize( int org_size, ubyte *src );
 ubyte * gr_rle_find_xth_pixel( ubyte *src, int x,int * count, ubyte color );
@@ -29,6 +33,8 @@ void gr_rle_expand_scanline( ubyte *dest, ubyte *src, int x1, int x2  );
 
 grs_bitmap * rle_expand_texture( grs_bitmap * bmp );
 
-rle_cache_flush();
+void rle_cache_flush();
+
+void gr_rle_expand_scanline_svga_masked( grs_bitmap * dest, int dx, int dy, ubyte *src, int x1, int x2  );
 
 #endif

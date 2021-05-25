@@ -1320,7 +1320,7 @@ void sound_menuset(int nitems, newmenu_item * items, int *last_key, int citem )
 	citem++;		//kill warning
 }
 
-void do_sound_menu()
+do_sound_menu()
 {
    newmenu_item m[6];
 	int i = 0;
@@ -1403,7 +1403,7 @@ extern int Automap_always_hires;
 
 #define ADD_CHECK(n,txt,v)  do { m[n].type=NM_TYPE_CHECK; m[n].text=txt; m[n].value=v;} while (0)
 
-void do_toggles_menu()
+do_toggles_menu()
 {
 #ifndef MACINTOSH
 #if defined(POLY_ACC)

@@ -1,5 +1,5 @@
 #define VERBOSE
-#define debug_objnum 75
+#define debug_objnum 23
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -2360,7 +2360,7 @@ static fix	Prev_boss_shields = -1;
 
 // --------------------------------------------------------------------------------------------------------------------
 //	Do special stuff for a boss.
-static void do_boss_stuff(object *objp)
+static void do_boss_stuff_d1(object *objp)
 {
     //  New code, fixes stupid bug which meant boss never gated in robots if > 32767 seconds played.
     if (Last_teleport_time > GameTime)
@@ -2419,7 +2419,7 @@ static void do_boss_stuff(object *objp)
 static void do_super_boss_stuff(object *objp, fix dist_to_player, int player_visibility)
 {
 	static int eclip_state = 0;
-	do_boss_stuff(objp);
+	do_boss_stuff_d1(objp);
 
 	// Only master player can cause gating to occur.
 	#ifdef NETWORK
@@ -2890,7 +2890,7 @@ void do_ai_frame_d1(object *obj)
 				aip->CURRENT_STATE = AIS_FIRE;
 			dist_to_player /= 4;
 
-			do_boss_stuff(obj);
+			do_boss_stuff_d1(obj);
 			dist_to_player *= 4;
 			break;
 #ifndef SHAREWARE

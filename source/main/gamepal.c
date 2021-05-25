@@ -19,6 +19,7 @@ static char rcsid[] = "$Id: gamepal.c 1.18 1996/02/12 11:09:34 jay Exp $";
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <dos.h>
 
 #include "pa_enabl.h"                   //$$POLY_ACC
 #include "3d.h"
@@ -40,6 +41,8 @@ static char rcsid[] = "$Id: gamepal.c 1.18 1996/02/12 11:09:34 jay Exp $";
 char Current_level_palette[FILENAME_LEN];
 
 extern int Color_0_31_0, HUD_color;
+
+extern void g3_remap_interp_colors();
 
 //give a filename a new extension
 void change_filename_ext( char *dest, char *src, char *ext )

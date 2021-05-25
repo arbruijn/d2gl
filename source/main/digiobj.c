@@ -92,6 +92,10 @@ int digi_sounds_initialized=0;
 
 int digi_lomem 						= 0;
 
+void SoundQ_init();
+void SoundQ_process();
+void SoundQ_pause();
+
 int digi_xlat_sound(int soundno)
 {
 	if ( soundno < 0 ) return -1;

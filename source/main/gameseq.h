@@ -18,6 +18,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "player.h"
 #include "mission.h"
+#include "credits.h"
 
 #define SUPER_MISSILE		0
 #define SUPER_SEEKER			1
@@ -56,10 +57,10 @@ extern int Player_highest_level;
 //
 
 //called once at program startup to get the player's name
-RegisterPlayer();
+void RegisterPlayer();
 
 //Inputs the player's name, without putting up the background screen
-RegisterPlayerSub(int allow_abort_flag);
+//void RegisterPlayerSub(int allow_abort_flag);
 
 //starts a new game on the given level
 void StartNewGame(int start_level);

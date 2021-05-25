@@ -1,6 +1,7 @@
 #include "cfile.h"
 #include "vecmat.h"
 #include "byteswap.h"
+#include "error.h"
 
 fix cfile_read_fix(CFILE *fp)
 {

@@ -1148,7 +1148,7 @@ int show_briefing_text(int screen_num)
 
 	return show_briefing_message(screen_num, message_ptr);
 }
-void DoBriefingColorStuff ()
+DoBriefingColorStuff ()
  {
    Briefing_foreground_colors[0] = gr_find_closest_color_current( 0, 40, 0);
    Briefing_background_colors[0] = gr_find_closest_color_current( 0, 6, 0);

@@ -202,6 +202,8 @@ fix JasonPlaybackTotal=0;
 FILE *infile;
 FILE *outfile=NULL;
 
+void DoJasonInterpolate (fix recorded_time);
+
 int newdemo_get_percent_done()	{
 	if ( Newdemo_state == ND_STATE_PLAYBACK )	{
 		return (ftell(infile)*100)/Newdemo_size;
@@ -2941,7 +2943,7 @@ void newdemo_start_recording()
 	#else
 	if (outfile == NULL) {							//dir doesn't exist and no errno on mac!
 	#endif	
-		mkdir(DEMO_DIR);								//try making directory
+		mkdir(DEMO_DIR, 0777);								//try making directory
 		outfile = fopen( DEMO_FILENAME, "wb" );
 	}
 

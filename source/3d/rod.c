@@ -169,6 +169,24 @@ bool g3_draw_bitmap(vms_vector *pos,fix width,fix height,grs_bitmap *bm, int ori
 	else
 		return 1;
 
+	if (grd_curcanv->cv_bitmap.bm_type == BM_GL) {
+		void gl_draw_rod(g3s_point *pnt,fix w, fix h,grs_bitmap *bm, int o);
+		width = fixmul(width, Matrix_scale.x);
+		height = fixmul(height, Matrix_scale.y);
+		gl_draw_rod(&pnt,width,height,bm, orientation);
+		return 0;
+	}
+
+	if (checkmuldiv(&t,width,Canv_w2,pnt.p3_z))
+		w = fixmul(t,Matrix_scale.x);
+	else
+		return 1;
+
+	if (checkmuldiv(&t,height,Canv_h2,pnt.p3_z))
+		h = fixmul(t,Matrix_scale.y);
+	else
+		return 1;
+
 	blob_vertices[0].x = pnt.p3_sx - w;
 	blob_vertices[0].y = blob_vertices[1].y = pnt.p3_sy - h;
 	blob_vertices[1].x = blob_vertices[2].x = pnt.p3_sx + w;

@@ -564,7 +564,7 @@ void DoGameOver()
 
 	Function_mode = FMODE_MENU;
 	Game_mode = GM_GAME_OVER;
-	longjmp( LeaveGame, 0 );		// Exit out of game loop
+	//longjmp( LeaveGame, 0 );		// Exit out of game loop
 
 }
 
@@ -1601,7 +1601,7 @@ void DoEndGame(void)
 		Game_mode = GM_GAME_OVER;
 
 
-	longjmp( LeaveGame, 0 );		// Exit out of game loop
+	//longjmp( LeaveGame, 0 );		// Exit out of game loop
 }
 
 //from which level each do you get to each secret level 
@@ -1635,9 +1635,9 @@ void AdvanceLevel(int secret_flag)
 	if (Game_mode & GM_MULTI)	{
 		result = multi_endlevel(&secret_flag); // Wait for other players to reach this point
 		if (result) // failed to sync
-			if (Current_level_num == Last_level)		//player has finished the game!
-				longjmp( LeaveGame, 0 );		// Exit out of game loop
-			else
+			if (Current_level_num == Last_level) {		//player has finished the game!
+				DoLeaveGame(); return; //longjmp( LeaveGame, 0 );		// Exit out of game loop
+			} else
 				return;
 	}
 

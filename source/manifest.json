@@ -1,0 +1,14 @@
+{
+  "short_name": "D2Wasm",
+  "name": "D2Wasm",
+  "icons": [
+    {
+      "src": "descent.jpg",
+      "sizes": "128x128",
+      "type": "image/jpeg"
+    }
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "landscape"
+}

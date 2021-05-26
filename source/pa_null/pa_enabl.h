@@ -15,7 +15,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define PA_ENABL_H
 
 #ifdef NASM
-int PAEnabled;
+extern int PAEnabled;
 #endif
 //#define POLY_ACC                        // define this if poly support wanted.
 

@@ -93,7 +93,7 @@ void on_mousebutton(int dombtn, int down) {
 	mprintf((0, "mousebutton %d->%d %d\n", dombtn, btn, down));
 }
 ubyte joystick_read_raw_axis(ubyte mask, int *axis) { return 0; }
-void victor_read_headset_filtered(fix *yaw, fix *pitch, fix *roll) { *yaw = *pitch = *roll = 0; }
+int victor_read_headset_filtered(fix *yaw, fix *pitch, fix *roll) { *yaw = *pitch = *roll = 0; return 0; }
 int iglasses_read_headset(fix *yaw, fix *pitch, fix *roll) { *yaw = *pitch = *roll = 0; return 0; }
 int joy_get_scaled_reading(int raw, int axn) { return 0; }
 int mouse_button_state(int button) { return Mouse.pressed[button]; }
@@ -129,7 +129,7 @@ void vfx_close_graphics() {}
 void vfx_init_graphics() {}
 
 
-void victor_init_graphics() {}
+int victor_init_graphics() { return -1; }
 
 char joy_present;
 

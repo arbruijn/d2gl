@@ -95,6 +95,8 @@ void g3_start_frame(void)
 
 	init_interface_vars_to_assembler();		//for the texture-mapper
 
+	void gl_start_frame();
+	gl_start_frame();
 }
 
 //this doesn't do anything, but is here for completeness
@@ -102,6 +104,9 @@ void g3_end_frame(void)
 {
 //	Assert(free_point_num==0);
 	free_point_num = 0;
+
+	void gl_end_frame();
+	gl_end_frame();
 }
 
 

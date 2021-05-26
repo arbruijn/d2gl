@@ -206,6 +206,8 @@ grs_bitmap * texmerge_get_cached_bitmap( int tmap_bottom, int tmap_top )
 	Cache[least_recently_used].last_frame_used = FrameCount;
 	Cache[least_recently_used].orient = orient;
 
+	Cache[least_recently_used].bitmap->bm_flags |= BM_FLAG_CHANGED;
+
 	return Cache[least_recently_used].bitmap;
 }
 

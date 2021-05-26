@@ -3203,7 +3203,7 @@ void newdemo_stop_playback()
 	Cockpit_mode = Newdemo_old_cockpit;
 	Game_mode = GM_GAME_OVER;
 	Function_mode = FMODE_MENU;
-	longjmp(LeaveGame,0);			// Exit game loop
+	//longjmp(LeaveGame,0);			// Exit game loop
 }
 
 

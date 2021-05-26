@@ -33,6 +33,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 #define MAX_OPEN_FONTS	50
 #define FILENAME_LEN		13
@@ -353,6 +354,72 @@ int gr_internal_string0m(int x, int y, char *s )
 		VideoOffset1 += ROWSIZE * skip_lines;
 		skip_lines = 0;
 	}
+	return 0;
+}
+
+
+int gr_internal_string_gl(int x, int y, char *s )
+{
+	unsigned char * fp;
+	ubyte * text_ptr, * next_row, * text_ptr1;
+	int r, BitMask, i, bits, width, spacing, letter, underline;
+	int	skip_lines = 0;
+	int sx = x;
+
+	sx += sx == 0x8000 ? 0 : grd_curcanv->cv_bitmap.bm_x;
+	y += grd_curcanv->cv_bitmap.bm_y;
+
+	next_row = s;
+
+	gl_font_start(FONT, FG_COLOR);
+
+	while (next_row != NULL )
+	{
+		ubyte c, *text_ptr = next_row;
+		next_row = NULL;
+
+		int x = sx == 0x8000 ?
+			get_centered_x(text_ptr) + grd_curcanv->cv_bitmap.bm_x :
+			sx;
+
+		while ((c = *text_ptr++)) {
+			if (c == '\n' ) {
+				next_row = text_ptr;
+				break;
+			}
+
+			if (c == CC_COLOR) {
+				FG_COLOR = *text_ptr++;
+				continue;
+			}
+
+			if (c == CC_LSPACING) {
+				skip_lines = *text_ptr++;
+				continue;
+			}
+
+			underline = 0;
+			if (c == CC_UNDERLINE)
+			{
+				underline = 1;
+				c = *text_ptr++;
+			}
+
+			get_char_width(c, *text_ptr, &width, &spacing);
+
+			gl_draw_char(x, y, FONT, c);
+
+			x += spacing;
+		}
+
+		y += FHEIGHT;
+
+		y += skip_lines;
+		skip_lines = 0;
+	}
+
+	gl_font_end();
+
 	return 0;
 }
 
@@ -1103,7 +1170,7 @@ int gr_string(int x, int y, char *s )
 
 int gr_ustring(int x, int y, char *s )
 {
-	if (FFLAGS & FT_COLOR) {
+	if (FFLAGS & FT_COLOR && TYPE != BM_GL) {
 
 		return gr_internal_color_string(x,y,s);
 
@@ -1128,6 +1195,10 @@ int gr_ustring(int x, int y, char *s )
 			else
                 return gr_internal_string5(x,y,s);
 #endif
+
+		case BM_GL:
+			return gr_internal_string_gl(x, y, s);
+
         }
 
 	return 0;
@@ -1281,41 +1352,45 @@ grs_font * gr_init_font( char * fontname )
 	if (file_id != 'NFSP')
 		Error( "File %s is not a font file", fontname );
 
-	font = (grs_font *) malloc(datasize);
+	#define FONT_HDR_SIZE 28
+	font = (grs_font *) malloc(sizeof(grs_font) + datasize - FONT_HDR_SIZE);
+	memset(font, 0, sizeof(grs_font));
 
 	open_font[fontnum].ptr = font;
 
-	cfread(font,1,datasize,fontfile);
 
-#ifdef MACINTOSH
-// gotta translate those endian things
+	font->ft_w = cfile_read_short(fontfile);
+	font->ft_h = cfile_read_short(fontfile);
+	font->ft_flags = cfile_read_short(fontfile);
+	font->ft_baseline = cfile_read_short(fontfile);
+	font->ft_minchar = cfile_read_byte(fontfile);
+	font->ft_maxchar = cfile_read_byte(fontfile);
+	font->ft_bytewidth = cfile_read_short(fontfile);
+	int data_ofs = cfile_read_int(fontfile);
+	int chars_ofs = cfile_read_int(fontfile); // unused
+	int widths_ofs = cfile_read_int(fontfile);
+	int kerndata_ofs = cfile_read_int(fontfile);
 
-	font->ft_w = SWAPSHORT(font->ft_w);
-	font->ft_h = SWAPSHORT(font->ft_h);
-	font->ft_flags = SWAPSHORT(font->ft_flags);
-	font->ft_bytewidth = SWAPSHORT(font->ft_bytewidth);
-	font->ft_data = (ubyte *)SWAPINT((int)(font->ft_data));
-	font->ft_chars = (ubyte **)SWAPINT((int)(font->ft_chars));
-	font->ft_widths = (short *)SWAPINT((int)(font->ft_widths));
-	font->ft_kerndata = (ubyte *)SWAPINT((int)(font->ft_kerndata));
-#endif
+	cfread(font + 1, 1, datasize - FONT_HDR_SIZE, fontfile);
+
+	font->ft_data = font->ft_flags & FT_PROPORTIONAL ?
+		(ubyte *)(font + 1) + data_ofs - FONT_HDR_SIZE : (ubyte *)(font + 1);
+	font->ft_chars = NULL;
+	font->ft_widths = font->ft_flags & FT_PROPORTIONAL ?
+		(ubyte *)(font + 1) + widths_ofs - FONT_HDR_SIZE : NULL;
+	font->ft_kerndata = font->ft_flags & FT_KERNED ?
+		(ubyte *)(font + 1) + kerndata_ofs - FONT_HDR_SIZE : NULL;
 
 	nchars = font->ft_maxchar-font->ft_minchar+1;
+	ptr = font->ft_data;
 
 	if (font->ft_flags & FT_PROPORTIONAL) {
-
-		font->ft_widths = (short *) (((int) font->ft_widths) + ((ubyte *) font));
-
 #ifdef MACINTOSH
 		for (i = 0; i < nchars; i++)
 			font->ft_widths[i] = SWAPSHORT(font->ft_widths[i]);
 #endif
 
-		font->ft_data = ((int) font->ft_data) + ((ubyte *) font);
-
 		font->ft_chars = (unsigned char **)malloc( nchars * sizeof(unsigned char *));
-
-		ptr = font->ft_data;
 
 		for (i=0; i< nchars; i++ ) {
 			font->ft_chars[i] = ptr;
@@ -1326,18 +1401,8 @@ grs_font * gr_init_font( char * fontname )
 		}
 
 	} else  {
-
-		font->ft_data = ((unsigned char *) font) + sizeof(*font);
-
-		font->ft_chars	= NULL;
-		font->ft_widths = NULL;
-
-		ptr = font->ft_data + (nchars * font->ft_w * font->ft_h);
+		ptr += nchars * font->ft_w * font->ft_h;
 	}
-
-	if (font->ft_flags & FT_KERNED)
-		font->ft_kerndata = ((int) font->ft_kerndata) + ((ubyte *) font);
-
 
 	if (font->ft_flags & FT_COLOR) {		//remap palette
 		ubyte palette[256*3];
@@ -1378,6 +1443,9 @@ grs_font * gr_init_font( char * fontname )
 	}
 
 	cfclose(fontfile);
+
+	gl_init_font(font);
+	//printf("%s: %dx%d fl %x ch %d\n", fontname, font->ft_w, font->ft_h, font->ft_flags, nchars);
 
 	//set curcanv vars
 

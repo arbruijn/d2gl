@@ -1,3 +1,4 @@
+//#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -74,6 +75,7 @@ static char rcsid[] = "$Id: object.c 2.89 1996/10/11 18:40:20 matt Exp $";
 #include "text.h"
 #include "piggy.h"
 #include "switch.h"
+#include "slew.h"
 
 #ifdef TACTILE
 #include "tactile.h"
@@ -151,6 +153,10 @@ char	Object_type_names[MAX_OBJECT_TYPES][9] = {
 	"MARKER  ",
 };
 #endif
+
+void AdjustMineSpawn();
+void obj_detach_one(object *sub);
+void obj_detach_all(object *parent);
 
 #ifndef RELEASE
 //set viewer object to next object in array
@@ -279,7 +285,9 @@ void draw_object_tmap_rod(object *obj,bitmap_index bitmapi,int lighted)
 
 	PIGGY_PAGE_IN(bitmapi);
 
+   #ifdef _3DFX
    bitmap->bm_handle = bitmapi.index;
+   #endif
 
 	vm_vec_copy_scale(&delta,&obj->orient.uvec,obj->size);
 
@@ -815,7 +823,7 @@ void render_object(object *obj)
 //--unused-- 	}
 //--unused-- }
 
-check_and_fix_matrix(vms_matrix *m);
+void check_and_fix_matrix(vms_matrix *m);
 
 #define vm_angvec_zero(v) (v)->p=(v)->b=(v)->h=0
 
@@ -1356,7 +1364,9 @@ int obj_create(ubyte type,ubyte id,int segnum,vms_vector *pos,
 	if (obj->type == OBJ_DEBRIS)
 		Debris_object_count++;
 
+#ifdef VERBOSE
 printf("obj_create %d type %d id %d sig %d\n", objnum, obj->type, obj->id, obj->signature);
+#endif
 	return objnum;
 }
 
@@ -1405,7 +1415,9 @@ void obj_delete(int objnum)
 	Assert(obj->type != OBJ_NONE);
 	Assert(obj != ConsoleObject);
 
+#ifdef VERBOSE
 printf("obj_delete %d\n", objnum);
+#endif
 
 	if (obj->type==OBJ_WEAPON && obj->id==GUIDEDMISS_ID) {
 		pnum=Objects[obj->ctype.laser_info.parent_num].id;
@@ -1791,6 +1803,7 @@ void obj_delete_all_that_should_be_dead()
 			if (objp->type==OBJ_PLAYER) {
 				if ( objp->id == Player_num ) {
 					if (local_dead_player_object == -1) {
+						void my_start_player_death_sequence(object *);
 						my_start_player_death_sequence(objp);
 						local_dead_player_object = objp-Objects;
 					} else
@@ -1926,10 +1939,12 @@ void object_move_one( object * obj )
 
 		#ifndef RELEASE
 		case CT_SLEW:
-			if ( keyd_pressed[KEY_PAD5] ) slew_stop( obj );
+			if ( keyd_pressed[KEY_PAD5] ) slew_stop( );
 			if ( keyd_pressed[KEY_NUMLOCK] ) 		{
-				slew_reset_orient( obj ); 
+				slew_reset_orient( );
+				#ifndef NDOS
 				* (ubyte *) 0x417 &= ~0x20;		//kill numlock
+				#endif
 			}
 			slew_frame(0 );		// Does velocity addition for us.
 			break;
@@ -2231,7 +2246,7 @@ int update_object_seg(object * obj )
 
 
 //go through all objects and make sure they have the correct segment numbers
-fix_object_segs()
+void fix_object_segs()
 {
 	int i;
 

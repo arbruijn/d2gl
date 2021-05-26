@@ -4203,7 +4203,7 @@ menu:
 		if (Network_game_type == APPLETALK_GAME)
 			network_release_registered_game();
 		#endif
-		longjmp(LeaveGame, 0);  
+		DoLeaveGame(); //longjmp(LeaveGame, 0);  
 	}
 	else if (choice != -2)
 		goto menu;
@@ -4245,7 +4245,7 @@ network_level_sync(void)
 		if (Network_game_type == APPLETALK_GAME)
 			network_release_registered_game();
 		#endif
-		longjmp(LeaveGame, 0);
+		DoLeaveGame(); //longjmp(LeaveGame, 0);
 	}
 	return(0);
 }
@@ -4303,7 +4303,7 @@ void network_get_appletalk_zone()
 	if (num_zones < 0)	{		// error in getting zone list...maybe no router available....
 		if ( (num_zones == tooManyReqs) || (num_zones == noDataArea) ){
 			nm_messagebox(NULL, 1, TXT_OK, "AppleTalk Network is too busy.\nPlease try again shortly.");
-			longjmp(LeaveGame,0);
+			DoLeaveGame(); //longjmp(LeaveGame,0);
 		}
 		num_zones = 0;
 	}
@@ -4397,7 +4397,7 @@ void network_join_game()
 
 	N_players = 0;
 
-	setjmp(LeaveGame);
+	//setjmp(LeaveGame);
 	
 	#ifdef MACINTOSH
 	if (Network_game_type == APPLETALK_GAME)

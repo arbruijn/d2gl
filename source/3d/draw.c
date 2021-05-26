@@ -241,6 +241,12 @@ bool g3_draw_poly(int nv,g3s_point **pointlist)
 	if (cc.and)
 		return 1;	//all points off screen
 
+	if (grd_curcanv->cv_bitmap.bm_type == BM_GL) {
+		void gl_draw_flat(ubyte color, int nv, g3s_point**pnts);
+		gl_draw_flat(grd_curcanv->cv_color, nv, pointlist);
+		return 0;
+	}
+
 	if (cc.or)
 		return must_clip_flat_face(nv,cc);
 
@@ -296,6 +302,12 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,grs_bitmap *bm)
 
 	if (cc.and)
 		return 1;	//all points off screen
+
+	if (grd_curcanv->cv_bitmap.bm_type == BM_GL) {
+		void gl_draw_tmap(grs_bitmap*,int,g3s_point**);
+		gl_draw_tmap(bm,nv,bufptr);
+		return 0;
+	}
 
 	if (cc.or)
 		return must_clip_tmap_face(nv,cc,bm);

@@ -1,6 +1,10 @@
 //#include "sdl2/include/SDL.h"
+#ifdef EMSCRIPTEN
+#include "SDL/SDL.h"
+#else
 #include "SDL2/SDL.h"
 #define SDL2
+#endif
 #include "sdlkeymap.h"
 
 enum PCKey {

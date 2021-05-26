@@ -86,6 +86,7 @@ char game_rcsid[] = "$Id: game.c 2.285 1996/12/09 14:45:35 jeremy Exp $";
 #include "controls.h"
 #include "songs.h"
 #include "gamepal.h"
+#include "pa_gl.h"
 
 #if defined(POLY_ACC)
 #include "poly_acc.h"
@@ -173,6 +174,7 @@ ubyte * Game_cockpit_copy_code = NULL;
 #else
 ubyte Game_cockpit_copy_code = 0;
 ubyte Scanline_double = 0;
+grs_bitmap *cockpit_cur_bm;
 #endif
 
 int			VR_screen_mode			= 0;
@@ -272,6 +274,8 @@ void GameLoop(int RenderFlag, int ReadControlsFlag);
 void FireLaser(void);
 void slide_textures(void);
 void powerup_grab_cheat_all(void);
+void flicker_lights();
+void game_palette_step_up( int r, int g, int b );
 
 //	Other functions
 extern void multi_check_for_killgoal_winner();
@@ -512,6 +516,7 @@ void init_cockpit()
 	case CM_FULL_COCKPIT:
 	case CM_REAR_VIEW:		{
 		grs_bitmap *bm = &GameBitmaps[cockpit_bitmap[Cockpit_mode+(Current_display_mode?(Num_cockpits/2):0)].index];
+		cockpit_cur_bm = bm;
 
 		PIGGY_PAGE_IN(cockpit_bitmap[Cockpit_mode+(Current_display_mode?(Num_cockpits/2):0)]);
 
@@ -524,10 +529,10 @@ void init_cockpit()
 	#endif		
 
 	WIN(DDGRLOCK(dd_grd_curcanv));
+		gr_ibitblt_find_hole_size_rle ( bm, &minx, &miny, &maxx, &maxy );
 		gr_bitmap( 0, 0, bm );
 		bm = &VR_offscreen_buffer->cv_bitmap;
 		bm->bm_flags = BM_FLAG_TRANSPARENT;
-		gr_ibitblt_find_hole_size ( bm, &minx, &miny, &maxx, &maxy );
 	WIN(	win_get_span_list(bm, miny, maxy);
 			DDGRUNLOCK(dd_grd_curcanv)
 	);
@@ -817,6 +822,7 @@ void game_init_render_buffers(int screen_mode, int render_w, int render_h, int r
 #endif
         }
 
+		gl_init_canvas(VR_offscreen_buffer);
 		gr_init_sub_canvas( &VR_render_buffer[0], VR_offscreen_buffer, 0, 0, render_w, render_h );
 		gr_init_sub_canvas( &VR_render_buffer[1], VR_offscreen_buffer, 0, 0, render_w, render_h );
 	}
@@ -1670,7 +1676,7 @@ int	Ab_scale = 4;
 //@@}
 
 //	------------------------------------------------------------------------------------
-extern multi_send_sound_function (char,char);
+extern void multi_send_sound_function (char,char);
 
 void do_afterburner_stuff(void)
 {
@@ -2053,7 +2059,8 @@ void reset_rear_view(void)
 int Automap_flag;
 int Config_menu_flag;
 
-jmp_buf LeaveGame;
+//jmp_buf LeaveGame;
+void DoLeaveGame() { Function_mode = FMODE_MENU; }
 
 int Cheats_enabled=0;
 
@@ -2192,7 +2199,7 @@ void game()
 	ProfilerSetStatus(1);
 #endif
 
-	if ( setjmp(LeaveGame)==0 )	{
+	{ // if ( setjmp(LeaveGame)==0 )	{
 		while (1) {
 			int player_shields;
 
@@ -2289,7 +2296,8 @@ void game()
 
 			IWasKicked=0;
 			if (Function_mode != FMODE_GAME)
-				longjmp(LeaveGame,0);
+				return;
+				//longjmp(LeaveGame,0);
 
 			#ifdef APPLE_DEMO
 			if ( (keyd_time_when_last_pressed + (F1_0 * 60)) < timer_get_fixed_seconds() )		// idle in game for 1 minutes means exit
@@ -2475,7 +2483,7 @@ void flush_movie_buffer()
 	start_time();
 }
 
-toggle_movie_saving()
+void toggle_movie_saving()
 {
 	int exit;
 
@@ -2576,6 +2584,7 @@ void do_ambient_sounds()
 // -- extern void lightning_frame(void);
 
 void game_render_frame();
+void my_game_render_frame();
 extern void omega_charge_frame(void);
 
 extern time_t t_current_time, t_saved_time;
@@ -2785,7 +2794,7 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 		if ( Newdemo_state == ND_STATE_PLAYBACK )	{
 			newdemo_playback_one_frame();
 			if ( Newdemo_state != ND_STATE_PLAYBACK )		{
-				longjmp( LeaveGame, 0 );		// Go back to menu
+				DoLeaveGame();return; //longjmp( LeaveGame, 0 );		// Go back to menu
 			}
 		} else
 		{ // Note the link to above!
@@ -2799,8 +2808,10 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 				return;
 
 			fuelcen_update_all();
-			if (Current_level_D1)
+			if (Current_level_D1) {
+				void do_countdown_frame();
 				do_countdown_frame();
+			}
 
 			do_ai_frame_all();
 

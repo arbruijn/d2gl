@@ -40,4 +40,6 @@ void 		gr_ibitblt (grs_bitmap * source_bmp, grs_bitmap * dest_bmp, ubyte * mask 
 void 		gr_ibitblt (grs_bitmap * source_bmp, grs_bitmap * dest_bmp, ubyte pixel_double );
 #endif
 
+void gr_ibitblt_find_hole_size_rle(grs_bitmap *mask_bmp, int *minx, int *miny, int *maxx, int *maxy);
+
 #endif

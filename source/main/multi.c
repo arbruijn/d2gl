@@ -946,7 +946,7 @@ multi_do_frame(void)
 	if (multi_quit_game && !multi_in_menu)
 	{
 		multi_quit_game = 0;
-		longjmp(LeaveGame, 0);
+		DoLeaveGame(); //longjmp(LeaveGame, 0);
 	}
 }
 		
@@ -3938,7 +3938,7 @@ void multi_restore_game(ubyte slot, uint id)
 		nm_messagebox( "Error", 1, "Ok", "Cannot restore saved game" );
 		Game_mode |= GM_GAME_OVER;
 		Function_mode = FMODE_MENU;
-		longjmp(LeaveGame, 0);
+		//longjmp(LeaveGame, 0);
 	}
 
   	change_playernum_to(pnum-1);

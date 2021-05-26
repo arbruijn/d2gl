@@ -186,6 +186,8 @@ void show_framerate()
 	fix rate;
 
 	frame_time_total += RealFrameTime - frame_time_list[frame_time_cntr];
+	if (!frame_time_total)
+		return;
 	frame_time_list[frame_time_cntr] = RealFrameTime;
 	frame_time_cntr = (frame_time_cntr+1)%8;
 
@@ -1359,6 +1361,7 @@ void game_render_frame_mono(void)
 					win_flip = 1;
 				}
 			#else
+				if (grd_curcanv->cv_bitmap.bm_type != BM_GL)
 				gr_bm_ubitblt( VR_render_sub_buffer[0].cv_w, 
 						VR_render_sub_buffer[0].cv_h, 
 						VR_render_sub_buffer[0].cv_bitmap.bm_x, 
@@ -1374,6 +1377,12 @@ void game_render_frame_mono(void)
 
 			}
 		} else	{
+			extern grs_bitmap *cockpit_cur_bm;
+			if (cockpit_cur_bm && grd_curcanv->cv_bitmap.bm_type  == BM_GL) {
+				gr_set_current_canvas(get_current_game_screen());
+				gr_ubitmapm(0, 0, cockpit_cur_bm);
+				init_gauges();
+			} else {
 			#ifdef NASM
 				gr_ibitblt( &VR_render_sub_buffer[0].cv_bitmap, &VR_screen_pages[0].cv_bitmap, Scanline_double );
 			#else
@@ -1389,6 +1398,7 @@ void game_render_frame_mono(void)
 				}
 			#endif
 			#endif
+			}
 		}
 	}
 

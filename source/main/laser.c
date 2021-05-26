@@ -1,6 +1,6 @@
 #include <stdio.h>
 #define XYZ(v) (v)->x,(v)->y,(v)->z
-#define debug_obj_num 104
+//#define debug_obj_num 104
 int printf(const char *msg,...);
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX

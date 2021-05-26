@@ -170,7 +170,7 @@ void digi_play_sample(int sndnum, fix max_volume) {
 	digi_play_sample_3d(sndnum, 0x8000, max_volume, 0);
 }
 #endif
-int digi_lomem;
+//int digi_lomem;
 int digi_timer_rate;
 #if 0
 void digi_pause_all() {
@@ -381,7 +381,7 @@ void digi_stop_sound(int channel) {}
 int digi_start_sound(short soundnum, fix volume, int pan, int looping, int loop_start, int loop_end, int persistant) { return -1; }
 int digi_sample_rate;
 int digi_find_channel(int soundno) { return -1; }
-void digi_max_channels() {}
+int digi_max_channels;
 void digi_pause_midi() {}
 void digi_resume_midi() {}
 void digi_set_channel_volume(int ch, int vol) {}

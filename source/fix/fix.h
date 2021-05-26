@@ -161,17 +161,17 @@ typedef struct quad {
 //typedef struct quad { struct int64_t large; } quad;
 
 //multiply two fixes, and add 64-bit product to a quad
-inline void fixmulaccum(quad *q,fix a,fix b) { q->large += (int64_t)a * b; }
+inline __attribute__((always_inline)) void fixmulaccum(quad *q,fix a,fix b) { q->large += (int64_t)a * b; }
 
 //extract a fix from a quad product
-inline fix fixquadadjust(quad *q) { return (fix)(q->large >> 16); }
+inline __attribute__((always_inline)) fix fixquadadjust(quad *q) { return (fix)(q->large >> 16); }
 
-inline void fixquadinit(quad *q) { q->large = 0; }
+inline __attribute__((always_inline)) void fixquadinit(quad *q) { q->large = 0; }
 
 //divide a quad by a long
 long fixdivquadlong(ulong qlow,long qhigh,ulong d);
 
 //negate a quad
-inline void fixquadnegate(quad *q) { q->large = -q->large; }
+inline __attribute__((always_inline)) void fixquadnegate(quad *q) { q->large = -q->large; }
 
 #endif

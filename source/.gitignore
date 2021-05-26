@@ -38,3 +38,6 @@ game2
 *.256
 *.mn2
 lst
+d2wasm.html
+d2wasm.js
+

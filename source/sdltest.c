@@ -1,6 +1,16 @@
 //#include "sdl2/include/SDL.h"
+#ifdef EMSCRIPTEN
+#include "SDL/SDL.h"
+#define GL_GLEXT_PROTOTYPES 1
+//#include <SDL2/SDL_opengles2.h>
+#include <SDL/SDL_opengl.h>
+#else
 #define SDL2
 #include "SDL2/SDL.h"
+#define GL_GLEXT_PROTOTYPES 1
+//#include <SDL2/SDL_opengles2.h>
+#include <SDL2/SDL_opengl.h>
+#endif
 #include "sdlkeymap.h"
 #include <stdarg.h>
 #include <stdint.h>
@@ -10,6 +20,12 @@
 #include "fix.h"
 #include "effects.h"
 #include "deslog.h"
+#include "3d.h"
+#include "gr.h"
+#include "playsave.h"
+#include "mission.h"
+#include "cfile.h"
+#include "pa_gl.h"
 
 
 //#define SDL_Window SDL_Surface
@@ -18,10 +34,12 @@ long lastTicks;
 #ifdef SDL2
 static SDL_Texture *texture;
 static SDL_Renderer *render;
-#endif
 static SDL_Window *window;
+#else
+static SDL_Surface *window;
+#endif
 
-static int EventLoop();
+int EventLoop(int sync);
 extern void on_key(int, int);
 extern int test_main(int argc, char **argv);
 
@@ -37,12 +55,25 @@ extern void copy_screen_to_texture(uint32_t *texture);
 int last_time;
 int sdl_time_start;
 int time_speed = 1;
-int play_speed = 4;
-int play_show = 1;
+int play_speed = 16;
+int play_show = 0;
 
 FILE *log_file = NULL;
 int is_record = 1;
 int is_play = 0;
+
+void frame_delay() {
+    EventLoop(0);
+    #if 0
+    SDL_Delay(1);
+    #else
+    int timeout = sdl_time_start + fixmuldiv(last_time, 1000, 65536 * time_speed);
+    while (SDL_GetTicks() < timeout) {
+        EventLoop(0);
+        SDL_Delay(1);
+    }
+    #endif
+}
 
 void draw() {
     if (is_play && !play_show)
@@ -70,7 +101,7 @@ void draw() {
     SDL_UnlockSurface(window);
     SDL_UpdateRect(window, 0, 0, 0, 0);
     #endif
-    EventLoop();
+    frame_delay();
     if (0) {
             long now = SDL_GetTicks();
             if (lastTicks != 0 && now - lastTicks < 10) {
@@ -79,13 +110,10 @@ void draw() {
             }
             lastTicks = now;
     }
-    int timeout = sdl_time_start + fixmuldiv(last_time, 1000, 65536 * time_speed);
-    while (SDL_GetTicks() < timeout) {
-        EventLoop();
-        SDL_Delay(1);
-    }
     return;
 }
+
+
 
 void sdl_time_sync() {
     sdl_time_start = SDL_GetTicks() - fixmuldiv(last_time, 1000, 65536 * time_speed);
@@ -105,27 +133,50 @@ static void *CreateTexture(int w, int h) {
 
 int sdl_init() {
     if (is_play && !play_show)
-        return;
+        return 0;
 
     SDL_Init(SDL_INIT_EVERYTHING);
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetSwapInterval(0);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
     #ifdef SDL2
-    if (SDL_CreateWindowAndRenderer(640, 480,
-                                                                    SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN,
-                                                                    &window, &render) != 0) {
+    if (!(window = SDL_CreateWindow("SDL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        640, 480, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL))) {
             error_set("SDL_CreateWindow %s", SDL_GetError());
             return 1;
     }
     SDL_SetWindowTitle(window, "Test");
-    //SDL_RenderCopy(render, texture, NULL, NULL);
-    //SDL_RenderPresent(render);
+    SDL_GL_CreateContext(window);
+    SDL_GL_SetSwapInterval(0); // disable vsync
     #else
-    if (!(window = SDL_SetVideoMode(640, 480, 32, 0))) {
-            error_set("SDL_SetVideoMode %s", SDL_GetError());
-            return 1;
-    }
-    SDL_WM_SetCaption("Test", NULL);
+    SDL_EnableKeyRepeat(0, 0);
+    if (!(window = SDL_SetVideoMode( 640, 480, 32, SDL_OPENGL )))
+        return 1;
     #endif
-    // SDL_UpdateWindowSurface(window);
+
+    gl_init();
+
+    #if 0
+    //glViewport(0, 0, 640, 480);
+    //glViewport(-10, -10, 10, 10);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    //glOrthof(0, 640, 480, 0, -65536.0f, 65536.0f); //, 1.0f/256.0f); //, 65536.0f);
+    //glOrtho(0, 640, 480, 0, -1, 1);
+    //glOrthof(-2.0f, 2.0f, -2.0f, 2.0f, -100.0f, 100.0f);
+    //glFrustum(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0);
+    //glFrustum(-10.0, 10.0, -10.0, 10.0, 1.0, 10.0);
+    glFrustum(-0.01, 0.01, -0.01, 0.01, 0.01, 5000.0);
+    //glCullFace(GL_FRONT);
+    //glClear(GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode( GL_MODELVIEW );
+    glLoadIdentity();
+    #endif
     return 0;
 }
 
@@ -137,6 +188,7 @@ void video_set_res(int w, int h) {
     cur_h = h;
     if (is_play && !play_show)
         return;
+    return; // opengl
 #ifdef SDL2
     if (texture != NULL)
         SDL_DestroyTexture(texture);
@@ -144,7 +196,16 @@ void video_set_res(int w, int h) {
 #endif
 }
 
-static int EventLoop() {
+int EventLoop(int sync) {
+        if (sync) {
+            #ifdef SDL2
+            SDL_GL_SwapWindow(window);
+            #else
+            SDL_GL_SwapBuffers();
+            #endif
+            glClear(GL_COLOR_BUFFER_BIT);
+            SDL_Delay(10);
+        }
 	int keep_running = 1;
 	// while (keep_running)
 	//{
@@ -186,13 +247,20 @@ static int EventLoop() {
 											(int)SDL_WINDOW_FULLSCREEN_DESKTOP);
 				break;
 			}
-			#endif
 			int pckey = sdlkeymap[(int)evt.key.keysym.scancode];
+			#else
+			int pckey = sdlkeymap[(int)evt.key.keysym.sym];
+			#endif
+			//printf("key %d pc %d\n", evt.key.keysym.scancode, pckey);
 			on_key(pckey, 1);
 			break;
 		}
 		case SDL_KEYUP: {
+		        #ifdef SDL2
 			int pckey2 = sdlkeymap[(int)evt.key.keysym.scancode];
+		        #else
+			int pckey2 = sdlkeymap[(int)evt.key.keysym.sym];
+			#endif
 			on_key(pckey2, 0);
 			break;
     }
@@ -251,7 +319,7 @@ int Fuelcen_seconds_left;
 int *pFuelcen_seconds_left = &Fuelcen_seconds_left;
 extern unsigned int d_rand_seed;
 unsigned int *pRandNext = &d_rand_seed;
-int Num_awareness_events;
+extern int Num_awareness_events;
 int *pNum_awareness_events = &Num_awareness_events;
 extern int Laser_offset;
 extern int Missile_gun;
@@ -259,6 +327,7 @@ extern int Missile_gun;
 int level = 1;
 int skipped_levels = 0;
 int end_level = 0;
+int reset_effects = 0;
 void load_stat(FILE *f, int have_level) {
     char line[256], *p, *arg;
 
@@ -330,6 +399,8 @@ void load_stat(FILE *f, int have_level) {
             explosion_wait2 = (int)strtoul(arg, NULL, 16);
         if (strcmp(line, "missile_gun") == 0)
             Missile_gun = (int)strtol(arg, NULL, 10);
+        if (strcmp(line, "reset_effects") == 0)
+            reset_effects = (int)strtol(arg, NULL, 10);
     }
     if ((p = strchr(line, '\n')))
         *p = 0;
@@ -372,6 +443,9 @@ int test_main2(int argc, char **argv) {
 	load_text();
 	Lighting_on = 1;
 
+	extern int grd_fades_disabled;
+	grd_fades_disabled = 1;
+
 	#define SM_320x200C 0
 	#define SM_640x480V 14
 	#define VR_NONE 0
@@ -393,6 +467,7 @@ int test_main2(int argc, char **argv) {
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
 	extern int VR_screen_mode;
 	ret = call_reg1(gr_set_mode, VR_screen_mode);
+	grd_curcanv->cv_bitmap.bm_type = BM_GL;
 	//printf("gr_set_mode=%d\n", ret);
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
 	//(*cur_canvas)[3] = (int)vga_screen;
@@ -420,6 +495,7 @@ int test_main2(int argc, char **argv) {
 	//RegisterPlayer();
 	//build_mission_list(0);
 	//read_mission_file("d2.mn2", 0, ML_CURDIR);
+	int read_mission_file(const char*,int,int);
 	read_mission_file("descent.mn2", 1, ML_CURDIR);
 	call_reg1(load_mission, 1);
 	Function_mode = 2; // FMODE_GAME
@@ -459,6 +535,18 @@ int test_main2(int argc, char **argv) {
 	my_StartNewLevelSub(level, 1, 0);
 
 	
+	//game();
+
+	//void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist) = gl_draw_tmap;
+	//void (*flat_drawer_ptr)(int nv,int *vertlist) = gl_draw_flat;
+	//int (*line_drawer_ptr)(fix x0,fix y0,fix x1,fix y1) = gl_draw_line;
+
+        //g3_set_special_render(tmap_drawer_ptr, NULL, line_drawer_ptr);
+
+	//game_render_frame();
+	//SDL_GL_SwapWindow(window);
+	//gl_test();
+	//getchar();
 	game();
     
 	return 0;
@@ -518,6 +606,7 @@ my_control_info *controls = &Controls;
 
 void timer_init() {}
 fix timer_get_fixed_seconds() { return last_time; } //fixmuldiv(SDL_GetTicks(), F1_0, 1000); }
+//fix timer_get_fixed_seconds() { return fixmuldiv(SDL_GetTicks(), F1_0, 1000); }
 
 void my_controls_read_all() {
     char line[256];
@@ -637,10 +726,17 @@ int my_key_inkey_time(fix *time) {
 
 void game_render_frame();
 void my_game_render_frame() {
+    //glClear(GL_DEPTH_BUFFER_BIT);
     game_render_frame();
     last_time += 65536/32;
-    draw();
-    printf("%d\n", Players[0].shields / 65536);
+    #ifdef SDL2
+    SDL_GL_SwapWindow(window);
+    #else
+    SDL_GL_SwapBuffers();
+    #endif
+    frame_delay();
+    //draw();
+    //printf("%d\n", Players[0].shields / 65536);
 }
 
 #if 0
@@ -709,3 +805,4 @@ void my_start_player_death_sequence(object *obj) {
 void mouse_show_cursor() {}
 void mouse_hide_cursor() {}
 void mouse_get_pos(int *x, int *y) {}
+

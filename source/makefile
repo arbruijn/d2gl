@@ -791,28 +791,35 @@ ALL_WINOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
 	fake/fake.obj \
 	novga/novesa.obj win95/smfread.obj
 
-CFLAGS += -DNDOS -DNASM -Dfar="" -D_far="" -DKEY_COMMAND=512 -Dnear="" -Dcdecl=""
-CFLAGS += -DENDLEVEL
-CFLAGS += -Wno-implicit-int
-#CFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE
-CFLAGS += -DNETWORK -DNPACK
-CFLAGS += -Ilib -Iincludes -Ipa_null -I2d -I3d -Itexmap \
+ACFLAGS += -DNDOS -DNASM -Dfar="" -D_far="" -DKEY_COMMAND=512 -Dnear="" -Dcdecl=""
+ACFLAGS += -DENDLEVEL
+#ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE
+ACFLAGS += -DNETWORK -DNPACK
+ACFLAGS += -Ilib -Iincludes -Ipa_null -I2d -I3d -Itexmap \
 	-Ifix -Ivecmat -Ibios -Imem -Icfile -Imisc -Iiff \
 	-Ivga -Idiv -Iarch -Imain
+ACFLAGS += -I../../desrun/deslog
+CFLAGS += $(ACFLAGS)
+CFLAGS += -Wno-implicit-int
 CFLAGS += -Og -g -m32 -fno-pie -fcf-protection=none
 #CFLAGS += -fpack-struct
 LDFLAGS += --disable-auto-image-base -Wl,--section-start=.text=0x08000000
-CFLAGS += -I../../desrun/deslog
+EMCFLAGS += $(ACFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s USE_SDL=1
+#-s LEGACY_GL_EMULATION=1
+
+CC = clang
+CFLAGS += -I/usr/include/SDL2 -Wno-parentheses-equality -fwrapv
+LDFLAGS =
 
 all: descent2
 
 descent2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
-	testiface.o sdltest.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
 	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
-	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm
+	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm -lGL
 
 game2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
-	testiface.o game2.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+	testiface.o game2.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
 	myipx.o myvga.o cfile_ext.o main/inferno.o
 	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm
 
@@ -835,3 +842,31 @@ win: $(ALL_WINOBJS) fake/fakewin.obj
 
 clean:
 	rm -f $(ALL_DOSOBJS) $(ALL_WINOBJS) $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) *.o
+
+
+%.em.o: %.c
+	emcc $(EMCFLAGS) -O3 -c -o $@ $^ 
+
+EMFILES = descent2.hog groupa.pig descent.hog descent.pig descent.mn2 descent2.ham descent.256 .plr
+
+EMOBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
+	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
+
+#	-s ASYNCIFY \
+#	-s ASYNCIFY_IGNORE_INDIRECT \
+#	 -s 'ASYNCIFY_IMPORTS=["play_ad","emscripten_sleep"]' \
+#	 -s EXPORTED_FUNCTIONS='["_main","_get_screen","_on_key","_playerweb_gen","_playerweb_get_last_rc","_playerweb_get_volume","_playerweb_get_time","_get_sample_size","_get_sample_data","_on_mousemove", "_on_mousebutton", "_get_function_mode", "_key_flush"]' 
+#	 -s ERROR_ON_UNDEFINED_SYMBOLS=0
+#
+d2wasm.html: $(patsubst %.o,%.em.o,$(EMOBJ))
+	emcc $(EMCFLAGS) -O3 -g4 -o $@ $^ \
+	 -s ASYNCIFY \
+	 -s ASYNCIFY_IGNORE_INDIRECT \
+	 -s EXPORTED_FUNCTIONS='["_main","_on_key","_on_mousemove","_on_mousebutton","_key_flush"]' \
+	 -s 'ASYNCIFY_IMPORTS=["play_ad","emscripten_sleep"]' \
+	 --source-map-base / \
+	 -s ASSERTIONS=1 \
+	 -s TOTAL_MEMORY=41943040 \
+	 --js-library library.js \
+	 $(patsubst %,--preload-file %,$(EMFILES))

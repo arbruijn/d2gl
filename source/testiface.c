@@ -139,13 +139,15 @@ EM_JS(void, draw, (), {
 });
 #else
 extern void draw();
+extern int EventLoop(int sync);
 #endif
 
 double last_frame;
 
 #if 1
 void gr_sync_display() {
-	draw();
+	//draw();
+	EventLoop(1);
 #if EM_CC
 	if (!last_frame) {
 		emscripten_sleep(16);
@@ -182,8 +184,7 @@ void on_key(int keycode, int down) {
 }
 #endif
 
-void kconfig_read_external_controls() {
-}
+int kconfig_read_external_controls() { return -1; }
 
 
 #ifdef EM_CC
@@ -433,12 +434,12 @@ void close_subtitles() {}
 //ConfigInfo gConfigInfo;
 ubyte Config_master_volume;
 ubyte CybermouseActive;
-int descent_critical_deverror() { return -1; }
+int descent_critical_deverror;
 int digi_is_channel_playing(int ch) { return -1; }
 void digi_stop_all_channels() { }
 void gr_bm_ubitblt_double(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *src, grs_bitmap *dest) { }
 int hide_cursor() { return -1; }
-int init_extra_robot_movie() { return -1; }
+int init_extra_robot_movie(char *n) { return -1; }
 int InitMovieBriefing() { return -1; }
 int inp(int port) { return -1; }
 int joy_btn_name() { return -1; }
@@ -452,13 +453,13 @@ int ms_warning() { return -1; }
 int MVEPaletteCalls;
 int network_dump_appletalk_player() { return -1; }
 int p2cstr() { return -1; }
-int pa_draw_line() { return -1; }
+int pa_draw_line(int a, int b, int c, int d) { return -1; }
 int pa_render_start() { return -1; }
 int read_int_swap() { return -1; }
 int receive_netgame_packet() { return -1; }
 int receive_sequence_packet() { return -1; }
-int robot_movies() { return -1; }
-int RotateRobot() { return -1; }
+int robot_movies;
+void RotateRobot() { }
 int Screen_mode;
 int send_sequence_packet() { return -1; }
 int show_cursor() { return -1; }
@@ -466,7 +467,7 @@ int stackavail() { return 1048576; }
 int StackSpace() { return -1; }
 int swapint() { return -1; }
 int swap_object() { return -1; }
-int unarj_specific_file() { return -1; }
+int unarj_specific_file(char *a,char*b,char*c) { return -1; }
 ubyte Version_major, Version_minor, Version_fix;
 short vga_check_mode(short mode) { return 0; }
 int virtual_memory_on() { return -1; }
@@ -475,7 +476,7 @@ int c2pstr() { return -1; }
 int descent_critical_errcode;
 void digi_end_sound(int ch) { }
 int digi_set_master_volume() { return -1; }
-int gr_ibitblt_create_mask_pa() { return -1; }
+void gr_ibitblt_create_mask_pa( grs_bitmap * mask_bmp, int sx, int sy, int sw, int sh, int srowsize ) { }
 //int joydefs_config() { return -1; }
 int joy_have_firebird() { return -1; }
 #if 0
@@ -494,23 +495,30 @@ int joy_have_mousestick() { return -1; }
 int RBAEjectDisk() { return -1; }
 int send_netplayers_packet() { return -1; }
 short vga_set_mode(short mode) { return gr_set_mode(mode); }
-void game_3dmax_on() {}
-void game_3dmax_off() {}
+int game_3dmax_on() { return -1; }
+int game_3dmax_off() { return -1; }
 
-void vfx_enable_stereo() {}
-void vfx_disable_stereo() {}
+int vfx_enable_stereo() { return -1; }
+int vfx_disable_stereo() { return -1; }
 int vfx1_installed;
-void request_cd(){}
-void vfx_get_data(){}
-void vfx_center_headset(){}
+int request_cd(){ return -1; }
+int vfx_get_data(int*a,int*b,int*c,int*d){return-1;}
+int vfx_center_headset(){return -1;}
 int CD_blast_mixer(){ return -1; }
 
 #undef mprintf
 extern void mprintf( int n, char * format, ... ) { va_list vp; va_start(vp, format); vfprintf(stderr, format, vp); va_end(vp); }
-void WinInt3() { asm volatile("int $3"); }
+void WinInt3() {
+#ifndef EMSCRIPTEN
+asm volatile("int $3");
+#endif
+}
 
 void digi_debug(){}
+#ifndef NMONO
 void mopen(int n, int row, int col, int width, int height, char * title ){}
 void mclose(int n){}
 #undef mprintf_at
 void mprintf_at(int n, int row, int col, char * format, ...){va_list vp; va_start(vp, format); vfprintf(stderr, format, vp); va_end(vp);}
+#endif
+int PAEnabled;

@@ -135,6 +135,8 @@ grs_bitmap *gr_create_sub_bitmap(grs_bitmap *bm, int x, int y, int w, int h )
 
 void gr_free_bitmap(grs_bitmap *bm )
 {
+	void gl_free_bitmap(grs_bitmap*);
+	gl_free_bitmap(bm);
 	if (bm->bm_data != NULL)
 	    free(bm->bm_data);
 	bm->bm_data = NULL;
@@ -243,6 +245,12 @@ void gr_remap_bitmap_good( grs_bitmap * bmp, ubyte * palette, int transparent_co
 {
 	ubyte colormap[256];
 	int freq[256];
+
+	if (bmp->bm_type == BM_GL) {
+		void bm_bind_tex_pal(grs_bitmap*,ubyte*);
+		bm_bind_tex_pal(bmp, palette);
+		return;
+	}
 
 	if (bmp->bm_type != BM_LINEAR) {
 		Int3();

@@ -23,6 +23,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 int gr_bitblt_dest_step_shift = 0;
 int gr_bitblt_double = 0;
@@ -1311,6 +1312,13 @@ void gr_bm_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * sr
 	}
 #endif
 
+	if ( (src->bm_type == BM_LINEAR) && (dest->bm_type == BM_GL ))
+	{
+		gl_ubitblt( w, h, dx+XOFFSET, dy+YOFFSET, sx, sy, src );
+		return;
+	}
+
+
     for (y1=0; y1 < h; y1++ )    {
 		for (x1=0; x1 < w; x1++ )    {
 			gr_bm_pixel( dest, dx+x1, dy+y1, gr_gpixel(src,sx+x1,sy+y1) );
@@ -1440,6 +1448,11 @@ void gr_ubitmapm( int x, int y, grs_bitmap *bm )
             return;
 #endif
 
+		case BM_GL: {
+			void gl_draw_bitmap_2d(int,int,grs_bitmap*);
+			gl_draw_bitmap_2d(x, y, bm);
+			return;
+		}
 		default:
 			gr_ubitmap012m( x, y, bm );
 			return;

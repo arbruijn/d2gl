@@ -16,7 +16,7 @@ static SDL_Texture *texture;
 static SDL_Renderer *render;
 static SDL_Window *window;
 
-static int EventLoop();
+int EventLoop(int sync);
 extern void on_key(int, int);
 extern int test_main(int argc, char **argv);
 
@@ -41,11 +41,11 @@ void draw() {
     SDL_UnlockTexture(texture);
     SDL_RenderCopy(render, texture, NULL, NULL);
     SDL_RenderPresent(render);
-    EventLoop();
+    EventLoop(0);
     long now;
     long timeout = lastTicks + 1000/60;
     while ((now = SDL_GetTicks()) < timeout) {
-        EventLoop();
+        EventLoop(0);
         SDL_Delay(1);
     }
     lastTicks = now;
@@ -84,7 +84,11 @@ void video_set_res(int w, int h) {
     texture = CreateTexture(w, h);
 }
 
-static int EventLoop() {
+int EventLoop(int sync) {
+	if (sync) {
+		draw();
+		return 1;
+	}
         int keep_running = 1;
 	SDL_Event evt;
 	while (SDL_PollEvent(&evt) > 0) {
@@ -158,6 +162,7 @@ void my_StartNewLevelSub(int level, int page_in, int secret) { StartNewLevelSub(
 #include "vga.h"
 #include "joy.h"
 #include "sdlkeymap.h"
+#include "pa_gl.h"
 int grd_fades_disabled;
 void timer_init() { InitKeyMap(); grd_fades_disabled = 1; }
 int mouse_init(int cyberman) { return 1; }
@@ -169,3 +174,22 @@ void mouse_show_cursor() { SDL_ShowCursor(SDL_ENABLE); printf("show_cursor\n"); 
 void mouse_hide_cursor() { SDL_ShowCursor(SDL_DISABLE); printf("hide_cursor\n"); }
 
 void mouse_get_pos(int *x, int *y) { SDL_GetMouseState(x, y); printf("pos %d,%d\n", *x, *y); }
+
+#include "gr.h"
+#include "3d.h"
+void gl_free_bitmap(grs_bitmap *bm) {}
+void gl_draw_tmap(grs_bitmap *bm,int nv,g3s_point **vertlist) {}
+void bm_bind_tex(grs_bitmap *bm) {}
+void bm_bind_tex_pal(grs_bitmap *bm, ubyte *pal) {}
+void gl_draw_rod(g3s_point *pnt, fix width, fix height, grs_bitmap *bm, int o) {}
+void gl_get_rgb(ubyte color, float *r, float *g, float *b) {}
+void gl_draw_flat(ubyte color, int nv, g3s_point**pnts) {}
+void gl_start_frame() {}
+void gl_end_frame() {}
+void gl_draw_bitmap_2d(int sx, int sy, grs_bitmap *bm) {}
+void gl_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *bm) {}
+void gl_font_start(grs_font *font, ubyte color) {}
+void gl_draw_char(int sx, int sy, grs_font *font, int c) {}
+void gl_init_font(grs_font *font) {}
+void gl_init_canvas(grs_canvas *canv) {}
+

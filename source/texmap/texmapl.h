@@ -53,7 +53,7 @@ extern	fix	fx_dl_dx,fx_l;
 extern	int	fx_r,fx_g,fx_b,fx_dr_dx,fx_dg_dx,fx_db_dx;
 
 extern	int	bytes_per_row;
-extern	int	write_buffer;
+extern	intptr_t	write_buffer;
 extern	int  	window_left;
 extern	int	window_right;
 extern	int	window_top;

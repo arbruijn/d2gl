@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: ibitblt.c 1.16 1996/12/19 16:51:38 matt Exp $";
 #include "gr.h"
 #include "mem.h"
 #include "error.h"
+#include "bitblt.h"
 #include "ibitblt.h"
 #include "grdef.h"
 
@@ -63,7 +64,8 @@ int	ibitblt_svga_page = 0;
 int is_svga = 0;
 uint linear_address;
 
-
+extern void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels );
+extern void gr_linear_movsd_double(ubyte * src, ubyte * dest, int num_pixels );
 
 void count_block( int ecx )
 {
@@ -867,3 +869,53 @@ void gr_ibitblt_find_hole_size(grs_bitmap *mask_bmp, int *minx, int *miny, int *
 }
 
 #endif		// ifdef NASM
+
+
+void gr_ibitblt_find_hole_size_rle(grs_bitmap *mask_bmp, int *minx, int *miny, int *maxx, int *maxy)
+{
+	ubyte c;
+	int x, y, count = 0;
+
+	Assert( mask_bmp->bm_flags&BM_FLAG_RLE );
+	Assert( mask_bmp->bm_flags&BM_FLAG_TRANSPARENT );
+
+	*minx = mask_bmp->bm_w - 1;
+	*maxx = 0;
+	*miny = mask_bmp->bm_h - 1;
+	*maxy = 0;
+
+	ubyte *p1 = mask_bmp->bm_data + 4;
+	ubyte *ofsb = p1;
+	short *ofsw = (void *)p1;
+	int usew = mask_bmp->bm_flags & BM_FLAG_RLE_BIG;
+	ubyte *p2 = p1 + (usew ? 2 : 1) * mask_bmp->bm_h;
+	//	mask_bmp->bm_h *
+	//	(mask_bmp->bm_flags & BM_FLAG_RLE_BIG ? 2 : 1);
+	for (y = 0; y < mask_bmp->bm_h; y++) {
+		ubyte *p = p2;
+		p2 += usew ? ofsw[y] : ofsb[y];
+		for (x = 0; x < mask_bmp->bm_w; ) {
+			int n;
+			c = *p++;
+			if (c >= 0xe0) {
+				if (c == 0xe0)
+					break;
+				n = c - 0xe0;
+				c = *p++;
+			} else
+				n = 1;
+			if (c == TRANSPARENCY_COLOR) {
+				count += n;
+				if (x < *minx) *minx = x;
+				if (y < *miny) *miny = y;
+				x += n;
+				Assert(x <= mask_bmp->bm_w);
+				if (x - 1 > *maxx) *maxx = x - 1;
+				if (y > *maxy) *maxy = y;
+			} else
+				x += n;
+		}
+	}
+	Assert (count);
+	//printf("find hole count=%d %d,%d - %d,%d\n", count, *minx, *miny, *maxx, *maxy);
+}

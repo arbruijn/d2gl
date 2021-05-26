@@ -46,24 +46,12 @@ typedef struct _grs_point {
 #define CC_LSPACING_S 	"\x2"		//next char specifies line spacing
 #define CC_UNDERLINE_S	"\x3"		//next char is underlined
 
-typedef struct _grs_font {
-	short		ft_w,ft_h;		// Width and height in pixels
-	short		ft_flags;		// Proportional?
-	short		ft_baseline;	//
-	ubyte		ft_minchar,		// The first and last chars defined by
-				ft_maxchar;		// This font
-	short		ft_bytewidth;	// Width in unsigned chars
-	ubyte	* 	ft_data;			// Ptr to raw data.
-	ubyte	**	ft_chars;		// Ptrs to data for each char (required for prop font)
-	short	*	ft_widths;		// Array of widths (required for prop font)
-	ubyte *  ft_kerndata;	// Array of kerning triplet data
-} grs_font;
-
 #define BM_LINEAR   0
 #define BM_MODEX    1
 #define BM_SVGA     2
 #define BM_RGB15    3   //5 bits each r,g,b stored at 16 bits
 #define BM_SVGA15   4
+#define BM_GL       5
 
 //@@//	Define these modes for Gameplay too, since the game was developed under
 //@@//	DOS, we will adapt these modes to other systems thru rendering.
@@ -95,6 +83,7 @@ typedef struct _grs_font {
 #define BM_FLAG_RLE					8			// A run-length encoded bitmap.
 #define BM_FLAG_PAGED_OUT			16			// This bitmap's data is paged out.
 #define BM_FLAG_RLE_BIG				32			// for bitmaps that RLE to > 255 per row (i.e. cockpits)
+#define BM_FLAG_CHANGED				64
 
 typedef struct _grs_bitmap {
 	short       bm_x,bm_y;      // Offset from parent's origin
@@ -112,6 +101,21 @@ typedef struct _grs_bitmap {
 	ubyte			avg_color;		//	Average color of all pixels in texture map.
 	byte			unused;			//	to 4-byte align.
 } grs_bitmap;
+
+typedef struct _grs_font {
+	short		ft_w,ft_h;		// Width and height in pixels
+	short		ft_flags;		// Proportional?
+	short		ft_baseline;	//
+	ubyte		ft_minchar,		// The first and last chars defined by
+				ft_maxchar;		// This font
+	short		ft_bytewidth;	// Width in unsigned chars
+	ubyte	* 	ft_data;			// Ptr to raw data.
+	ubyte	**	ft_chars;		// Ptrs to data for each char (required for prop font)
+	short	*	ft_widths;		// Array of widths (required for prop font)
+	ubyte *  ft_kerndata;	// Array of kerning triplet data
+	grs_bitmap ft_bitmap;
+	int ft_bm_row_chars;
+} grs_font;
 
 typedef struct _grs_canvas {
 	grs_bitmap  cv_bitmap;      // the bitmap for this canvas
@@ -228,8 +232,9 @@ void gr_bm_upixel( grs_bitmap * bm, int x, int y, unsigned char color );
 void gr_bm_ubitblt( int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * src, grs_bitmap * dest);
 void gr_bm_ubitbltm(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * src, grs_bitmap * dest);
 
-#ifdef MACINTOSH
+#ifdef NASM
 void gr_bm_ubitblt_double(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *src, grs_bitmap *dest);
+void gr_linear_movsd(ubyte *src, ubyte *dest, int num_pixels);
 void gr_linear_movsd_double(ubyte *src, ubyte *dest, int num_pixels);
 #endif
 

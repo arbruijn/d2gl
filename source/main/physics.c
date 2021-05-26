@@ -1,4 +1,4 @@
-//#define debug_objnum 104
+//#define debug_objnum 0
 //#define EXTRA_DEBUG_OBJ
 //#define VERBOSE_MIN
 //#define VERBOSE

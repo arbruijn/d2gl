@@ -194,7 +194,7 @@ typedef struct vms_matrix {
 										m->uvec.x = m->uvec.z = \
 										m->fvec.x = m->fvec.y = 0;} while (0)
 
-inline vms_vector *vm_vec_make(vms_vector *v,fix x,fix y,fix z) { v->x = x; v->y = y; v->z = z; return v; }
+inline __attribute__((always_inline)) vms_vector *vm_vec_make(vms_vector *v,fix x,fix y,fix z) { v->x = x; v->y = y; v->z = z; return v; }
 
 #if 0
 #pragma aux vm_vec_make "*_" parm [eax] [edx] [ebx] [ecx] value [eax] modify exact [] = \

@@ -55,23 +55,27 @@ int strnicmp( char *s1, char *s2, int n )
 	return 0;
 }
 
-void strlwr( char *s1 )
+char * strlwr( char *s )
 {
+	char *s1 = s;
 	while( *s1 )	{
 		*s1 = tolower(*s1);
 		s1++;
 	}
+	return s;
 }
 
-void strupr( char *s1 )
+char * strupr( char *s )
 {
+	char *s1 = s;
 	while( *s1 )	{
 		*s1 = toupper(*s1);
 		s1++;
 	}
+	return s;
 }
 
-void strrev( char *s1 )
+char *strrev( char *s1 )
 {
 	int i,l;
 	char *s2;
@@ -82,6 +86,7 @@ void strrev( char *s1 )
 	for (i = 0; i < l; i++)
 		s1[l-1-i] = s2[i];
 	free(s2);
+	return s1;
 }
 
 void _splitpath(char *name, char *drive, char *path, char *base, char *ext)

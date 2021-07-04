@@ -199,7 +199,7 @@ int start_endlevel_movie()
    int r;
 	ubyte save_pal[768];
 
-	if (Current_mission_num != 0)
+	if (Current_mission_num != 0 || Current_level_D1)
 		return 0;
 
 	Assert(Current_mission_num == 0);		//only play movie for built-in mission
@@ -295,6 +295,7 @@ vms_matrix surface_orient;
 
 int endlevel_data_loaded=0;
 extern char last_palette_loaded[];
+void load_exit_models();
 
 void start_endlevel_sequence()
 {
@@ -302,7 +303,7 @@ void start_endlevel_sequence()
 	int movie_played;
 	static int inited = 0;
 	
-	#if defined(MACINTOSH) && defined(SHAREWARE)
+	#ifdef MACSW
 	if (!inited) {
 		load_exit_models();
 		inited = 1;

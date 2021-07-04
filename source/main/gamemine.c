@@ -47,8 +47,11 @@ static char rcsid[] = "$Id: gamemine.c 2.21 1996/05/07 16:09:17 jeremy Exp $";
 #include "piggy.h"
 
 #include "byteswap.h"
+#include "strutil.h"
 
 #define REMOVE_EXT(s)  (*(strchr( (s), '.' ))='\0')
+
+extern char Gamesave_current_filename[128];
 
 fix	Level_shake_frequency = 0, Level_shake_duration = 0;
 int	Secret_return_segment = 0;
@@ -650,24 +653,24 @@ void read_verts(int segnum,CFILE *LoadFile)
 		Segments[segnum].verts[i] = read_short(LoadFile);
 }
 
-// -- void read_special(int segnum,ubyte bit_mask,CFILE *LoadFile)
-// -- {
-// -- 	if (bit_mask & (1 << MAX_SIDES_PER_SEGMENT)) {
-// -- 		// Read ubyte	Segments[segnum].special
-// -- //		cfread( &Segments[segnum].special, sizeof(ubyte), 1, LoadFile );
-// -- 		Segment2s[segnum].special = read_byte(LoadFile);
-// -- 		// Read byte	Segments[segnum].matcen_num
-// -- //		cfread( &Segments[segnum].matcen_num, sizeof(ubyte), 1, LoadFile );
-// -- 		Segment2s[segnum].matcen_num = read_byte(LoadFile);
-// -- 		// Read short	Segments[segnum].value
-// -- //		cfread( &Segments[segnum].value, sizeof(short), 1, LoadFile );
-// -- 		Segment2s[segnum].value = read_short(LoadFile);
-// -- 	} else {
-// -- 		Segment2s[segnum].special = 0;
-// -- 		Segment2s[segnum].matcen_num = -1;
-// -- 		Segment2s[segnum].value = 0;
-// -- 	}
-// -- }
+void read_special(int segnum,ubyte bit_mask,CFILE *LoadFile)
+{
+	if (bit_mask & (1 << MAX_SIDES_PER_SEGMENT)) {
+		// Read ubyte	Segments[segnum].special
+//		cfread( &Segments[segnum].special, sizeof(ubyte), 1, LoadFile );
+		Segment2s[segnum].special = read_byte(LoadFile);
+		// Read byte	Segments[segnum].matcen_num
+//		cfread( &Segments[segnum].matcen_num, sizeof(ubyte), 1, LoadFile );
+		Segment2s[segnum].matcen_num = read_byte(LoadFile);
+		// Read short	Segments[segnum].value
+//		cfread( &Segments[segnum].value, sizeof(short), 1, LoadFile );
+		Segment2s[segnum].value = read_short(LoadFile);
+	} else {
+		Segment2s[segnum].special = 0;
+		Segment2s[segnum].matcen_num = -1;
+		Segment2s[segnum].value = 0;
+	}
+}
 
 int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 {
@@ -676,6 +679,9 @@ int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 	short		temp_short;
 	ushort	temp_ushort;
 	ubyte		bit_mask;
+	int	is_d1sw = 0, is_d2sw = 0;
+	is_d1sw = stricmp(Gamesave_current_filename + strlen(Gamesave_current_filename) - 4, ".sdl") == 0;
+	is_d2sw = stricmp(Gamesave_current_filename + strlen(Gamesave_current_filename) - 4, ".sl2") == 0;
 
 	//	For compiled levels, textures map to themselves, prevent tmap_override always being gray,
 	//	bug which Matt and John refused to acknowledge, so here is Mike, fixing it.
@@ -694,12 +700,12 @@ int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 
 //	cfread( &temp_ushort, sizeof(ushort), 1, LoadFile );					// 2 bytes = Num_vertices
 //	Num_vertices = temp_ushort;
-	Num_vertices = read_short(LoadFile);
+	Num_vertices = is_d1sw ? cfile_read_int(LoadFile) : read_short(LoadFile);
 	Assert( Num_vertices <= MAX_VERTICES );
 
 //	cfread( &temp_ushort, sizeof(ushort), 1, LoadFile );					// 2 bytes = Num_segments
 //	Num_segments = INTEL_SHORT(temp_ushort);
-	Num_segments = read_short(LoadFile);
+	Num_segments = is_d1sw ? cfile_read_int(LoadFile) : read_short(LoadFile);
 	Assert( Num_segments <= MAX_SEGMENTS );
 
 //	cfread( Vertices, sizeof(vms_vector), Num_vertices, LoadFile );
@@ -714,40 +720,32 @@ int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 		Segments[segnum].group = 0;
 		#endif
 
- 		cfread( &bit_mask, sizeof(ubyte), 1, LoadFile );
+		if (is_d1sw)
+			bit_mask = (1 << MAX_SIDES_PER_SEGMENT) - 1 | (1 << MAX_SIDES_PER_SEGMENT);
+		else
+	 		cfread( &bit_mask, sizeof(ubyte), 1, LoadFile );
 
-		#if defined(SHAREWARE) && !defined(MACINTOSH)
-			// -- read_special(segnum,bit_mask,LoadFile);
+		if (is_d2sw) {
+			read_special(segnum,bit_mask,LoadFile);
 			read_verts(segnum,LoadFile);
 			read_children(segnum,bit_mask,LoadFile);
-		#else
+		} else {
 			read_children(segnum,bit_mask,LoadFile);
 			read_verts(segnum,LoadFile);
 			// --read_special(segnum,bit_mask,LoadFile);
-		#endif
+		}
 
 		Segments[segnum].objects = -1;
 
-		if (file_version == 1) { // d1
-			if (bit_mask & (1 << MAX_SIDES_PER_SEGMENT)) {
-				cfread( &Segment2s[segnum].special, sizeof(ubyte), 1, LoadFile);
-				cfread( &Segment2s[segnum].matcen_num, sizeof(ubyte), 1, LoadFile);
-				cfread( &Segment2s[segnum].value, sizeof(short), 1, LoadFile);
-			} else {
-				Segment2s[segnum].special = 0;
-				Segment2s[segnum].matcen_num = -1;
-				Segment2s[segnum].value = 0;
-			}
-
-			cfread( &temp_ushort, sizeof(temp_ushort), 1, LoadFile );
-			Segment2s[segnum].static_light   = ((fix)temp_ushort) << 4;
-		}
-
+		if (file_version == 1) // d1
+			read_special(segnum,bit_mask,LoadFile);
 
 		// Read fix	Segments[segnum].static_light (shift down 5 bits, write as short)
 //		cfread( &temp_ushort, sizeof(temp_ushort), 1, LoadFile );
-//		temp_ushort = read_short(LoadFile);
-//		Segment2s[segnum].static_light	= ((fix)temp_ushort) << 4;
+		if (file_version == 1 || is_d2sw) {
+			temp_ushort = read_short(LoadFile);
+			Segment2s[segnum].static_light	= ((fix)temp_ushort) << 4;
+		}
 		//cfread( &Segments[segnum].static_light, sizeof(fix), 1, LoadFile );
 	
 		// Read the walls as a 6 byte array
@@ -755,7 +753,8 @@ int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 			Segments[segnum].sides[sidenum].pad = 0;
 		}
 
- 		cfread( &bit_mask, sizeof(ubyte), 1, LoadFile );
+		if (!is_d1sw)
+	 		cfread( &bit_mask, sizeof(ubyte), 1, LoadFile );
 		for (sidenum=0; sidenum<MAX_SIDES_PER_SEGMENT; sidenum++) {
 			ubyte byte_wallnum;
 
@@ -777,7 +776,7 @@ int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 				temp_ushort = read_short(LoadFile);
 				Segments[segnum].sides[sidenum].tmap_num = temp_ushort & 0x7fff;
 
-				if (!(temp_ushort & 0x8000))
+				if (!(temp_ushort & 0x8000) && !is_d1sw)
 					Segments[segnum].sides[sidenum].tmap_num2 = 0;
 				else {
 					// Read short Segments[segnum].sides[sidenum].tmap_num2;
@@ -849,7 +848,7 @@ int load_mine_data_compiled(CFILE *LoadFile, int file_version)
 
 	for (i=0; i<Num_segments; i++) {
 // NO NO!!!!		cfread( &Segment2s[i], sizeof(segment2), 1, LoadFile );
-		if (file_version > 1) {
+		if (file_version > 1 && !is_d2sw) {
 			Segment2s[i].special = read_byte(LoadFile);
 			Segment2s[i].matcen_num = read_byte(LoadFile);
 			Segment2s[i].value = read_byte(LoadFile);

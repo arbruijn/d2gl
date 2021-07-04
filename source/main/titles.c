@@ -258,7 +258,72 @@ typedef struct {
 #define MAX_BRIEFING_SCREENS 60
 
 briefing_screen Briefing_screens[MAX_BRIEFING_SCREENS]=
+#ifdef D1SW
+	{
+	{	"brief01.pcx",   0,  1,  13, 140, 290,  59 },
+	{	"brief02.pcx",   0,  2,  27,  34, 257, 177 },
+	{	"brief03.pcx",   0,  3,  20,  22, 257, 177 },
+	{	"brief02.pcx",   0,  4,  27,  34, 257, 177 },
+
+	{	"moon01.pcx",    1,  5,  10,  10, 300, 170 },	// level 1
+	{	"moon01.pcx",    2,  6,  10,  10, 300, 170 },	// level 2
+	{	"moon01.pcx",    3,  7,  10,  10, 300, 170 },	// level 3
+
+	{	"venus01.pcx",   4,  8,  15, 15, 300,  200 },	// level 4
+	{	"venus01.pcx",   5,  9,  15, 15, 300,  200 },	// level 5
+
+	{	"brief03.pcx",   6, 10,  20,  22, 257, 177 },
+	{	"merc01.pcx",    6, 11,  10, 15, 300, 200 },	// level 6
+	{	"merc01.pcx",    7, 12,  10, 15, 300, 200 },	// level 7
+
+#ifndef SHAREWARE
+	{	"brief03.pcx",   8, 13,  20,  22, 257, 177 },
+	{	"mars01.pcx",    8, 14,  10, 100, 300,  200 },	// level 8
+	{	"mars01.pcx",    9, 15,  10, 100, 300,  200 },	// level 9
+	{	"brief03.pcx",  10, 16,  20,  22, 257, 177 },
+	{	"mars01.pcx",   10, 17,  10, 100, 300,  200 },	// level 10
+
+	{	"jup01.pcx",    11, 18,  10, 40, 300,  200 },	// level 11
+	{	"jup01.pcx",    12, 19,  10, 40, 300,  200 },	// level 12
+	{	"brief03.pcx",  13, 20,  20,  22, 257, 177 },
+	{	"jup01.pcx",    13, 21,  10, 40, 300,  200 },	// level 13
+	{	"jup01.pcx",    14, 22,  10, 40, 300,  200 },	// level 14
+
+	{	"saturn01.pcx", 15, 23,  10, 40, 300,  200 },	// level 15
+	{	"brief03.pcx",  16, 24,  20,  22, 257, 177 },
+	{	"saturn01.pcx", 16, 25,  10, 40, 300,  200 },	// level 16
+	{	"brief03.pcx",  17, 26,  20,  22, 257, 177 },
+	{	"saturn01.pcx", 17, 27,  10, 40, 300,  200 },	// level 17
+
+	{	"uranus01.pcx", 18, 28,  100, 100, 300,  200 },	// level 18
+	{	"uranus01.pcx", 19, 29,  100, 100, 300,  200 },	// level 19
+	{	"uranus01.pcx", 20, 30,  100, 100, 300,  200 },	// level 20
+	{	"uranus01.pcx", 21, 31,  100, 100, 300,  200 },	// level 21
+
+	{	"neptun01.pcx", 22, 32,  10, 20, 300,  200 },	// level 22
+	{	"neptun01.pcx", 23, 33,  10, 20, 300,  200 },	// level 23
+	{	"neptun01.pcx", 24, 34,  10, 20, 300,  200 },	// level 24
+
+	{	"pluto01.pcx",  25, 35,  10, 20, 300,  200 },	// level 25
+	{	"pluto01.pcx",  26, 36,  10, 20, 300,  200 },	// level 26
+	{	"pluto01.pcx",  27, 37,  10, 20, 300,  200 },	// level 27
+
+	{	"aster01.pcx",  -1, 38,  10, 90, 300,  200 },	// secret level -1
+	{	"aster01.pcx",  -2, 39,  10, 90, 300,  200 },	// secret level -2
+	{	"aster01.pcx",  -3, 40,  10, 90, 300,  200 }, 	// secret level -3
+#endif
+
+	{	"end01.pcx",   SHAREWARE_ENDING_LEVEL_NUM,  1,  23, 40, 320, 200 }, 	// shareware end
+#ifndef SHAREWARE
+	{	"end02.pcx",   REGISTERED_ENDING_LEVEL_NUM,  1,  5, 5, 300, 200 }, 		// registered end
+	{	"end01.pcx",   REGISTERED_ENDING_LEVEL_NUM,  2,  23, 40, 320, 200 }, 		// registered end
+	{	"end03.pcx",   REGISTERED_ENDING_LEVEL_NUM,  3,  5, 5, 300, 200 }, 		// registered end
+#endif
+
+};
+#else
  {{"brief03.pcx",0,3,8,8,257,177}}; // default=0!!!
+#endif
 
 int	Briefing_text_x, Briefing_text_y;
 
@@ -659,6 +724,9 @@ int show_briefing_message(int screen_num, char *message)
 	int hum_channel=-1,printing_channel=-1;
 	int LineAdjustment=0;	
 	WIN(int wpage_done=0);
+	#ifdef D1SW
+	GotZ = 1;
+	#endif
 
 	//strcpy(spinRobotName, "rba.mve");
 	Bitmap_name[0] = 0;
@@ -925,11 +993,13 @@ int show_briefing_message(int screen_num, char *message)
 				 
 			prev_ch = ch;
 
+			#ifndef SHAREWARE
          if (!chattering)
 			 {
 		 		printing_channel  = digi_start_sound( digi_xlat_sound(SOUND_BRIEFING_PRINTING), F1_0, 0xFFFF/2, 1, -1, -1, -1 );
 	  		   chattering=1;
 			 }
+			 #endif
 		
 			WIN(if (GRMODEINFO(emul)) delay_count = 0);
 
@@ -1047,6 +1117,11 @@ char * get_briefing_message(int screen_num)
 	char	*tptr = Briefing_text;
 	int	cur_screen=0;
 	int	ch;
+
+	#ifdef D1SW
+	Assert(screen_num >= 0 && screen_num < MAX_BRIEFING_SCREENS);
+	screen_num = Briefing_screens[screen_num].message_num;
+	#endif
 
 	Assert(screen_num >= 0);
 
@@ -1268,7 +1343,25 @@ void do_briefing_screens(char *filename,int level_num)
 
 	key_flush();
 	
+	#ifndef D1SW
 	show_briefing_screen(level_num,0);
+	#else
+	int	abort_briefing_screens = 0;
+	int	cur_briefing_screen = 0;
+	if (level_num == 1) {
+		while ((!abort_briefing_screens) && (Briefing_screens[cur_briefing_screen].level_num == 0)) {
+			abort_briefing_screens = show_briefing_screen(cur_briefing_screen, 0);
+			cur_briefing_screen++;
+		}
+	}
+
+	if (!abort_briefing_screens) {
+		for (cur_briefing_screen = 0; cur_briefing_screen < MAX_BRIEFING_SCREENS; cur_briefing_screen++)
+			if (Briefing_screens[cur_briefing_screen].level_num == level_num)
+				if (show_briefing_screen(cur_briefing_screen, 0))
+					break;
+	}
+	#endif
 
 	free (Briefing_text);
 	key_flush();

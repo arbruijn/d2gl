@@ -26,7 +26,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define SUPER_SHOCKWAVE		3
 
 #if defined(SHAREWARE)
+#ifdef D1SW
+#define Last_level 7
+#else
 #define Last_level			3			//the number of the very last level for shareware
+#endif
 #define Last_secret_level	0 			// No secret levels!
 #else
 #if defined(D2_OEM)

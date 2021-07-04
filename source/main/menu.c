@@ -743,7 +743,7 @@ void do_detail_level_menu_custom(void)
 	#endif
 }
 
-#ifndef MACINTOSH
+#if !defined(MACINTOSH) || !defined(MACSW)
 int Default_display_mode=0;
 int Current_display_mode=0;
 #else
@@ -788,6 +788,11 @@ void set_display_mode(int mode)
 	if ((Current_display_mode == -1)||(VR_render_mode != VR_NONE))	//special VR mode
 		return;								//...don't change
 
+	#ifdef MACSW
+	if (mode == 0)
+		mode = 1;
+	#endif
+
 	#if !defined(MACINTOSH) && !defined(WINDOWS)
 	if (mode >= 5 && !FindArg("-superhires"))
 		mode = 4;
@@ -828,7 +833,7 @@ void set_display_mode(int mode)
 	Screen_mode = -1;		//force screen reset
 }
 
-#ifdef MACINTOSH	// use Mac version of do_screen_res_menu
+#if defined(MACINTOSH) || defined(MACSW)	// use Mac version of do_screen_res_menu
 
 void do_screen_res_menu()
 {

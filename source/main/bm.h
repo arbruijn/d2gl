@@ -35,7 +35,7 @@ typedef struct {
 	short		eclip_num;			//the eclip that changes this, or -1
 	short		destroyed;			//bitmap to show when destroyed, or -1
 	short		slide_u,slide_v;	//slide rates of texture, stored in 8:8 fix
-	#ifdef EDITOR
+	#if defined(EDITOR) || defined(D1SW)
 	char		filename[13];		//used by editor to remap textures
 	char		pad2[3];
 	#endif
@@ -84,7 +84,7 @@ extern byte	ObjType[MAX_OBJTYPE];		// Type of an object, such as Robot, eg if Ob
 extern byte	ObjId[MAX_OBJTYPE];			// ID of a robot, within its class, eg if ObjType[11] == 3, then object #11 is the third robot
 extern fix	ObjStrength[MAX_OBJTYPE];	// initial strength of each object
 
-#if defined(MACINTOSH) && defined(SHAREWARE)
+#ifdef MACSW
 #define MAX_OBJ_BITMAPS				610
 #else
 #define MAX_OBJ_BITMAPS				600

@@ -21,7 +21,9 @@ extern void do_options_menu();
 
 extern int MenuHires;
 
-#ifdef SHAREWARE
+#ifdef D1SW
+#define Menu_pcx_name (MenuHires?"menuh.pcx":"menu.pcx")	//name of background bitmap
+#elif defined(SHAREWARE)
 	#ifdef RELEASE
 		#ifdef MACINTOSH
 			#define Menu_pcx_name "\x01menub.pcx"	//read only from hog file

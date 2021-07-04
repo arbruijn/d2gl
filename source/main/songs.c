@@ -83,11 +83,26 @@ void songs_init()
 	#endif
 
 
-	#ifndef MACINTOSH	// macs don't use the .sng file
+	#ifdef D1SW
+	strcpy(Songs[0].filename, "descent.hmp");
+	strcpy(Songs[1].filename, "briefing.hmp");
+	strcpy(Songs[2].filename, "endlevel.hmp");
+	strcpy(Songs[3].filename, "endgame.hmp");
+	strcpy(Songs[4].filename, "credits.hmp");
+	for (i = 0; i < 5; i++)
+		sprintf(Songs[SONG_FIRST_LEVEL_SONG + i].filename, "game%d.hmp", i);
+	for (i = 0; i < SONG_FIRST_LEVEL_SONG + 5; i++) {
+		strcpy(Songs[i].melodic_bank_file, "melodic.bnk");
+		strcpy(Songs[i].drum_bank_file, "drum.bnk");
+	}
+	Num_songs = SONG_FIRST_LEVEL_SONG + 5;
+	#elif !defined(MACINTOSH)	// macs don't use the .sng file
 		fp = cfopen( "descent.sng", "rb" );
 		if ( fp == NULL )
 		{
-			Error( "Couldn't open descent.sng" );
+			//Error( "Couldn't open descent.sng" );
+			Num_songs = 0;
+			return;
 		}
 		i = 0;
 		while (cfgets(inputline, 80, fp ))

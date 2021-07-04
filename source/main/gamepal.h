@@ -16,8 +16,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "inferno.h"
 
+#ifdef D1SW
+#define DEFAULT_PALETTE "descent.256"
+#define MENU_PALETTE		"descent.256"
+#else
 #define DEFAULT_PALETTE "default.256"
 #define MENU_PALETTE		"default.256"
+#endif
 
 extern char Current_level_palette[FILENAME_LEN];
 

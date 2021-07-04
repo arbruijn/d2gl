@@ -58,6 +58,7 @@ static char rcsid[] = "$Id: piggy.c 2.102 1996/12/04 18:28:09 matt Exp $";
 #include "findfile.h"
 #include "gauges.h"
 #include "weapon.h"
+#include "strutil.h"
 
 #ifndef MACINTOSH
 	#include "unarj.h"
@@ -73,7 +74,11 @@ static char rcsid[] = "$Id: piggy.c 2.102 1996/12/04 18:28:09 matt Exp $";
 #define DEFAULT_PIGFILE_SHAREWARE       "d2demo.pig"
 
 
-#ifdef SHAREWARE
+#ifdef D1SW
+	#define DEFAULT_HAMFILE         "noham"
+	#define DEFAULT_PIGFILE         "descent.pig"
+	#define DEFAULT_SNDFILE			"nosnd"
+#elif defined(SHAREWARE)
 	#define DEFAULT_HAMFILE         "d2demo.ham"
 	#define DEFAULT_PIGFILE         DEFAULT_PIGFILE_SHAREWARE
 	#define DEFAULT_SNDFILE			"descent2.s11"
@@ -168,7 +173,7 @@ ubyte BigPig = 0;
 	extern int		ConvertCToPStr(char* inCStr, StringPtr outPStrBuf);
 #endif
 
-#ifdef EDITOR
+#if defined(EDITOR) || defined(MACSW)
 void swap_0_255(grs_bitmap *bmp)
 {
 	int i;
@@ -179,6 +184,82 @@ void swap_0_255(grs_bitmap *bmp)
 		else if (bmp->bm_data[i] == 255)
 			bmp->bm_data[i] = 0;
 	}
+}
+
+// return new size or -1 if not fitting
+int swap_0_255_rle(grs_bitmap *bmp, ubyte *data_max)
+{
+	int i;
+	int size;
+	memcpy(&size, bmp->bm_data, sizeof(int));
+	int big = (bmp->bm_flags & BM_FLAG_RLE_BIG) != 0;
+	ubyte *rowsize = bmp->bm_data + sizeof(int);
+	ushort *rowsizebig = bmp->bm_data + sizeof(int);
+	ubyte *ip = bmp->bm_data + sizeof(int) + bmp->bm_h * (big + 1);
+	ubyte *ipend = bmp->bm_data + size;
+	ubyte *op = ip;
+	ubyte *iplast = ip;
+	int row = 0;
+
+	while (ip < ipend) {
+		ubyte c = *ip;
+		if (c >= 0xe0) {
+			if (c == 0xe0) { // end of row
+				ip++;
+				row++;
+				continue;
+			}
+			ubyte c1 = ip[1];
+			if (c1 == 0)
+				ip[1] = 255;
+			else if (c1 == 255) {
+				if (c == 0xe1) { // escape no longer needed
+					memmove(op, iplast, ip - iplast);
+					op += ip - iplast;
+					*op++ = 0;
+					ip += 2;
+					iplast = ip;
+					big ? rowsizebig[row]-- : rowsize[row]--;
+					continue;
+				}
+				ip[1] = 0;
+			}
+			ip += 2;
+			continue;
+		}
+		if (c == 255) {
+			*ip = 0;
+		} else if (c == 0) { // add escape
+			memmove(op, iplast, ip - iplast);
+			op += ip - iplast;
+			iplast = ++ip;
+
+			int left = ipend - ip;
+			if (op + left == data_max)
+				return -1;
+			if (ipend != data_max) { // move remaining input to end
+				ubyte *np = data_max - left;
+				memmove(np, ip, left);
+				iplast = ip = np;
+				ipend = data_max;
+			}
+
+			op[0] = 0xe1;
+			op[1] = 255;
+			op += 2;
+			big ? rowsizebig[row]++ : rowsize[row]++;
+			continue;
+		}
+		ip++;
+		continue;
+	}
+	if (op != iplast) {
+		memmove(op, iplast, ip - iplast);
+		op += ip - iplast;
+		size = op - bmp->bm_data;
+		memcpy(bmp->bm_data, &size, sizeof(int));
+	}
+	return size;
 }
 #endif
 
@@ -302,6 +383,7 @@ int Pigfile_initialized=0;
 #define PIGFILE_VERSION         2
 
 #define HAMFILE_ID              '!MAH'          //HAM!
+#define HAMFILE_VERSION_SW 2
 #define HAMFILE_VERSION 3
 //version 1 -> 2:  save marker_model_num
 //version 2 -> 3:  removed sound files
@@ -584,7 +666,7 @@ void piggy_read_d2_bitmaps(CFILE *fp, int count, bitmap_index d2_bmis[], bitmap_
 		cfseek( fp, data_start + offsets[i], SEEK_SET );
 		grs_bitmap *bm = &GameBitmaps[game_bmis[i].index];
 		int size = bm->bm_flags & BM_FLAG_RLE ? cfile_read_int(fp) : bm->bm_w * bm->bm_h;
-		char *p = bm->bm_data = malloc(size);
+		unsigned char *p = bm->bm_data = malloc(size);
 		if (bm->bm_flags & BM_FLAG_RLE) {
 			memcpy(p, &size, sizeof(size));
 			p += sizeof(size);
@@ -603,12 +685,12 @@ void piggy_read_d2_cockpit_data()
 	bitmap_index gauges_hires[MAX_GAUGE_BMS], cockpit_bms[N_COCKPIT_BITMAPS];
 	bitmap_index weapon_hires[20], weapon_hires_cur[20];
 	int n_gauges_hires, n_cockpit_bms, n_weapon_hires;
-	void bm_read_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_gauges_hires, bitmap_index cockpit_bms[], int *n_cockpit_bms,
+	void bm_read_part_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_gauges_hires, bitmap_index cockpit_bms[], int *n_cockpit_bms,
 		bitmap_index weapon_hires[], int *n_weapon_hires);
 	CFILE *fp = cfopen( DEFAULT_HAMFILE, "rb");
 	if (!fp || cfile_read_int(fp) != HAMFILE_ID || cfile_read_int(fp) != HAMFILE_VERSION)
 		Error("Invalid ham file " DEFAULT_HAMFILE);
-	bm_read_gauges_hires(fp, gauges_hires, &n_gauges_hires, cockpit_bms, &n_cockpit_bms, weapon_hires, &n_weapon_hires);
+	bm_read_part_gauges_hires(fp, gauges_hires, &n_gauges_hires, cockpit_bms, &n_cockpit_bms, weapon_hires, &n_weapon_hires);
 	cfclose(fp);
 	
 	ubyte pal[768];
@@ -693,7 +775,10 @@ void piggy_init_pigfile(char *filename)
 
 		pig_id = cfile_read_int(Piggy_fp);
 		pig_version = cfile_read_int(Piggy_fp);
-		if (pig_id > 0x10000 && pig_id < 0x100000 && pig_version > 100 && pig_version < 800) { // D1 1.4 pig
+		if (pig_id > 256 && pig_id < 4096 && pig_version > 32 && pig_version < 256) { // D1 1.0 pig
+			is_d1 = 1;
+			cfseek(Piggy_fp, 0, SEEK_SET);
+		} else if (pig_id > 0x10000 && pig_id < 0x100000 && pig_version > 100 && pig_version < 800) { // D1 1.4 pig
 			is_d1 = 1;
 			cfseek(Piggy_fp, pig_id, SEEK_SET);
 		} else if (pig_id != PIGFILE_ID || pig_version != PIGFILE_VERSION) {
@@ -760,8 +845,10 @@ void piggy_init_pigfile(char *filename)
 //	load_exit_models();
 	#endif
 
+	#ifndef D1SW
 	if (is_d1)
 		piggy_read_d2_cockpit_data();
+	#endif
 
 	Pigfile_initialized=1;  
 }
@@ -1032,8 +1119,8 @@ grs_bitmap bogus_bitmap;
 ubyte bogus_bitmap_initialized=0;
 digi_sound bogus_sound;
 
-extern void bm_read_all(CFILE * fp, int is_d1);
-
+extern void bm_read_all(CFILE * fp, int ham_version);
+void read_sndfile_data(CFILE *snd_fp, int N_sounds);
 
 int read_hamfile()
 {
@@ -1042,6 +1129,7 @@ int read_hamfile()
 	#ifdef MACINTOSH
 	char name[255];
 	#endif
+	int snd_offset, snd_count;
 	
 	#ifndef MACINTOSH
 	ham_fp = cfopen( DEFAULT_HAMFILE, "rb" );
@@ -1058,17 +1146,26 @@ int read_hamfile()
 	//make sure ham is valid type file & is up-to-date
 	ham_id = cfile_read_int(ham_fp);
 	ham_version = cfile_read_int(ham_fp);
-	if (ham_id != HAMFILE_ID || ham_version != HAMFILE_VERSION) {
+	if (ham_id != HAMFILE_ID ||
+		(ham_version != HAMFILE_VERSION && ham_version != HAMFILE_VERSION_SW)) {
 		Must_write_hamfile = 1;
 		cfclose(ham_fp);						//out of date ham
 		return 0;
 	}
 
+	snd_offset = ham_version == HAMFILE_VERSION_SW ? cfile_read_int(ham_fp) : -1;
+
 	#ifndef EDITOR
 	{
-		bm_read_all( ham_fp, 0 );  // Note connection to above if!!!
+		bm_read_all( ham_fp, ham_version );  // Note connection to above if!!!
 	}
 	#endif
+
+	if (snd_offset != -1) {
+		cfseek(ham_fp, snd_offset, 0);
+		snd_count = cfile_read_int(ham_fp);
+		read_sndfile_data(ham_fp, snd_count);
+	}
 
 	cfclose(ham_fp);
 
@@ -1139,8 +1236,10 @@ int read_sndfile()
 	snd_fp = cfopen( name, "rb");
 	#endif
 
-	if (snd_fp == NULL)
+	if (snd_fp == NULL) {
+		mprintf((1, "cannot open %s\n", DEFAULT_SNDFILE));
 		return 0;
+	}
 
 	//make sure soundfile is valid type file & is up-to-date
 	snd_id = cfile_read_int(snd_fp);
@@ -1167,9 +1266,13 @@ int read_d1_hamsnd() {
 	if (!(f = cfopen(sndfile, "rb")))
 		Error("Cannot open descent.pig");
 	int ofs = cfile_read_int(f);
-	if (ofs < 65536)
+	if (ofs < 65536) {
+		#ifndef D1SW
 		Error("Cannot open old descent.pig");
-	bm_read_all(f, 1);
+		#endif
+		ofs = 0;
+	} else
+		bm_read_all(f, 0);
 	cfseek(f, ofs, SEEK_SET);
 	int N_bitmaps = cfile_read_int(f);
 	int N_sounds = cfile_read_int(f);
@@ -1238,7 +1341,7 @@ int piggy_init(int is_d1)
 		gr_printf( 0x8000, grd_curcanv->cv_h-20, "%s...", TXT_LOADING_DATA );
 	WIN(DDGRUNLOCK(dd_grd_curcanv));
 		
-	#ifdef EDITOR
+	#if defined(EDITOR) || defined(D1SW)
 	piggy_init_pigfile(DEFAULT_PIGFILE);
 	#endif
 
@@ -1247,7 +1350,7 @@ int piggy_init(int is_d1)
 	} else {
 		ham_ok = read_hamfile();
 
-		snd_ok = read_sndfile();
+		snd_ok = Num_sound_files ? ham_ok : read_sndfile();
 	}
 
 	atexit(piggy_close);
@@ -1405,6 +1508,16 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 				goto ReDoIt;
 			}
 			Piggy_bitmap_cache_next += zsize-4;
+			#ifdef MACSW
+			Piggy_bitmap_cache_next -= zsize;
+			zsize = swap_0_255_rle(bmp, Piggy_bitmap_cache_data + Piggy_bitmap_cache_size);
+			if (zsize == -1) {
+				Int3();
+				piggy_bitmap_page_out_all();
+				goto ReDoIt;
+			}
+			Piggy_bitmap_cache_next += zsize;
+			#endif
 		} else {
 			// GET JOHN NOW IF YOU GET THIS ASSERT!!!
 			Assert( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) < Piggy_bitmap_cache_size );      
@@ -1419,6 +1532,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 				goto ReDoIt;
 			}
 			Piggy_bitmap_cache_next+=bmp->bm_h*bmp->bm_w;
+			#ifdef MACSW
+			swap_0_255(bmp);
+			#endif
 		}
 	
 		//@@if ( bmp->bm_selector ) {

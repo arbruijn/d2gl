@@ -53,7 +53,7 @@ static char rcsid[] = "$Id: bm.c 2.37 1996/10/16 15:03:28 jeremy Exp $";
 ubyte Sounds[MAX_SOUNDS];
 ubyte AltSounds[MAX_SOUNDS];
 
-#ifdef EDITOR
+#if defined(EDITOR) || defined(D1SW)
 int Num_total_object_types;
 byte	ObjType[MAX_OBJTYPE];
 byte	ObjId[MAX_OBJTYPE];
@@ -88,7 +88,8 @@ ushort				ObjBitmapPtrs[MAX_OBJ_BITMAPS];		// These point back into ObjBitmaps, 
 
 extern ushort GameBitmapXlat[MAX_BITMAP_FILES];
 
-static int data_d1 = 0;
+int data_d1 = 0;
+int data_sw = 0;
 #define MAX_TEXTURES_D1 800
 #define MAX_SOUNDS_D1 250
 #define MAX_VCLIPS_D1 70
@@ -287,7 +288,7 @@ void read_robot_info(CFILE *fp, int inNumRobotsToRead, int inOffset)
 		Robot_info[i].deathroll_sound = data_d1 ? SOUND_BOSS_SHARE_DIE : cfile_read_byte(fp);
 		Robot_info[i].glow = data_d1 ? 0 : cfile_read_byte(fp);
 		Robot_info[i].behavior = data_d1 ? AIB_NORMAL : cfile_read_byte(fp);
-		Robot_info[i].aim = data_d1 ? F1_0 : cfile_read_byte(fp);
+		Robot_info[i].aim = data_d1 ? 255 : cfile_read_byte(fp);
 
 		for (j = 0; j < MAX_GUNS + 1; j++) {
 			for (k = 0; k < N_ANIM_STATES; k++) {
@@ -355,13 +356,14 @@ void read_weapon_info(CFILE *fp, int inNumWeaponsToRead, weapon_info *weapon_inf
 		weapon_info[i].afterburner_size = data_d1 ? 0 : cfile_read_byte(fp);
 		
 		weapon_info[i].children =
-			data_d1 ? i == SMART_ID ? PLAYER_SMART_HOMING_ID : -1 :
+			data_d1 || data_sw ? i == SMART_ID ? PLAYER_SMART_HOMING_ID :
+				i == SUPERPROX_ID ? SMART_MINE_HOMING_ID : -1 :
 			cfile_read_byte(fp);
 
 		weapon_info[i].energy_usage = cfile_read_fix(fp);
 		weapon_info[i].fire_wait = cfile_read_fix(fp);
 		
-		weapon_info[i].multi_damage_scale = data_d1 ? F1_0 : cfile_read_fix(fp);
+		weapon_info[i].multi_damage_scale = data_d1 || data_sw ? F1_0 : cfile_read_fix(fp);
 		
 		weapon_info[i].bitmap.index = cfile_read_short(fp);	// bitmap_index = short
 
@@ -380,7 +382,7 @@ void read_weapon_info(CFILE *fp, int inNumWeaponsToRead, weapon_info *weapon_inf
 		weapon_info[i].lifetime = cfile_read_fix(fp);
 		weapon_info[i].damage_radius = cfile_read_fix(fp);
 		weapon_info[i].picture.index = cfile_read_short(fp);		// bitmap_index is a short
-		weapon_info[i].hires_picture.index = data_d1 ? 0 : cfile_read_short(fp);		// bitmap_index is a short
+		weapon_info[i].hires_picture.index = data_d1 || data_sw ? weapon_info[i].picture.index : cfile_read_short(fp);		// bitmap_index is a short
 	}
 }
 
@@ -530,7 +532,11 @@ void load_exit_models()
 	load_exit_model_bitmap("rbot061.bbm");
 	load_exit_model_bitmap("rbot063.bbm");
 
+	#ifdef MACINTOSH
 	exit_hamfile = cfopen(":Data:exit.ham","rb");
+	#else
+	exit_hamfile = cfopen("exit.ham","rb");
+	#endif
 
 	exit_modelnum = N_polygon_models++;
 	destroyed_exit_modelnum = N_polygon_models++;
@@ -539,7 +545,7 @@ void load_exit_models()
 	cfread( &Polygon_models[exit_modelnum], sizeof(polymodel), 1, exit_hamfile );
 	cfread( &Polygon_models[destroyed_exit_modelnum], sizeof(polymodel), 1, exit_hamfile );
 	#else
-	read_polygon_models(exit_hamfile, destroyed_exit_modelnum - exit_modelnum, Polygon_models, exit_modelnum);
+	read_polygon_models(exit_hamfile, destroyed_exit_modelnum - exit_modelnum + 1, Polygon_models, exit_modelnum);
 	#endif
 	Polygon_models[exit_modelnum].first_texture = start_num;
 	Polygon_models[destroyed_exit_modelnum].first_texture = start_num+3;
@@ -587,11 +593,12 @@ int bm_init(int is_d1)
 }
 
 #define ELMS(x) (sizeof(x) / sizeof((x)[0]))
-void bm_read_all(CFILE * fp, int is_d1)
+void bm_read_all(CFILE * fp, int ham_version)
 {
 	int i,t;
 
-	data_d1 = is_d1;
+	int is_d1 = data_d1 = !ham_version;
+	data_sw = ham_version == 2;
 
 	NumTextures = cfile_read_int(fp);
 	Assert(NumTextures > 0 && NumTextures <= ELMS(Textures));
@@ -722,10 +729,8 @@ void bm_read_all(CFILE * fp, int is_d1)
 	cfread( ObjBitmaps, sizeof(bitmap_index), t, fp );
 	cfread( ObjBitmapPtrs, sizeof(ushort), t, fp );
 
-#ifdef MACINTOSH
-#ifdef SHAREWARE
 	N_ObjBitmaps = t;
-#endif
+#ifdef MACINTOSH
 	for (i = 0; i < t; i++) {
 		ObjBitmaps[i].index = SWAPSHORT(ObjBitmaps[i].index);
 		ObjBitmapPtrs[i] = SWAPSHORT(ObjBitmapPtrs[i]);
@@ -815,12 +820,12 @@ void bm_read_all(CFILE * fp, int is_d1)
 	#endif
 }
 
-void bm_read_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_gauges, bitmap_index cockpit_bms[], int *n_cockpit_bms,
+void bm_read_part_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_gauges, bitmap_index cockpit_bms[], int *n_cockpit_bms,
 	bitmap_index weapon_hires[], int *n_weapon_hires)
 {
 	int i;
 
-	data_d1 = 0;
+	data_d1 = data_sw = 0;
 
 	int num_textures = cfile_read_int(fp);
 	Assert(num_textures > 0 && num_textures <= ELMS(Textures));

@@ -255,7 +255,9 @@ select_weapon(int weapon_num, int secondary_flag, int print_message, int wait_fo
 
 	if (!secondary_flag) {
 		if (Primary_weapon != weapon_num) {
+			#ifndef D1SW
 			if (wait_for_rearm) digi_play_sample_once( SOUND_GOOD_SELECTION_PRIMARY, F1_0 );
+			#endif
 			if (Game_mode & GM_MULTI)	{
 				if (wait_for_rearm) multi_send_play_sound(SOUND_GOOD_SELECTION_PRIMARY, F1_0);
 			}
@@ -285,7 +287,9 @@ select_weapon(int weapon_num, int secondary_flag, int print_message, int wait_fo
 	} else {
 
 		if (Secondary_weapon != weapon_num) {
+			#ifndef D1SW
 			if (wait_for_rearm) digi_play_sample_once( SOUND_GOOD_SELECTION_SECONDARY, F1_0 );
+			#endif
 			if (Game_mode & GM_MULTI)	{
 				if (wait_for_rearm) multi_send_play_sound(SOUND_GOOD_SELECTION_PRIMARY, F1_0);
 			}

@@ -81,17 +81,22 @@ int load_mission(int mission_num)
 
 	N_secret_levels = 0;
 
-	Assert(Last_level == 3);
 
-#ifdef MACINTOSH	// mac demo is using the regular hog and rl2 files
-	strcpy(Level_names[0],"d2leva-1.rl2");
-	strcpy(Level_names[1],"d2leva-2.rl2");
-	strcpy(Level_names[2],"d2leva-3.rl2");
+#ifdef D1SW
+	for (int i = 0; i < Last_level; i++)
+		sprintf(Level_names[i], "level%02d.sdl", i + 1);
 #else
-	strcpy(Level_names[0],"d2leva-1.sl2");
-	strcpy(Level_names[1],"d2leva-2.sl2");
-	strcpy(Level_names[2],"d2leva-3.sl2");
-#endif 	// end of ifdef macintosh
+	Assert(Last_level == 3);
+	if (cfexist("d2leva-1.rl2")) {	// mac demo is using the regular hog and rl2 files
+		strcpy(Level_names[0],"d2leva-1.rl2");
+		strcpy(Level_names[1],"d2leva-2.rl2");
+		strcpy(Level_names[2],"d2leva-3.rl2");
+	} else {
+		strcpy(Level_names[0],"d2leva-1.sl2");
+		strcpy(Level_names[1],"d2leva-2.sl2");
+		strcpy(Level_names[2],"d2leva-3.sl2");
+	}
+#endif
 
 	return 1;
 }

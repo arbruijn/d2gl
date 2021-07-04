@@ -814,7 +814,7 @@ void create_name_canv()
 	else
 		sprintf(name_level_left, "Secret Level %i",-Current_level_num);
 
-	if (Current_mission_num == 0 && Current_level_num>0)		//built-in mission
+	if (Current_mission_num == 0 && Current_level_num>0 && !Current_level_D1)		//built-in mission
 		sprintf(name_level_right,"%s %d: ",system_name[(Current_level_num-1)/4],((Current_level_num-1)%4)+1);
 	else
 		strcpy(name_level_right, " ");
@@ -850,7 +850,9 @@ extern int set_segment_depths(int start_seg, ubyte *segbuf);
 
 int Automap_active = 0;
 
-#ifdef RELEASE
+#ifdef D1SW
+#define MAP_BACKGROUND_FILENAME (AutomapHires?"maph.pcx":"map.pcx")
+#elif defined(RELEASE)
 #define MAP_BACKGROUND_FILENAME (AutomapHires?"\x01MAPB.PCX":"\x01MAP.PCX")	//load only from hog file
 #else
 #define MAP_BACKGROUND_FILENAME (AutomapHires?"MAPB.PCX":"MAP.PCX")

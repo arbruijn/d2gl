@@ -2106,7 +2106,11 @@ void ShowLevelIntro(int level_num)
 			#ifdef SHAREWARE
 				if (level_num==1)
 				{
+					#ifdef D1SW
+					do_briefing_screens ("briefing.tex",1);
+					#else
 					do_briefing_screens ("brief2.tex",1);	
+					#endif
 				}
 			#else
 				for (i=0;i<NUM_INTRO_MOVIES;i++)

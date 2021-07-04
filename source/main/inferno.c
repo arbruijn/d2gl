@@ -134,6 +134,7 @@ int __far descent_critical_error_handler( unsigned deverr, unsigned errcode, uns
 #endif
 
 void check_joystick_calibration(void);
+void show_order_form();
 
 
 //--------------------------------------------------------------------------
@@ -1120,15 +1121,20 @@ int main(int argc,char **argv)
 	#endif
 
 	#ifdef SHAREWARE
-		cfile_init("d2demo.hog");			//specify name of hogfile
+	#ifdef D1SW
+	#define HOGNAME "descent.hog"
+	#else
+	#define HOGNAME "d2demo.hog"			//specify name of hogfile
+	#endif
 	#else
 	#define HOGNAME "descent2.hog"
-	if (! cfile_init(HOGNAME)) {		//didn't find HOG.  Check on CD
-		#ifdef RELEASE
-			Error("Could not find required file <%s>",HOGNAME);
-		#endif
-	}
 	#endif
+	if (! cfile_init(HOGNAME)) {		//didn't find HOG.  Check on CD
+		//#ifdef RELEASE
+			Error("Could not find required file <%s>",HOGNAME);
+		//#endif
+	}
+	mprintf((1, "opened %s\n", HOGNAME));
 	
 	load_text();
 
@@ -1331,6 +1337,12 @@ int main(int argc,char **argv)
 #endif
 		//NOTE LINK TO ABOVE!
 		MenuHires = MenuHiresAvailable = 1;
+#ifdef SHAREWARE
+	if (cfexist("descentb.pcx"))
+		MovieHires = MenuHires = MenuHiresAvailable = 1;
+	else
+		MovieHires = MenuHires = MenuHiresAvailable = 0;
+#endif
 
 	mprintf( (0, "\nInitializing movie libraries..." ));
 	init_movies();		//init movie libraries
@@ -1449,7 +1461,11 @@ int main(int argc,char **argv)
 		char filename[14];
 
 		#ifdef SHAREWARE
+		#ifdef D1SW
+		strcpy(filename, MenuHires?"descenth.pcx":"descent.pcx");
+		#else
 		strcpy(filename, "descentd.pcx");
+		#endif
 		#else
 		#ifdef D2_OEM
 		strcpy(filename, MenuHires?"descntob.pcx":"descento.pcx");
@@ -1457,6 +1473,8 @@ int main(int argc,char **argv)
 		strcpy(filename, MenuHires?"descentb.pcx":"descent.pcx");
 		#endif
 		#endif
+		if (strcmp(filename, "descentd.pcx") == 0 && MenuHires)
+			strcpy(filename, "descentb.pcx");
 
 #if defined(POLY_ACC)
 		vga_set_mode(SM_640x480x15xPA);
@@ -1475,7 +1493,7 @@ int main(int argc,char **argv)
 	}
 
 	mprintf( (0, "\nDoing bm_init..." ));
-	#ifdef EDITOR
+	#if defined(EDITOR) || defined(D1SW)
 		bm_init_use_tbl();
 	#else
 		bm_init(0);
@@ -1605,7 +1623,7 @@ int main(int argc,char **argv)
 
 	//do this here because the demo code can do a longjmp when trying to
 	//autostart a demo from the main menu, never having gone into the game
-	setjmp(LeaveGame);
+	//setjmp(LeaveGame);
 
 	while (Function_mode != FMODE_EXIT)
 	{
@@ -1723,7 +1741,9 @@ void show_order_form()
 
 	key_flush();		
 
-	#ifdef D2_OEM
+	#ifdef D1SW
+		strcpy(exit_screen, MenuHires?"order01h.pcx":"order01.pcx");
+	#elif defined(D2_OEM)
 		strcpy(exit_screen, MenuHires?"ordrd2ob.pcx":"ordrd2o.pcx");
 	#else
 	#if defined(SHAREWARE)
@@ -1736,6 +1756,8 @@ void show_order_form()
 	if ((pcx_error=pcx_read_bitmap( exit_screen, &grd_curcanv->cv_bitmap, grd_curcanv->cv_bitmap.bm_type, title_pal ))==PCX_ERROR_NONE) {
 		//vfx_set_palette_sub( title_pal );
 		gr_palette_fade_in( title_pal, 32, 0 );
+		void gr_sync_display();
+		gr_sync_display();
 		key_getch();
 		gr_palette_fade_out( title_pal, 32, 0 );		
 	}

@@ -2556,13 +2556,16 @@ void save_movie_frame()
 
 extern int Level_shake_duration;
 
+int no_ambient_sounds;
+
 //if water or fire level, make occasional sound
 void do_ambient_sounds()
 {
+	#ifndef SHAREWARE
 	int has_water,has_lava;
 	int sound;
 
-	if (Current_level_D1)
+	if (Current_level_D1 || no_ambient_sounds)
 		return;
 
 	has_lava = (Segment2s[ConsoleObject->segnum].s2_flags & S2F_AMBIENT_LAVA);
@@ -2582,6 +2585,7 @@ void do_ambient_sounds()
 		fix volume = psrand() + f1_0/2;
 		digi_play_sample(sound,volume);
 	}
+	#endif
 }
 
 // -- extern void lightning_frame(void);

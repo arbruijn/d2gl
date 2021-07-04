@@ -122,13 +122,18 @@ void load_text()
 
 		tptr = strchr(tptr,'\n');
 
-		#ifdef MACINTOSH			// total hack for mac patch since they don't want to patch data.
+		#if defined(MACINTOSH) || defined(SHAREWARE)			// total hack for mac patch since they don't want to patch data.
 		if (!tptr && (i == 644) )
 			break;
-		#else
+		#elif defined(D1SW)
+		if (!tptr && (i == 514) )
+			break;
+		#elif defined(D1)
+		if (!tptr && (i == 621) )
+			break;
+		#endif
 		if (!tptr)
 			Error("Not enough strings in text file - expecting %d, found %d",N_TEXT_STRINGS,i);
-		#endif
 
 		if ( tptr ) *tptr++ = 0;
 
@@ -136,7 +141,7 @@ void load_text()
 			decode_text_line(Text_string[i]);
 
 		//scan for special chars (like \n)
-		for (p=Text_string[i];p=strchr(p,'\\');) {
+		for (p=Text_string[i];(p=strchr(p,'\\'));) {
 			char newchar;
 
 			if (p[1] == 'n') newchar = '\n';
@@ -146,10 +151,18 @@ void load_text()
 				Error("Unsupported key sequence <\\%c> on line %d of file <%s>",p[1],i+1,filename); 
 
 			p[0] = newchar;
-			strcpy(p+1,p+2);
+			memmove(p+1,p+2,strlen(p+1));
 			p++;
 		}
  
+	}
+
+	if (i <= 644) {
+		Text_string[TNUM_Z1] = "Z1";
+		Text_string[TNUM_UN] = "UN";
+		Text_string[TNUM_P1] = "P1";
+		Text_string[TNUM_R1] = "R1";
+		Text_string[TNUM_YA1] = "YA1";
 	}
 
 //	Assert(tptr==text+len || tptr==text+len-2);

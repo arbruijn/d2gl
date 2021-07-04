@@ -65,7 +65,11 @@ void piggy_read_sound_data(digi_sound	*snd);
 
 void piggy_load_level_data();
 
+#if defined(SHAREWARE) && !defined(MACSW)
+#define MAX_BITMAP_FILES	2500
+#else
 #define MAX_BITMAP_FILES	2620 // Upped for CD Enhanced
+#endif
 #define MAX_SOUND_FILES		MAX_SOUNDS
 
 extern digi_sound GameSounds[MAX_SOUND_FILES];

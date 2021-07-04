@@ -67,7 +67,7 @@ static char rcsid[] = "$Id: mem.c 1.29 1996/05/30 10:31:57 champaign Exp $";
 
 #define MAX_INDEX 10000
 
-static unsigned int MallocBase[MAX_INDEX];
+static void * MallocBase[MAX_INDEX];
 static unsigned int MallocSize[MAX_INDEX];
 static unsigned int MallocRealSize[MAX_INDEX];
 static unsigned char Present[MAX_INDEX];
@@ -171,7 +171,9 @@ void * mem_malloc( unsigned int size, char * var, char * filename, int line, int
 	int i, id;
 	void *ptr;
 	char * pc;
+	#ifndef NDOS
 	int * data;
+	#endif
 
 	if (Initialized==0)
 		mem_init();
@@ -240,9 +242,9 @@ void * mem_malloc( unsigned int size, char * var, char * filename, int line, int
 	if ( base < SmallestAddress ) SmallestAddress = base;
 	if ( (base+size) > LargestAddress ) LargestAddress = base+size;
 
-	MallocBase[id] = (unsigned int)ptr;
-	data = (int *)((int)MallocBase[id]-4);
+	MallocBase[id] = ptr;
 	#ifndef NDOS
+	data = (int *)((int)MallocBase[id]-4);
 	MallocRealSize[id] = *data;
 	#endif
 	MallocSize[id] = size;
@@ -271,7 +273,7 @@ int mem_find_id( void * buffer )
 
 	for (i=0; i<=LargestIndex; i++ )
 		if (Present[i]==1)
-			if (MallocBase[i] == (unsigned int)buffer )
+			if (MallocBase[i] == buffer )
 				return i;
 
 	// Didn't find id.
@@ -280,15 +282,17 @@ int mem_find_id( void * buffer )
 
 int mem_check_integrity( int block_number )
 {
+	#ifndef NDOS
 	int * data;
+	#endif
 	int i, ErrorCount;
 	ubyte * CheckData;
 
-	CheckData = (char *)(MallocBase[block_number] + MallocSize[block_number]);
-
-	data = (int *)((int)MallocBase[block_number]-4);
+	CheckData = ((char *)MallocBase[block_number] + MallocSize[block_number]);
 
 	#ifndef NDOS
+	data = (int *)((int)MallocBase[block_number]-4);
+
 	if ( *data != MallocRealSize[block_number] )	{
 		fprintf( stderr, "\nMEM_BAD_LENGTH: The length field of an allocated block was overwritten.\n" );
 		PrintInfo( block_number );

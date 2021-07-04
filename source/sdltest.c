@@ -1,4 +1,5 @@
 //#include "sdl2/include/SDL.h"
+#include "config.h"
 #ifdef EMSCRIPTEN
 #include "SDL/SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
@@ -56,11 +57,12 @@ int last_time;
 int sdl_time_start;
 int time_speed = 1;
 int play_speed = 16;
-int play_show = 0;
+int play_show = 1;
 
 FILE *log_file = NULL;
 int is_record = 1;
 int is_play = 0;
+int is_continue = 0;
 
 void frame_delay() {
     EventLoop(0);
@@ -75,9 +77,23 @@ void frame_delay() {
     #endif
 }
 
+void maybe_swap_delay() {
+    if (is_play && !play_show)
+        return;
+    #ifdef SDL2
+    SDL_GL_SwapWindow(window);
+    #else
+    SDL_GL_SwapBuffers();
+    #endif
+    frame_delay();
+}
+
 void draw() {
     if (is_play && !play_show)
         return;
+    #ifdef GL
+    SDL_GL_SwapWindow(window);
+    #else
     void *pixels;
     #ifdef SDL2
     int pitch;
@@ -101,6 +117,7 @@ void draw() {
     SDL_UnlockSurface(window);
     SDL_UpdateRect(window, 0, 0, 0, 0);
     #endif
+    #endif
     frame_delay();
     if (0) {
             long now = SDL_GetTicks();
@@ -113,7 +130,9 @@ void draw() {
     return;
 }
 
-
+void gr_sync_display() {
+    draw();
+}
 
 void sdl_time_sync() {
     sdl_time_start = SDL_GetTicks() - fixmuldiv(last_time, 1000, 65536 * time_speed);
@@ -135,23 +154,37 @@ int sdl_init() {
     if (is_play && !play_show)
         return 0;
 
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     SDL_Init(SDL_INIT_EVERYTHING);
 
+    #ifdef GL
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetSwapInterval(0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    #endif
 
     #ifdef SDL2
     if (!(window = SDL_CreateWindow("SDL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        640, 480, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL))) {
+        640, 480, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN
+         #ifdef GL
+         | SDL_WINDOW_OPENGL
+         #endif
+         ))) {
             error_set("SDL_CreateWindow %s", SDL_GetError());
             return 1;
     }
     SDL_SetWindowTitle(window, "Test");
+    #ifdef GL
     SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(0); // disable vsync
+    #else
+    if (!(render = SDL_CreateRenderer(window, -1, 0))) {
+        error_set("SDL_CreateRenderer %s", SDL_GetError());
+        return 1;
+    }
+    #endif
     #else
     SDL_EnableKeyRepeat(0, 0);
     if (!(window = SDL_SetVideoMode( 640, 480, 32, SDL_OPENGL )))
@@ -188,11 +221,13 @@ void video_set_res(int w, int h) {
     cur_h = h;
     if (is_play && !play_show)
         return;
-    return; // opengl
-#ifdef SDL2
+#if defined(SDL2) && !defined(GL)
     if (texture != NULL)
         SDL_DestroyTexture(texture);
-    texture = CreateTexture(w, h);
+    if (!(texture = CreateTexture(w, h))) {
+        fprintf(stderr, "cannot create texture %dx%d\n", w, h);
+        exit(1);
+    }
 #endif
 }
 
@@ -305,7 +340,9 @@ extern int modes[][2];
 extern char Ai_cloak_info[8 * 16];
 extern int Last_gate_time;
 #endif
+#ifdef ENDLEVEL
 extern int explosion_wait1, explosion_wait2;
+#endif
 player *Player = &Players[0];
 int *pDifficulty_level = &Difficulty_level;
 int *pGameTime = &GameTime;
@@ -393,10 +430,12 @@ void load_stat(FILE *f, int have_level) {
             Secondary_weapon = (char)strtol(arg, NULL, 10);
         if (strcmp(line, "laser_offset") == 0)
             Laser_offset = (int)strtoul(arg, NULL, 16);
+        #ifdef ENDLEVEL
         if (strcmp(line, "explosion_wait1") == 0)
             explosion_wait1 = (int)strtoul(arg, NULL, 16);
         if (strcmp(line, "explosion_wait2") == 0)
             explosion_wait2 = (int)strtoul(arg, NULL, 16);
+        #endif
         if (strcmp(line, "missile_gun") == 0)
             Missile_gun = (int)strtol(arg, NULL, 10);
         if (strcmp(line, "reset_effects") == 0)
@@ -416,8 +455,8 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
         if (level == end_level)
             exit(0);
         load_stat(log_file, skipped_levels);
-        skipped_levels = 0;
     }
+    skipped_levels = 0;
 
     // clear AI globals
     memset(pAi_local_info, 0, 184 * 350);
@@ -427,9 +466,18 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     
     *pFuelcen_seconds_left = 0;
 
+    extern int Buddy_last_seen_player, Buddy_last_player_path_created;
+    extern int Escort_last_path_created;
+
+    Buddy_last_seen_player = 0;
+    Buddy_last_player_path_created = 0;
+    Escort_last_path_created = 0;
+
+    #if 0
     init_special_effects();
     for (int i = 0; i < Num_effects; i++)
         Effects[i].frame_count = 0;
+    #endif
 
     call_reg3(StartNewLevelSub, level, flag, secret);
 }
@@ -437,14 +485,23 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
 
 void init_data_files();
 int test_main2(int argc, char **argv) {
+	int d1 =  0;
 	//init_data_files();
 	
+	#ifdef SHAREWARE
+	cfile_init("d2demo.hog");
+	#else
 	cfile_init("descent2.hog");
+	#endif
 	load_text();
 	Lighting_on = 1;
 
 	extern int grd_fades_disabled;
 	grd_fades_disabled = 1;
+	extern int skip_endlevel;
+	skip_endlevel = 1;
+	extern int no_ambient_sounds; // depends on loaded bitmaps for previous level
+	no_ambient_sounds = 1;
 
 	#define SM_320x200C 0
 	#define SM_640x480V 14
@@ -467,14 +524,14 @@ int test_main2(int argc, char **argv) {
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
 	extern int VR_screen_mode;
 	ret = call_reg1(gr_set_mode, VR_screen_mode);
-	grd_curcanv->cv_bitmap.bm_type = BM_GL;
+	//grd_curcanv->cv_bitmap.bm_type = BM_GL;
 	//printf("gr_set_mode=%d\n", ret);
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
 	//(*cur_canvas)[3] = (int)vga_screen;
 	//goto err;
 	call_reg1(gr_use_palette_table, "default.256");
 	gamefont_init();
-	bm_init(1);
+	bm_init(d1);
 
 	//call_reg2(show_title_screen, (int)"iplogo1.pcx", 1);
 	//call_reg2(show_title_screen, (int)"logo.pcx", 1);
@@ -495,9 +552,13 @@ int test_main2(int argc, char **argv) {
 	//RegisterPlayer();
 	//build_mission_list(0);
 	//read_mission_file("d2.mn2", 0, ML_CURDIR);
-	int read_mission_file(const char*,int,int);
-	read_mission_file("descent.mn2", 1, ML_CURDIR);
-	call_reg1(load_mission, 1);
+	#ifndef SHAREWARE
+	if (d1) {
+		int read_mission_file(const char*,int,int);
+		read_mission_file("descent.mn2", 1, ML_CURDIR);
+	}
+	#endif
+	call_reg1(load_mission, d1 ? 1 : 0);
 	Function_mode = 2; // FMODE_GAME
 	#ifndef Skip_briefing_screens
 	Skip_briefing_screens = 1;
@@ -507,6 +568,7 @@ int test_main2(int argc, char **argv) {
 	Cockpit_mode = CM_FULL_SCREEN;
 	extern int Missile_view_enabled;
 	Missile_view_enabled = 0;
+	Difficulty_level = 0;
 	write_player_file();
 	//extern int Current_display_mode;
 	//Current_display_mode = display_mode;
@@ -531,6 +593,30 @@ int test_main2(int argc, char **argv) {
 	cur_time = 0;
 	#endif
 
+	if (skipped_levels) {
+	    char *level_name = Level_names[level-1];
+	    CFILE *f = cfopen(level_name, "rb");
+	    char buf[64];
+	    if (!f) {
+	        fprintf(stderr, "cannot open %s for palette peek\n", level_name);
+	        return 1;
+            }
+            cfread(buf, sizeof(buf), 1, f);
+            cfclose(f);
+            if (memcmp(buf, "LVLP", 4) != 0 || buf[4] < 5) {
+                fprintf(stderr, "invalid level for palette peek %s\n", level_name);
+                return 1;
+            }
+            char *pal = buf + 16 + (buf[5] >= 8 ? 7 : 0);
+            char *p = memchr(pal, '\n', buf + 64 - pal);
+            if (!p) {
+                fprintf(stderr, "invalid level for palette peek %s\n", level_name);
+                return 1;
+            }
+            *p = 0;
+             load_palette(pal,1,1); 
+	}
+
 	//call_reg2(StartNewLevelSub, start_level, 1);
 	my_StartNewLevelSub(level, 1, 0);
 
@@ -553,7 +639,8 @@ int test_main2(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    if (init_play_record(argc, argv))
+    init_play_args(argc, argv);
+    if (start_play_record())
         return 1;
     InitKeyMap();
     #if 0
@@ -709,7 +796,7 @@ void my_controls_read_all() {
                     if (hashscr != cur) {
                         printf("screen mismatch read %x is %x\n", hashscr, cur);
                         exit(1);
-                    }
+                        }
                     break;
                 }
                 #endif
@@ -729,12 +816,7 @@ void my_game_render_frame() {
     //glClear(GL_DEPTH_BUFFER_BIT);
     game_render_frame();
     last_time += 65536/32;
-    #ifdef SDL2
-    SDL_GL_SwapWindow(window);
-    #else
-    SDL_GL_SwapBuffers();
-    #endif
-    frame_delay();
+    maybe_swap_delay();
     //draw();
     //printf("%d\n", Players[0].shields / 65536);
 }
@@ -773,8 +855,10 @@ void print_stat(FILE *f) {
     fprintf(f, "primary_weapon=%d\n", Primary_weapon);
     fprintf(f, "secondary_weapon=%d\n", Secondary_weapon);
     fprintf(f, "laser_offset=%x\n", Laser_offset);
+    #ifdef ENDLEVEL
     fprintf(f, "explosion_wait1=%x\n", explosion_wait1);
     fprintf(f, "explosion_wait2=%x\n", explosion_wait2);
+    #endif
     fprintf(f, "missile_gun=%d\n", Missile_gun);
 }
 
@@ -806,3 +890,7 @@ void mouse_show_cursor() {}
 void mouse_hide_cursor() {}
 void mouse_get_pos(int *x, int *y) {}
 
+int Function_mode;
+int Screen_mode;
+ubyte Version_major, Version_minor, Version_fix;
+void show_order_form() {}

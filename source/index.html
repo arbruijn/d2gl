@@ -148,8 +148,15 @@ window.addEventListener('resize', dosize);
 function dosize() {
  var outer=document.querySelector('#outer');
  var c=outer.firstChild;w=outer.offsetWidth;h=outer.offsetHeight;
- if (w>h*4/3)w=h*4/3;else h=w*3/4;
- c.style.width=w+'px';c.style.height=h+'px';
+ w=document.documentElement.clientWidth;
+ h=document.documentElement.clientHeight;
+ if (w>h*4/3)w=Math.floor(h*4/3);else h=Math.floor(w*3/4);
+ //c.style.width=w+'px';c.style.height=h+'px';
+ c.width=w;
+ c.height=h;
+ console.log('dosize w='+w+' h='+h);
+ if (window.Module && Module._gl_set_screen_size)
+   Module._gl_set_screen_size(w, h);
 }
 window.requestAnimationFrame(dosize);
 </script>

@@ -40,4 +40,13 @@ game2
 lst
 d2wasm.html
 d2wasm.js
-
+.gdb_history
+*.pcx
+*.ham
+*.sg0
+*.fnt
+lst
+lst[vpcr]
+lst[0-9]
+lst[vpcr][0-9]
+lst[vpcr]_[0-9]

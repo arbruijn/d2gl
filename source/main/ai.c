@@ -1,3 +1,6 @@
+#define VERBOSE
+#define PRINT_DO_FRAME
+#define debug_objnum 102
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -436,6 +439,11 @@ _exit_cheat:
 		}
 	}
 	dist_to_player = vm_vec_dist_quick(&Believed_player_pos, &obj->pos);
+
+	#ifdef PRINT_DO_FRAME
+	printf("do_ai_frame time=%x count=%d obj=%d pvis=%d dist=%x beh=%x\n", GameTime, FrameCount, objnum, previous_visibility, dist_to_player, aip->behavior);
+	#endif
+
 //	if (robptr->companion)
 //		mprintf((0, "%3i: %3i %8.3f %8s %8s [%3i %4i]\n", objnum, obj->segnum, f2fl(dist_to_player), mode_text[ailp->mode], behavior_text[aip->behavior-0x80], aip->hide_index, aip->path_length));
 
@@ -1347,6 +1355,10 @@ _exit_cheat:
 				aip->CURRENT_GUN = 1;
 	}
 
+#ifdef VERBOSE
+	if (objnum==debug_objnum)
+		printf("obj %d ai mode %d cur %d goal %d plen %d\n", objnum, ailp->mode, aip->CURRENT_STATE, aip->GOAL_STATE, aip->path_length);
+#endif
 }
 
 //	-----------------------------------------------------------------------------------

@@ -322,9 +322,10 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	multi.c cntrlcen.c credits.c config.c kmatrix.c	\
 	paging.c mission.c songs.c bmread.c \
 	escort.c gamepal.c multibot.c state.c \
-	3dmax.c terrain.c
+	3dmax.c
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
+#DESCENT2_SRCS += terrain.c
 
 #ifeq ($(TARGSYS),WIN32)
 DESCENT2WIN_SRCS += winferno.c descentw.c modem.c joydefsw.c windigi.c movie.c
@@ -792,16 +793,18 @@ ALL_WINOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
 	novga/novesa.obj win95/smfread.obj
 
 ACFLAGS += -DNDOS -DNASM -Dfar="" -D_far="" -DKEY_COMMAND=512 -Dnear="" -Dcdecl=""
-ACFLAGS += -DENDLEVEL
-#ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE
+#ACFLAGS += -DENDLEVEL
+ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE
 ACFLAGS += -DNETWORK -DNPACK
+#ACFLAGS += -DD1SW -DSHAREWARE
+#ACFLAGS += -DSHAREWARE -DMACSW
 ACFLAGS += -Ilib -Iincludes -Ipa_null -I2d -I3d -Itexmap \
 	-Ifix -Ivecmat -Ibios -Imem -Icfile -Imisc -Iiff \
 	-Ivga -Idiv -Iarch -Imain
 ACFLAGS += -I../../desrun/deslog
 CFLAGS += $(ACFLAGS)
 CFLAGS += -Wno-implicit-int
-CFLAGS += -Og -g -m32 -fno-pie -fcf-protection=none
+CFLAGS += -Og -g -fno-pie -fcf-protection=none
 #CFLAGS += -fpack-struct
 LDFLAGS += --disable-auto-image-base -Wl,--section-start=.text=0x08000000
 EMCFLAGS += $(ACFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s USE_SDL=1
@@ -810,18 +813,25 @@ EMCFLAGS += $(ACFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s U
 CC = clang
 CFLAGS += -I/usr/include/SDL2 -Wno-parentheses-equality -fwrapv
 LDFLAGS =
+CFLAGS += -m32
+LDFLAGS += -m32
+#CFLAGS += -fsanitize=memory -fsanitize-recover=all
+#LDFLAGS += -fsanitize=memory -fsanitize-recover=all
 
+#all: game2
 all: descent2
+
+GAME2_OBJ = testiface.o game2.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+	myipx.o myvga.o cfile_ext.o main/inferno.o unadpcm.o dos.o pa_gl.o
+
 
 descent2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
 	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
 	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm -lGL
 
-game2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
-	testiface.o game2.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
-	myipx.o myvga.o cfile_ext.o main/inferno.o
-	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm
+game2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) $(GAME2_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^ -lSDL2 -lm -lGL
 
 #all: $(ALL_DOSOBJS)
 #	wlink system dos4g $(WLFLAGS) $(addprefix file ,$^) $(addprefix file ,$(subst /,\,$(EXT_LIBS))) name descent2.exe
@@ -841,17 +851,22 @@ win: $(ALL_WINOBJS) fake/fakewin.obj
 	#/c/masm615/bin/ml -c -Fo$@ $(patsubst -I=%,-I%,$(INC)) $<
 
 clean:
-	rm -f $(ALL_DOSOBJS) $(ALL_WINOBJS) $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) *.o
+	rm -f $(ALL_DOSOBJS) $(ALL_WINOBJS) $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) *.o $(GAME2_OBJ)
 
 
 %.em.o: %.c
 	emcc $(EMCFLAGS) -O3 -c -o $@ $^ 
 
-EMFILES = descent2.hog groupa.pig descent.hog descent.pig descent.mn2 descent2.ham descent.256 .plr
+#EMFILES = descent2.hog groupa.pig descent.hog descent.pig descent.mn2 descent2.ham descent.256 .plr
+#EMFILES = d2demo.hog d2demo.pig d2demo.ham demo.plr
+EMFILES = d2demo.hog d2demo.pig d2demo.ham demo.plr descent2.s11 exit.ham descent.cfg
+
+#EMOBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
+#	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+#	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o orderform.o
 
 EMOBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
-	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
-	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
+	$(GAME2_OBJ)
 
 #	-s ASYNCIFY \
 #	-s ASYNCIFY_IGNORE_INDIRECT \
@@ -861,12 +876,19 @@ EMOBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 #
 d2wasm.html: $(patsubst %.o,%.em.o,$(EMOBJ))
 	emcc $(EMCFLAGS) -O3 -g4 -o $@ $^ \
+	 -s LLD_REPORT_UNDEFINED \
 	 -s ASYNCIFY \
 	 -s ASYNCIFY_IGNORE_INDIRECT \
-	 -s EXPORTED_FUNCTIONS='["_main","_on_key","_on_mousemove","_on_mousebutton","_key_flush"]' \
+	 -s EXPORTED_FUNCTIONS='["_main","_on_key","_on_mousemove","_on_mousebutton","_key_flush","_gl_set_screen_size"]' \
 	 -s 'ASYNCIFY_IMPORTS=["play_ad","emscripten_sleep"]' \
 	 --source-map-base / \
 	 -s ASSERTIONS=1 \
 	 -s TOTAL_MEMORY=41943040 \
 	 --js-library library.js \
 	 $(patsubst %,--preload-file %,$(EMFILES))
+	sed -i -r 's/antialias: \(\(/preserveDrawingBuffer: true,antialias: ((/' d2wasm.js
+	sed -i -r 's/if \(wNative && hNative\) \{/return;if (wNative \&\& hNative) {/' d2wasm.js
+
+
+emclean:
+	rm -f $(patsubst %.o,%.em.o,$(EMOBJ))

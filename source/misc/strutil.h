@@ -18,10 +18,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 extern int stricmp(char *str1, char *str2);
 extern int strnicmp(char *str1, char *str2, int n);
 
-void strupr( char *s1 );
-void strlwr( char *s1 );
+char * strupr( char *s1 );
+char * strlwr( char *s1 );
 void strrev( char *s1 );
 
-void _splitpath(char *name, char *drive, char *path, char *base, char *ext);
+void _splitpath(const char *name, char *drive, char *path, char *base, char *ext);
 
 #endif

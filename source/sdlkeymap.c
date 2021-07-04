@@ -1,5 +1,6 @@
 //#include "sdl2/include/SDL.h"
 #ifdef EMSCRIPTEN
+//#if 1
 #include "SDL/SDL.h"
 #else
 #include "SDL2/SDL.h"

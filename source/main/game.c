@@ -1210,8 +1210,8 @@ void calc_frame_time()
 	#ifndef NDEBUG
 	if (!(((FrameTime > 0) && (FrameTime <= F1_0)) || (Function_mode == FMODE_EDITOR) || (Newdemo_state == ND_STATE_PLAYBACK))) {
 		mprintf((1,"Bad FrameTime - value = %x\n",FrameTime));
-		if (FrameTime == 0)
-			Int3();	//	Call Mike or Matt or John!  Your interrupts are probably trashed!
+		//if (FrameTime == 0)
+		//	Int3();	//	Call Mike or Matt or John!  Your interrupts are probably trashed!
 //		if ( !dpmi_virtual_memory )
 //			Int3();		//Get MATT if hit this!
 	}

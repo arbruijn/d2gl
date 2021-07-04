@@ -99,7 +99,11 @@ int joy_get_scaled_reading(int raw, int axn) { return 0; }
 int mouse_button_state(int button) { return Mouse.pressed[button]; }
 void mouse_get_cyberman_pos(int *x, int *y) { *x = 0; *y = 0; }
 void joy_set_btn_values(int btn, int state, fix timedown, int downcount, int upcount) {}
-void joy_get_cal_vals(int *axis_min, int *axis_center, int *axis_max) { *axis_min = *axis_center = *axis_max = 0; }
+void joy_get_cal_vals(int *axis_min, int *axis_center, int *axis_max) {
+	memset(axis_min, 0, 7 * sizeof(int));
+	memset(axis_center, 0, 7 * sizeof(int));
+	memset(axis_max, 0, 7 * sizeof(int));
+}
 void joy_set_cal_vals(int *axis_min, int *axis_center, int *axis_max) { }
 
 int dpmi_init(int verbose) { return 0; }

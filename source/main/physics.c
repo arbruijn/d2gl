@@ -1,5 +1,5 @@
-//#define debug_objnum 0
-//#define EXTRA_DEBUG_OBJ
+#define debug_objnum 105
+#define EXTRA_DEBUG_OBJ
 //#define VERBOSE_MIN
 //#define VERBOSE
 int printf(const char*msg,...);
@@ -1039,10 +1039,10 @@ void phys_apply_force(object *obj,vms_vector *force_vec)
 	//Add in acceleration due to force
 	vm_vec_scale_add2(&obj->mtype.phys_info.velocity,force_vec,fixdiv(f1_0,obj->mtype.phys_info.mass));
 
-#ifdef debug_objnum
-if (obj-Objects==debug_objnum)
-printf("obj %d force %x,%x,%x\n", obj-Objects, XYZ(force_vec));
-#endif
+//#ifdef debug_objnum
+//if (obj-Objects==debug_objnum)
+printf("obj %d apply force %x,%x,%x\n", obj-Objects, XYZ(force_vec));
+//#endif
 }
 
 //	----------------------------------------------------------------

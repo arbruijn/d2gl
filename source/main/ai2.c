@@ -1262,6 +1262,7 @@ void move_around_player(object *objp, vms_vector *vec_to_player, int fast_flag)
 		pptr->velocity.y = (pptr->velocity.y*3)/4;
 		pptr->velocity.z = (pptr->velocity.z*3)/4;
 	}
+	printf("move_around_player obj=%d newvel=%x,%x,%x\n", objp-Objects, pptr->velocity.x, pptr->velocity.y, pptr->velocity.z);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -87,24 +87,6 @@ int _dos_findfirst(const char *spec, int attr, find_t *data) { return 1; }
 int _dos_findnext(find_t *data) { return 1; }
 
 #ifdef EM_CC
-void _makepath(char *path, const char *drive, const char *dir, const char *fname, const char *ext) {
-	*path = 0;
-}
-void _splitpath(const char *path, char *drive, char *dir, char *fname, char *ext) {
-	const char *p = strchr(path, '.');
-	if (p == NULL)
-		p = path + strlen(path);
-	if (drive)
-		*drive = 0;
-	if (dir)
-		*dir = 0;
-	if (fname) {
-		memcpy(fname, path, p - path);
-		fname[p - path] = 0;
-	}
-	if (ext)
-		strcpy(ext, p);
-}
 #endif
 
 /*
@@ -144,7 +126,7 @@ extern int EventLoop(int sync);
 
 double last_frame;
 
-#if 1
+#if 0
 void gr_sync_display() {
 	//draw();
 	EventLoop(1);
@@ -241,12 +223,12 @@ static unsigned char sndbuf[69976]; // largest shareware sound (nuke01)
 unsigned char *get_sample_data(int num) {
 	digi_sound *snd = get_sound(num);
 	if (!snd || !snd->data
-#ifdef SHAREWARE	
+#ifdef D1SW
 		 || snd->length > sizeof(sndbuf)
 #endif		 
 		)
 		return NULL;
-#ifdef SHAREWARE
+#ifdef D1SW
 	unadpcm(snd->data, sndbuf, snd->length);
 	return sndbuf;
 #else
@@ -369,7 +351,6 @@ void RBAEnable() {}
 void RBADisable() {}
 int RBAGetNumberOfTracks(void) { return 0; }
 
-int Function_mode;
 int descent_critical_error = 0;
 
 void outp(int port, int val) {}
@@ -411,6 +392,7 @@ int FileFindNext(FILEFINDSTRUCT *ffstruct) {
 int FileFindClose(void) {
 	closedir(ff_dir);
 	ff_dir = NULL;
+	return 0;
 }
 int GetFileDateTime(int filehandle, FILETIMESTRUCT *ftstruct) { return -1; }
 int SetFileDateTime(int filehandle, FILETIMESTRUCT *ftstruct) { return -1; }
@@ -460,7 +442,6 @@ int receive_netgame_packet() { return -1; }
 int receive_sequence_packet() { return -1; }
 int robot_movies;
 void RotateRobot() { }
-int Screen_mode;
 int send_sequence_packet() { return -1; }
 int show_cursor() { return -1; }
 int stackavail() { return 1048576; }
@@ -468,7 +449,6 @@ int StackSpace() { return -1; }
 int swapint() { return -1; }
 int swap_object() { return -1; }
 int unarj_specific_file(char *a,char*b,char*c) { return -1; }
-ubyte Version_major, Version_minor, Version_fix;
 short vga_check_mode(short mode) { return 0; }
 int virtual_memory_on() { return -1; }
 
@@ -479,9 +459,6 @@ int digi_set_master_volume() { return -1; }
 void gr_ibitblt_create_mask_pa( grs_bitmap * mask_bmp, int sx, int sy, int sw, int sh, int srowsize ) { }
 //int joydefs_config() { return -1; }
 int joy_have_firebird() { return -1; }
-#if 0
-int mouse_get_pos() { return -1; }
-#endif
 int pa_render_end() { return -1; }
 int RBAMountDisk() { return -1; }
 int receive_netplayers_packet() { return -1; }
@@ -494,6 +471,7 @@ void digi_set_channel_pan(int ch, int pan) { }
 int joy_have_mousestick() { return -1; }
 int RBAEjectDisk() { return -1; }
 int send_netplayers_packet() { return -1; }
+int gr_set_mode(int mode);
 short vga_set_mode(short mode) { return gr_set_mode(mode); }
 int game_3dmax_on() { return -1; }
 int game_3dmax_off() { return -1; }

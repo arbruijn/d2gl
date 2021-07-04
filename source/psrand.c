@@ -1,15 +1,16 @@
-//#define VERBOSE
+#define VERBOSE
+//#define RAND_RET
 #include "psrand.h"
 #include <stdio.h>
 
 unsigned int d_rand_seed = 1;
 extern int GameTime;
 
-//#define RAND_RET
 int psrand(void) {
 	#ifdef VERBOSE
 	#ifdef RAND_RET
-	volatile int v = 0;
+	//volatile int v = 0;
+	void *addr = __builtin_extract_return_addr (__builtin_return_address (0));
 	#endif
 	printf("rand GameTime %08x seed %08x"
 	        #ifdef RAND_RET
@@ -17,7 +18,7 @@ int psrand(void) {
 	        #endif
 		"\n", GameTime, d_rand_seed
 	        #ifdef RAND_RET
-	        , (&v)[5]
+	        , addr //(&v)[5]
 	        #endif
 		);
 	#endif

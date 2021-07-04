@@ -87,6 +87,7 @@ typedef struct flythrough_data {
 #define EL_STOPPED		4		//stopped, watching explosion
 #define EL_PANNING		5		//panning around, watching player
 #define EL_CHASING		6		//chasing player to station
+#define EL_END				7
 
 #define SHORT_SEQUENCE	1		//if defined, end sequnce when panning starts
 //#define STATION_ENABLED	1		//if defined, load & use space station model
@@ -362,12 +363,13 @@ void start_endlevel_sequence()
 	//else
 	//	gr_palette_fade_out(gr_palette, 32, 0);
 
-	PlayerFinishedLevel(0);		//done with level
+	//PlayerFinishedLevel(0);		//done with level
+	Endlevel_sequence = EL_END;
 }
 
 #ifndef ENDLEVEL
 
-void  do_endlevel_frame() {Int3();}
+void  do_endlevel_frame() { if(Endlevel_sequence==EL_END){Endlevel_sequence=EL_OFF;PlayerFinishedLevel(0);return;} Int3();}
 void stop_endlevel_sequence() {Int3();}
 void render_endlevel_frame(fix eye_offset) {Int3();}
 
@@ -947,6 +949,10 @@ void do_endlevel_frame()
 
 		}
 		#endif		//ifdef SHORT_SEQUENCE
+		case EL_END:
+			Endlevel_sequence = EL_OFF;
+			PlayerFinishedLevel(0);
+			break;
 #endif
 
 	}

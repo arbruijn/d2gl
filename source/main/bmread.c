@@ -18,7 +18,7 @@ char bmread_rcsid[] = "$Id: bmread.c 2.78 1996/09/17 22:10:10 matt Exp $";
 
 #include "settings.h"
 
-#ifdef EDITOR
+#if defined(EDITOR) || defined(D1SW)
 
 
 #include <stdio.h>
@@ -26,6 +26,7 @@ char bmread_rcsid[] = "$Id: bmread.c 2.78 1996/09/17 22:10:10 matt Exp $";
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <dos.h>
 
 #include "pstypes.h"
 #include "inferno.h"
@@ -61,9 +62,12 @@ char bmread_rcsid[] = "$Id: bmread.c 2.78 1996/09/17 22:10:10 matt Exp $";
 #include "cntrlcen.h"
 #include "compbit.h"
 #include "args.h"
+#include "strutil.h"
 
 
+#ifdef EDITOR
 #include "editor\texpage.h"
+#endif
 
 #define BM_NONE			-1
 #define BM_COCKPIT		 0
@@ -85,7 +89,7 @@ char bmread_rcsid[] = "$Id: bmread.c 2.78 1996/09/17 22:10:10 matt Exp $";
 
 extern player_ship only_player_ship;		// In bm.c
 
-short		N_ObjBitmaps=0;
+extern int		N_ObjBitmaps;
 short		N_ObjBitmapPtrs=0;
 static int			Num_robot_ais = 0;
 int	TmapList[MAX_TEXTURES];
@@ -145,6 +149,10 @@ void bm_read_player_ship(void);
 void bm_read_some_file(void);
 void bm_read_sound(void);
 void verify_textures(void);
+void bm_read_marker();
+void bm_read_alias();
+void bm_read_object();
+void clear_to_end_of_line(void);
 
 
 //----------------------------------------------------------------------
@@ -400,7 +408,11 @@ int get_texture(char *name)
 
 #define LINEBUF_SIZE 600
 
+#ifdef D1SW
+#define DEFAULT_PIG_PALETTE	"descent.256"
+#else
 #define DEFAULT_PIG_PALETTE	"groupa.256"
+#endif
 
 //-----------------------------------------------------------------
 // Initializes all bitmaps from BITMAPS.TBL file.
@@ -466,7 +478,7 @@ int bm_init_use_tbl()
 
 	Installed = 1;
 
-	piggy_init();		//don't care about error, since no pig is ok for editor
+	piggy_init(1);		//don't care about error, since no pig is ok for editor
 
 //	if ( FindArg( "-nobm" ) )	{
 //		piggy_read_sounds();
@@ -524,6 +536,11 @@ int bm_init_use_tbl()
 		if (strlen(inputline) == LINEBUF_SIZE-1)
 			Error("Possible line truncation in BITMAPS.TBL on line %d\n",linenum);
 
+		#ifndef EDITOR
+		if (inputline[0] == '!')
+			continue;
+		#endif
+
 		SuperX = -1;
 
 		if ( (temp_ptr=strstr( inputline, "superx=" )) )	{
@@ -576,7 +593,7 @@ int bm_init_use_tbl()
 			else IFTOK("force_field")		TmapInfo[texture_count-1].flags |= TMI_FORCE_FIELD;
 			else IFTOK("slide")	 			{TmapInfo[texture_count-1].slide_u = fl2f(get_float())>>8; TmapInfo[texture_count-1].slide_v = fl2f(get_float())>>8;}
 			else IFTOK("destroyed")	 		{int t=texture_count-1; TmapInfo[t].destroyed = get_texture(strtok( NULL, space ));}
-			//else IFTOK("Num_effects")		Num_effects = get_int();
+			else IFTOK("Num_effects")		/*Num_effects = */get_int();
 			else IFTOK("Num_wall_anims")	Num_wall_anims = get_int();
 			else IFTOK("clip_num")			clip_num = get_int();
 			else IFTOK("dest_bm")			dest_bm = strtok( NULL, space );
@@ -605,12 +622,16 @@ int bm_init_use_tbl()
 			else IFTOK("$POWERUP")			{bm_read_powerup(0);		continue;}
 			else IFTOK("$POWERUP_UNUSED")	{bm_read_powerup(1);		continue;}
 			else IFTOK("$HOSTAGE")			{bm_read_hostage();		continue;}
+			else IFTOK("$HOSTAGE_FACE")	{clear_to_end_of_line();continue;}
 			else IFTOK("$ROBOT")				{bm_read_robot();			continue;}
 			else IFTOK("$WEAPON")			{bm_read_weapon(0);		continue;}
 			else IFTOK("$WEAPON_UNUSED")	{bm_read_weapon(1);		continue;}
 			else IFTOK("$REACTOR")			{bm_read_reactor();		continue;}
 			else IFTOK("$MARKER")			{bm_read_marker();		continue;}
 			else IFTOK("$PLAYER_SHIP")		{bm_read_player_ship();	continue;}
+			#ifdef D1SW
+			else IFTOK("$OBJECT")			{bm_read_object();		continue;}
+			#endif
 			else IFTOK("$EXIT") {
 				#ifdef SHAREWARE
 					bm_read_exitmodel();	
@@ -690,6 +711,10 @@ int bm_init_use_tbl()
 
 	gr_use_palette_table(DEFAULT_PALETTE);
 
+	#ifdef D1SW
+	memcpy(Gauges_hires, Gauges, sizeof(Gauges));
+	#endif
+
 	return 0;
 }
 
@@ -715,7 +740,7 @@ void verify_textures()
 
 }
 
-bm_read_alias()
+void bm_read_alias()
 {
 	char *t;
 
@@ -1123,7 +1148,11 @@ void bm_read_sound()
 	int alt_sound_num;
 
 	sound_num = get_int();
+	#ifndef D1SW
 	alt_sound_num = get_int();
+	#else
+	alt_sound_num = 0;
+	#endif
 
 	if ( sound_num>=MAX_SOUNDS )
 		Error( "Too many sound files.\n" );
@@ -1155,6 +1184,10 @@ void bm_read_robot_ai()
 	char			*robotnum_text;
 	int			robotnum;
 	robot_info	*robptr;
+	#ifdef D1SW
+	fix fire_power[NDL];
+	fix shield[NDL];
+	#endif
 
 	robotnum_text = strtok(NULL, space);
 	robotnum = atoi(robotnum_text);
@@ -1175,11 +1208,17 @@ void bm_read_robot_ai()
 
 	get4fix(robptr->field_of_view);
 	get4fix(robptr->firing_wait);
+	#ifdef D1SW
+	memcpy(robptr->firing_wait2, robptr->firing_wait, sizeof(robptr->firing_wait2));
+	#else
 	get4fix(robptr->firing_wait2);
+	#endif
 	get4byte(robptr->rapidfire_count);
 	get4fix(robptr->turn_time);
-//	get4fix(robptr->fire_power);
-//	get4fix(robptr->shield);
+	#ifdef D1SW
+	get4fix(fire_power);
+	get4fix(shield);
+	#endif
 	get4fix(robptr->max_speed);
 	get4fix(robptr->circle_distance);
 	get4byte(robptr->evade_speed);
@@ -1395,7 +1434,7 @@ void bm_read_robot()
 			} else {
 				Int3();
 				mprintf( (1, "Invalid parameter, %s=%s in bitmaps.tbl\n", arg, equal_ptr ));
-			}		
+			}
 		} else {			// Must be a texture specification...
 			load_polymodel_bitmap(arg);
 		}
@@ -1486,6 +1525,105 @@ void bm_read_robot()
 
 	bm_flag = BM_NONE;
 }
+
+#ifdef D1SW
+//read a polygon object of some sort
+void bm_read_object()
+{
+	char *model_name, *model_name_dead=NULL;
+	int first_bitmap_num, first_bitmap_num_dead = 0, n_normal_bitmaps;
+	char *equal_ptr;
+	short model_num;
+	//short explosion_vclip_num = -1;
+	//short explosion_sound_num = SOUND_ROBOT_DESTROYED;
+	fix	lighting = F1_0/2;		// Default
+	int type=-1;
+	fix strength=0;
+
+	model_name = strtok( NULL, space );
+
+	// Process bitmaps 
+	bm_flag = BM_NONE;
+	arg = strtok( NULL, space ); 
+	first_bitmap_num = N_ObjBitmapPtrs;
+
+	while (arg!=NULL)	{
+
+		equal_ptr = strchr( arg, '=' );
+
+		if ( equal_ptr )	{
+			*equal_ptr='\0';
+			equal_ptr++;
+
+			// if we have john=cool, arg is 'john' and equal_ptr is 'cool'
+
+			if (!stricmp(arg,"type")) {
+				if (!stricmp(equal_ptr,"controlcen"))
+					type = OL_CONTROL_CENTER;
+				else if (!stricmp(equal_ptr,"clutter"))
+					type = OL_CLUTTER;
+				else if (!stricmp(equal_ptr,"exit"))
+					type = OL_EXIT;
+			}
+			else if (!stricmp( arg, "exp_vclip" ))	{
+				//explosion_vclip_num = atoi(equal_ptr);
+			} else if (!stricmp( arg, "dead_pof" ))	{
+				model_name_dead = equal_ptr;
+				first_bitmap_num_dead=N_ObjBitmapPtrs;
+			} else if (!stricmp( arg, "exp_sound" ))	{
+				//explosion_sound_num = atoi(equal_ptr);
+			} else if (!stricmp( arg, "lighting" ))	{
+				lighting = fl2f(atof(equal_ptr));
+				if ( (lighting < 0) || (lighting > F1_0 )) {
+					mprintf( (1, "In bitmaps.tbl, lighting value of %.2f is out of range 0..1.\n", f2fl(lighting)));
+					Error( "In bitmaps.tbl, lighting value of %.2f is out of range 0..1.\n", f2fl(lighting));
+				}
+			} else if (!stricmp( arg, "strength" )) {
+				strength = fl2f(atof(equal_ptr));
+			} else {
+				mprintf( (1, "Invalid parameter, %s=%s in bitmaps.tbl\n", arg, equal_ptr ));
+			}
+		} else {			// Must be a texture specification...
+			load_polymodel_bitmap(arg);
+		}
+		arg = strtok( NULL, space );
+	}
+
+	if ( model_name_dead )
+		n_normal_bitmaps = first_bitmap_num_dead-first_bitmap_num;
+	else
+		n_normal_bitmaps = N_ObjBitmapPtrs-first_bitmap_num;
+
+	model_num = load_polygon_model(model_name,n_normal_bitmaps,first_bitmap_num,NULL);
+
+	if (type == OL_CONTROL_CENTER) {
+		Reactors[Num_reactors].model_num = model_num;
+		Reactors[Num_reactors].n_guns = read_model_guns(model_name,Reactors[Num_reactors].gun_points,Reactors[Num_reactors].gun_dirs,NULL);
+		Num_reactors++;
+	}
+ 
+	if ( model_name_dead )
+		Dead_modelnums[model_num]  = load_polygon_model(model_name_dead,N_ObjBitmapPtrs-first_bitmap_num_dead,first_bitmap_num_dead,NULL);
+	else
+		Dead_modelnums[model_num] = -1;
+
+	if (type == -1)
+		Error("No object type specfied for object in BITMAPS.TBL on line %d\n",linenum);
+
+	ObjType[Num_total_object_types] = type;
+	ObjId[Num_total_object_types] = model_num;
+	ObjStrength[Num_total_object_types] = strength;
+
+	//printf( "Object type %d is a control center\n", Num_total_object_types );
+	Num_total_object_types++;
+
+	if (type == OL_EXIT) {
+		exit_modelnum = model_num;
+		destroyed_exit_modelnum = Dead_modelnums[model_num];
+	}
+
+}
+#endif
 
 //read a reactor model
 void bm_read_reactor()
@@ -2082,7 +2220,7 @@ void bm_read_weapon(int unused_flag)
 				Weapon_info[n].fire_count = atoi(equal_ptr);
 			} else if (!stricmp(arg, "damage_radius" )) {
 				Weapon_info[n].damage_radius = fl2f(atof(equal_ptr));
-//--01/19/95, mk--			} else if (!stricmp(arg, "damage_force" )) {
+			} else if (!stricmp(arg, "damage_force" )) {
 //--01/19/95, mk--				Weapon_info[n].damage_force = fl2f(atof(equal_ptr));
 			} else if (!stricmp(arg, "lifetime" )) {
 				Weapon_info[n].lifetime = fl2f(atof(equal_ptr));
@@ -2119,7 +2257,7 @@ void bm_read_weapon(int unused_flag)
 			grs_bitmap *bm;
 
 			bm = load_polymodel_bitmap(arg);
-			if (! lighted)
+			if (bm && ! lighted)
 				bm->bm_flags |= BM_FLAG_NO_LIGHTING;
 
 			lighted = 1;			//default for next bitmap is lighted
@@ -2270,6 +2408,7 @@ void bm_read_hostage()
 
 }
 
+#ifdef EDITOR
 //these values are the number of each item in the release of d2
 //extra items added after the release get written in an additional hamfile
 #define N_D2_ROBOT_TYPES		66
@@ -2464,5 +2603,7 @@ bm_write_extra_robots()
 
 	fclose(fp);
 }
+
+#endif
 
 #endif

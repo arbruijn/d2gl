@@ -1911,7 +1911,7 @@ void draw_energy_bar(int energy)
 	else
 		not_energy = 125 - (energy*125)/100;
 
-	if (energy < 100)
+	if (energy < 100) {
 		for (y=0; y < LEFT_ENERGY_GAUGE_H; y++) {
 			x1 = LEFT_ENERGY_GAUGE_H - 1 - y;
 			x2 = LEFT_ENERGY_GAUGE_H - 1 - y + not_energy;
@@ -1922,6 +1922,8 @@ void draw_energy_bar(int energy)
 			
 			if (x2 > x1) gr_uscanline( x1, x2, y ); 
 		}
+		Canv_LeftEnergyGauge->cv_bitmap.bm_flags |= BM_FLAG_CHANGED;
+	}
 	
 	WINDOS(
 		dd_gr_set_current_canvas(get_current_game_screen()),
@@ -1937,7 +1939,7 @@ void draw_energy_bar(int energy)
 	gr_ubitmapm( 0, 0, &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_ENERGY_RIGHT) ] );
 	gr_setcolor( BM_XRGB(0,0,0) );
 
-	if (energy < 100)
+	if (energy < 100) {
 		for (y=0; y < RIGHT_ENERGY_GAUGE_H; y++) {
 			x1 = RIGHT_ENERGY_GAUGE_W - RIGHT_ENERGY_GAUGE_H + y - not_energy;
 			x2 = RIGHT_ENERGY_GAUGE_W - RIGHT_ENERGY_GAUGE_H + y;
@@ -1948,6 +1950,8 @@ void draw_energy_bar(int energy)
 			
 			if (x2 > x1) gr_uscanline( x1, x2, y ); 
 		}
+		Canv_RightEnergyGauge->cv_bitmap.bm_flags |= BM_FLAG_CHANGED;
+	}
 
 	WINDOS(
 		dd_gr_set_current_canvas(get_current_game_screen()),

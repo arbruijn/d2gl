@@ -561,7 +561,10 @@ void init_cockpit()
 		Game_cockpit_copy_code  = (ubyte *)(1); 
 		bm->bm_flags = 0;		// Clear all flags for offscreen canvas
 #endif
-		game_init_render_sub_buffers( 0, 0, maxx-minx+1, maxy-miny+1 );
+		if (grd_curcanv->cv_bitmap.bm_type == BM_GL)
+			game_init_render_sub_buffers( minx, miny, maxx-minx+1, maxy-miny+1 );
+		else
+			game_init_render_sub_buffers( 0, 0, maxx-minx+1, maxy-miny+1 );
 		break;
 		}
 

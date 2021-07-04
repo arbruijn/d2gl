@@ -1344,7 +1344,8 @@ grs_font * gr_init_font( char * fontname )
 	fontfile = cfopen(fontname, "rb");
 
 	if (!fontfile)
-		Error( "Can't open font file %s", fontname );
+		return NULL;
+		//Error( "Can't open font file %s", fontname );
 
 	file_id = cfile_read_int(fontfile);
 	datasize = cfile_read_int(fontfile);

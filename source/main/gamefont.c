@@ -21,6 +21,7 @@ static char rcsid[] = "$Id: gamefont.c 2.3 1996/01/12 16:03:16 matt Exp $";
 #include "inferno.h"
 #include "gr.h"
 #include "gamefont.h"
+#include "error.h"
 
 //if 1, use high-res versions of fonts
 int FontHires=0;
@@ -48,8 +49,15 @@ void gamefont_init()
 	if (Gamefont_installed) return;
 	Gamefont_installed = 1;
 
-	for (i=0; i<MAX_FONTS; i++ )
-		Gamefonts[i] = gr_init_font(Gamefont_filenames[i]);
+	for (i=0; i<MAX_FONTS; i++ ) {
+		if (!(Gamefonts[i] = gr_init_font(Gamefont_filenames[i]))) {
+			#ifdef SHAREWARE
+			if (i & 1)
+				continue;
+			#endif
+			Error( "Can't open font file %s", Gamefont_filenames[i] );
+		}
+	}
 
 	atexit( gamefont_close );
 }
@@ -63,7 +71,8 @@ void gamefont_close()
 	Gamefont_installed = 0;
 
 	for (i=0; i<MAX_FONTS; i++ )	{
-		gr_close_font( Gamefonts[i] );
+		if (Gamefonts[i])
+			gr_close_font( Gamefonts[i] );
 		Gamefonts[i] = NULL;
 	}
 

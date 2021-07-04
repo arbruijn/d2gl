@@ -83,7 +83,7 @@ void load_text()
 
 		len = cfilelength(ifile);
 
-		MALLOC(text,char,len);
+		MALLOC(text,char,len + 1);
 
 		atexit(free_text);
 
@@ -91,13 +91,14 @@ void load_text()
 
 		cfclose(ifile);
 
+		text[len] = 0;
 	} else {
 		int c;
 		char * p;
 
 		len = cfilelength(tfile);
 
-		MALLOC(text,char,len);
+		MALLOC(text,char,len + 1);
 
 		atexit(free_text);
 
@@ -110,6 +111,8 @@ void load_text()
 		} while ( c!=EOF );
 
 		cfclose(tfile);
+
+		*p = 0;
 	}
 
 	for (i=0,tptr=text;i<N_TEXT_STRINGS;i++) {

@@ -1262,6 +1262,7 @@ void gr_bm_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * sr
 			gr_bm_ubitblt00_rle( w, h, dx, dy, sx, sy, src, dest );
 		else
 			gr_bm_ubitblt00( w, h, dx, dy, sx, sy, src, dest );
+		dest->bm_flags |= BM_FLAG_CHANGED;
 		return;
 	}
 
@@ -1375,6 +1376,7 @@ void gr_ubitmap( int x, int y, grs_bitmap *bm )
 				gr_bm_ubitblt00_rle(bm->bm_w, bm->bm_h, x, y, 0, 0, bm, &grd_curcanv->cv_bitmap );
 			else
 				gr_ubitmap00( x, y, bm );
+			grd_curcanv->cv_bitmap.bm_flags |= BM_FLAG_CHANGED;
 			return;
 		case BM_SVGA:
 			if ( bm->bm_flags & BM_FLAG_RLE )
@@ -1394,6 +1396,10 @@ void gr_ubitmap( int x, int y, grs_bitmap *bm )
 			return;
 
 #endif
+		case BM_GL:
+			gl_draw_bitmap_2d(x + XOFFSET, y + YOFFSET, bm);
+			return;
+
 		default:
 			gr_ubitmap012( x, y, bm );
 			return;
@@ -1427,6 +1433,7 @@ void gr_ubitmapm( int x, int y, grs_bitmap *bm )
 				gr_bm_ubitblt00m_rle(bm->bm_w, bm->bm_h, x, y, 0, 0, bm, &grd_curcanv->cv_bitmap );
 			else
 				gr_ubitmap00m( x, y, bm );
+			grd_curcanv->cv_bitmap.bm_flags |= BM_FLAG_CHANGED;
 			return;
 		case BM_SVGA:
 			if (bm->bm_flags & BM_FLAG_RLE)
@@ -1448,11 +1455,10 @@ void gr_ubitmapm( int x, int y, grs_bitmap *bm )
             return;
 #endif
 
-		case BM_GL: {
-			void gl_draw_bitmap_2d(int,int,grs_bitmap*);
-			gl_draw_bitmap_2d(x, y, bm);
+		case BM_GL:
+			gl_draw_bitmap_2d(x + XOFFSET, y + YOFFSET, bm);
 			return;
-		}
+
 		default:
 			gr_ubitmap012m( x, y, bm );
 			return;

@@ -1500,9 +1500,11 @@ void gr_remap_font( grs_font *font, char * fontname )
 	} else
 		data_len = nchars * font->ft_w * font->ft_h;
 
-	data_ofs = font->ft_data - ((ubyte *) font);
+	cfseek(fontfile,12,SEEK_CUR);
+	//data_ofs = font->ft_data - ((ubyte *) font);
+	data_ofs = cfile_read_int(fontfile);
 
-	cfseek(fontfile,data_ofs,SEEK_CUR);
+	cfseek(fontfile,data_ofs-FONT_HDR_SIZE+12,SEEK_CUR);
 	cfread(font->ft_data,1,data_len,fontfile);		//read raw data
 
 	if (font->ft_flags & FT_COLOR) {		//remap palette

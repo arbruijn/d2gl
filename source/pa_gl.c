@@ -1,3 +1,5 @@
+#include "config.h"
+#ifdef GL
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -115,44 +117,46 @@ void gl_init_textures() {
 #if 0
 void gl_test() {
     // Create Vertex Array Object
-    GLuint vao;
-    glGenVertexArraysOES(1, &vao);
-    glBindVertexArrayOES(vao);
+    //GLuint vao;
+    //glGenVertexArraysOES(1, &vao);
+    //glBindVertexArrayOES(vao);
 
     // Create a Vertex Buffer Object and copy the vertex data to it
     GLuint vbo;
     glGenBuffers(1, &vbo);
 
-    GLfloat vertices[] = {0.0f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f};
+    GLfloat vertices[] = {0.0f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f};
+    //GLfloat vertices[] = {0.0f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f};
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 
     // Specify the layout of the vertex data
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glUseProgram(sh_atest);
+    GLint posAttrib = glGetAttribLocation(sh_atest, "pos");
     glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 
        // Clear the screen to black
-        //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        //glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw a triangle from the 3 vertices
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        SDL_GL_SwapWindow(window);
 }
 #endif
 
 int pal[256];
 int pal_ok;
 #define UP(x) (((x)<<2)|((x)>>4))
-void pal_conv(ubyte *pal18, int *pal32) {
+void pal_conv(ubyte *pal18, int *pal32, int trans) {
     for (int i = 0; i < 256; i++)
         pal32[i] = UP(pal18[i*3]) | (UP(pal18[i*3+1]) << 8) | (UP(pal18[i*3+2]) << 16) |
             0xff000000;
-    pal32[255] = 0;
+    if (trans)
+        pal32[255] = 0;
 }
 
 int *tex_buf;
@@ -205,9 +209,9 @@ void bm_bind_tex_pal32(grs_bitmap *bm, int *pal32) {
         glBindTexture(GL_TEXTURE_2D, bm->bm_handle);
 }
 
-void bm_bind_tex_pal(grs_bitmap *bm, ubyte *pal) {
+void bm_bind_tex_pal(grs_bitmap *bm, ubyte *pal, int trans) {
     int pal32[256];
-    pal_conv(pal, pal32);
+    pal_conv(pal, pal32, trans);
     bm_bind_tex_pal32(bm, pal32);
 }
 
@@ -215,11 +219,15 @@ void tex_buf_free() {
     free(rle_buf);
     free(tex_buf);
 }
-void pal_init() {
-    pal_conv(gr_palette, pal);
+
+void tex_buf_init() {
     tex_buf = malloc(640*480*sizeof(*tex_buf));
     rle_buf = malloc(640*480*sizeof(*rle_buf));
     atexit(tex_buf_free);
+}
+
+void pal_init() {
+    pal_conv(gr_palette, pal, 1);
     pal_ok = 1;
 }
 
@@ -238,7 +246,7 @@ void gl_free_bitmap(grs_bitmap *bm) {
 
 void gl_draw_tmap(grs_bitmap *bm,int nv,g3s_point **vertlist) {
     bm_bind_tex(bm);
-    glEnable(GL_TEXTURE_2D);
+    //glEnable(GL_TEXTURE_2D);
     if (nv > 16) {
         printf("too many verts%d\n", nv);
         abort();
@@ -272,7 +280,7 @@ void gl_draw_tmap(grs_bitmap *bm,int nv,g3s_point **vertlist) {
     glEnableVertexAttribArray(sh_atest_uv);
     glEnableVertexAttribArray(sh_atest_light);
     glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
-    glUseProgram(0);
+    //glUseProgram(0);
    
     
     #else
@@ -410,8 +418,14 @@ float proj[16] = { 1, 0, 0, 0,
     0, 0, -1, -1,
     0, 0, -0.02, 0 };
 
+extern int cur_w, cur_h;
+int gl_w, gl_h;
+
 void gl_start_frame() {
-    glViewport(XOFFSET, 480 - HEIGHT - YOFFSET, WIDTH, HEIGHT);
+    float ws = (float)gl_w / (float)cur_w;
+    float hs = (float)gl_h / (float)cur_h;
+    glViewport(XOFFSET * ws, gl_h - (HEIGHT + YOFFSET) * hs, WIDTH * ws, HEIGHT * hs);
+    //glViewport(XOFFSET * ws, gl_h - YOFFSET * hs, WIDTH * ws, HEIGHT * hs);
     #if 0
     glMatrixMode(GL_PROJECTION);
     //glLoadIdentity();
@@ -434,7 +448,10 @@ float ortho[16] = {
     0, 0, -1, 0,
     -1, 1, 0, 1};
 void gl_end_frame() {
-    glViewport(0, 0, 640, 480);
+    //printf("gl_w %d gl_h %d curw %d curh %d\n", gl_w, gl_h, cur_w, cur_h);
+    ortho[0] = 2.0f/cur_w;
+    ortho[4+1] = 2.0f/-cur_h;
+    glViewport(0, 0, gl_w, gl_h);
     //glMatrixMode(GL_PROJECTION);
     //glLoadIdentity();
     //glOrtho(0, 640, 480, 0, -1, 1);
@@ -532,10 +549,10 @@ MessageCallback( GLenum source,
             type, severity, message );
 }
 
-
 void gl_init_canvas(grs_canvas *canv) {
     canv->cv_bitmap.bm_type = BM_GL;
 }
+
 void bit_split(ubyte *src, ubyte *dst, ubyte c, int w) {
     ubyte v = *src++;
     for (int i = 128; w--; dst++) {
@@ -607,7 +624,7 @@ void gl_font_start(grs_font *font, ubyte color) {
         glBindTexture(GL_TEXTURE_2D, font->ft_bitmap.bm_handle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glEnable(GL_TEXTURE_2D);
+    //glEnable(GL_TEXTURE_2D);
     #if 0
     glAlphaFunc(GL_GREATER, 0.5);
     glEnable(GL_ALPHA_TEST);
@@ -668,6 +685,15 @@ void gl_font_end() {
     glUseProgram(0);
 }
 
+void gl_init_viewport() {
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    gl_w = viewport[2];
+    gl_h = viewport[3];
+    printf("gl screen size %d %d\n", gl_w, gl_h);
+    gl_end_frame(); // set ortho
+}
+
 void gl_init() {
     #ifndef EMSCRIPTEN
     // During init, enable debug output
@@ -677,4 +703,50 @@ void gl_init() {
     gl_init_shaders();
     gl_init_buffers();
     gl_init_textures();
+    tex_buf_init();
+    gl_init_viewport();
 }
+
+void gl_set_screen_size(int w, int h) {
+    gl_w = w;
+    gl_h = h;
+    gl_end_frame();
+}
+
+void gl_pal_changed() {
+    pal_ok = 0;
+}
+
+void gl_clear() {
+    if (!pal_ok)
+        pal_init();
+    unsigned int c = (unsigned int)pal[COLOR];
+    glClearColor(((c >> 16) & 255) / 255.0f,
+        ((c >> 8) & 255) / 255.0f, (c & 255) / 255.0f,
+        (c >> 24) / 255.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+#else
+#include "gr.h"
+#include "3d.h"
+void gl_free_bitmap(grs_bitmap *bm) {}
+void gl_draw_tmap(grs_bitmap *bm,int nv,g3s_point **vertlist) {}
+void bm_bind_tex(grs_bitmap *bm) {}
+void bm_bind_tex_pal(grs_bitmap *bm, ubyte *pal, int trans) {}
+void gl_draw_rod(g3s_point *pnt, fix width, fix height, grs_bitmap *bm, int o) {}
+void gl_get_rgb(ubyte color, float *r, float *g, float *b) {}
+void gl_draw_flat(ubyte color, int nv, g3s_point**pnts) {}
+void gl_start_frame() {}
+void gl_end_frame() {}
+void gl_draw_bitmap_2d(int sx, int sy, grs_bitmap *bm) {}
+void gl_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *bm) {}
+void gl_font_start(grs_font *font, ubyte color) {}
+void gl_draw_char(int sx, int sy, grs_font *font, int c) {}
+void gl_init_font(grs_font *font) {}
+void gl_init_canvas(grs_canvas *canv) {}
+void gl_init() {}
+void gl_font_end() {}
+void gl_pal_changed() {}
+void gl_set_screen_size(int x, int y) {}
+void gl_clear() {}
+#endif

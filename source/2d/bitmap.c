@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 grs_bitmap *gr_create_bitmap(int w, int h )
 {
@@ -135,7 +136,6 @@ grs_bitmap *gr_create_sub_bitmap(grs_bitmap *bm, int x, int y, int w, int h )
 
 void gr_free_bitmap(grs_bitmap *bm )
 {
-	void gl_free_bitmap(grs_bitmap*);
 	gl_free_bitmap(bm);
 	if (bm->bm_data != NULL)
 	    free(bm->bm_data);
@@ -246,9 +246,8 @@ void gr_remap_bitmap_good( grs_bitmap * bmp, ubyte * palette, int transparent_co
 	ubyte colormap[256];
 	int freq[256];
 
-	if (bmp->bm_type == BM_GL) {
-		void bm_bind_tex_pal(grs_bitmap*,ubyte*);
-		bm_bind_tex_pal(bmp, palette);
+	if (TYPE == BM_GL) {
+		bm_bind_tex_pal(bmp, palette, bmp->bm_flags & BM_FLAG_TRANSPARENT);
 		return;
 	}
 

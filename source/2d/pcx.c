@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: pcx.c 1.19 1996/09/18 16:38:07 jeremy Exp $";
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 /* PCX Header data type */
 typedef struct	{
@@ -122,6 +123,7 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 	PCXHeader header;
 	CFILE * PCXfile;
 	int i, row, col, count, xsize, ysize;
+	grs_bitmap * org_bmp = NULL;
     ubyte data, *pixdata;
 #if defined(POLY_ACC)
     unsigned char local_pal[768];
@@ -168,6 +170,12 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
         pa_update_clut(local_pal, 0, 256, 0);
     }
 #endif
+
+	if ( bitmap_type == BM_GL ) {
+		org_bmp = bmp;
+		bmp = gr_create_bitmap( xsize, ysize );
+		bitmap_type = bmp->bm_type;
+	}
 
 	if ( bitmap_type == BM_LINEAR )	{
 		if ( bmp->bm_data == NULL )	{
@@ -300,6 +308,13 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 		}
 	}
 	cfclose(PCXfile);
+
+	if ( org_bmp ) {
+		bm_bind_tex_pal( bmp, palette, 0 );
+		gr_bitmap( 0, 0, bmp );
+		gr_free_bitmap( bmp );
+	}
+
 	return PCX_ERROR_NONE;
 }
 //#endif

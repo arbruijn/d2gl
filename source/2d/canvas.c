@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 grs_canvas * grd_curcanv=NULL;    //active canvas
 grs_screen * grd_curscreen=NULL;  //active screen
@@ -45,6 +46,7 @@ grs_canvas *gr_create_canvas(int w, int h)
 	new->cv_bitmap.bm_type = BM_LINEAR;
 	new->cv_bitmap.bm_rowsize = w;
 	new->cv_bitmap.bm_data = data;
+	new->cv_bitmap.bm_handle = 0;
 
 	new->cv_color = 0;
 	new->cv_drawmode = 0;
@@ -110,6 +112,7 @@ grs_canvas *gr_create_sub_canvas(grs_canvas *canv, int x, int y, int w, int h)
 #else
     new->cv_bitmap.bm_data += x;
 #endif
+	new->cv_bitmap.bm_handle = 0;
 
 	new->cv_color = canv->cv_color;
    new->cv_drawmode = canv->cv_drawmode;
@@ -147,6 +150,7 @@ void gr_init_canvas(grs_canvas *canv, unsigned char * pixdata, int pixtype, int 
 	canv->cv_bitmap.bm_flags = 0;
 	canv->cv_bitmap.bm_type = pixtype;
 	canv->cv_bitmap.bm_data = pixdata;
+	canv->cv_bitmap.bm_handle = 0;
 }
 
 void gr_init_sub_canvas(grs_canvas *new, grs_canvas *src, int x, int y, int w, int h)
@@ -173,6 +177,7 @@ void gr_init_sub_canvas(grs_canvas *new, grs_canvas *src, int x, int y, int w, i
 #else
     new->cv_bitmap.bm_data += x;
 #endif
+	new->cv_bitmap.bm_handle = 0;
 }
 
 void gr_free_canvas(grs_canvas *canv)
@@ -181,6 +186,8 @@ void gr_free_canvas(grs_canvas *canv)
 		Int3();
 		gr_set_current_canvas(NULL);
 	}
+
+	gl_free_bitmap(&canv->cv_bitmap);
 
 #if defined(POLY_ACC) && !defined(MACINTOSH)
     //
@@ -245,7 +252,10 @@ void gr_set_current_canvas( grs_canvas *canv )
 void gr_clear_canvas(int color)
 {
 	gr_setcolor(color);
-	gr_rect(0,0,WIDTH-1,HEIGHT-1);
+	if (TYPE == BM_GL)
+		gl_clear();
+	else
+		gr_rect(0,0,WIDTH-1,HEIGHT-1);
 }
 
 void gr_setcolor(int color)

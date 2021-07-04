@@ -34,6 +34,7 @@ char palette_rcsid[] = "$Id: palette.c 1.51 1996/10/30 11:33:00 jason Exp $";
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 extern int gr_installed;
 
@@ -94,6 +95,7 @@ void gr_copy_palette(ubyte *gr_palette, ubyte *pal, int size)
 	memcpy(gr_palette, pal, size);
 
 	Num_computed_colors = 0;
+	gl_pal_changed();
 }
 
 void gr_use_palette_table( char * filename )
@@ -121,6 +123,7 @@ void gr_use_palette_table( char * filename )
 #if defined(POLY_ACC)
     pa_update_clut(gr_palette, 0, 256, 0);
 #endif
+	gl_pal_changed();
 }
 
 //	Add a computed color (by gr_find_closest_color) to list of computed colors in Computed_colors.

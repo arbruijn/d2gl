@@ -1750,6 +1750,7 @@ extern int Piggy_bitmap_cache_next;
 
 void show_time()
 {
+#if 0
 	int secs = f2i(Players[Player_num].time_level) % 60;
 	int mins = f2i(Players[Player_num].time_level) / 60;
 
@@ -1760,6 +1761,7 @@ void show_time()
 	gr_set_fontcolor(Color_0_31_0, -1 );
 
 	gr_printf(grd_curcanv->cv_w-4*GAME_FONT->ft_w,grd_curcanv->cv_h-4*Line_spacing,"%d:%02d", mins, secs);
+#endif	
 
 //@@#ifdef PIGGY_USE_PAGING
 //@@	{

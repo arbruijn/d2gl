@@ -1002,7 +1002,8 @@ RePaintNewmenu4:
 					gr_set_current_canvas( bg.menu_canvas )
 		);
 
-		bg.background = gr_create_sub_bitmap(&nm_background,0,0,w,h);
+		bg.background = grd_curcanv->cv_bitmap.bm_type == BM_GL ? &nm_background :
+			gr_create_sub_bitmap(&nm_background,0,0,w,h);
 
 	} else {
 		bg.saved = NULL;
@@ -1137,7 +1138,8 @@ RePaintNewmenu4:
 		
 			if (!filename) {
 				gr_free_bitmap(bg.saved);
-				free( bg.background );
+				if ( bg.background && bg.background != &nm_background )
+					free( bg.background );
 			}
 			else 	
 				gr_free_bitmap(bg.background);
@@ -1870,7 +1872,8 @@ RePaintNewmenu4:
 			gr_bitmap(0, 0, bg.saved); 	
 		WIN (DDGRUNLOCK(dd_grd_curcanv));
 		gr_free_bitmap(bg.saved);
-		free( bg.background );
+		if ( bg.background && bg.background != &nm_background )
+			free( bg.background );
 	} else {
 		if (!dont_restore)	//info passed back from subfunction
 		{

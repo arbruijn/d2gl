@@ -289,6 +289,7 @@ int create_path_points(object *objp, int start_seg, int end_seg, point_seg *pseg
 	byte		random_xlate[MAX_SIDES_PER_SEGMENT];
 	point_seg	*original_psegs = psegs;
 	int		l_num_points;
+	int		end_seg_is_qtail_min_1 = 0;
 
 // -- mprintf((0, "cpp: frame = %4i obj %3i, psegs = %5i\n", FrameCount, objp-Objects, psegs-Point_segs));
 #if PATH_VALIDATION
@@ -393,6 +394,7 @@ dont_add: ;
 		if (qhead >= qtail) {
 			//	Couldn't get to goal, return a path as far as we got, which probably acceptable to the unparticular caller.
 			end_seg = seg_queue[qtail-1].end;
+			end_seg_is_qtail_min_1 = 1;
 			break;
 		}
 
@@ -404,6 +406,13 @@ cpp_done1: ;
 	}	//	while (cur_seg ...
 
 	//	Set qtail to the segment which ends at the goal.
+	if (!qtail) {
+		if (!end_seg_is_qtail_min_1) {
+			*num_points = l_num_points;
+			return -1;
+		}
+		qtail--;
+	} else
 	while (seg_queue[--qtail].end != end_seg)
 		if (qtail < 0) {
 			// mprintf((0, "\nNo path!\n"));

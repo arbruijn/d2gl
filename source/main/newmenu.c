@@ -229,6 +229,9 @@ void nm_draw_background(int x1, int y1, int x2, int y2 )
 		}
 
 		pcx_error = pcx_read_bitmap(MENU_BACKGROUND_BITMAP,&nm_background_save,BM_LINEAR,background_palette);
+		if (pcx_error != PCX_ERROR_NONE) {
+			mprintf((1, "loading %s\n", MENU_BACKGROUND_BITMAP));
+		}
 		Assert(pcx_error == PCX_ERROR_NONE);
 
 		nm_background = nm_background_save;

@@ -1101,17 +1101,23 @@ void DoEndLevelScoreGlitz(int network)
 
 	if (!Cheats_enabled) {
 		if (Difficulty_level > 1) {
-			skill_points = level_points*(Difficulty_level)/4;
+			skill_points = Current_level_D1 ?
+				level_points*(Difficulty_level-1)/2 :
+				level_points*(Difficulty_level)/4;
 			skill_points -= skill_points % 100;
 		} else
 			skill_points = 0;
 
-		shield_points = f2i(Players[Player_num].shields) * 5 * mine_level;
-		energy_points = f2i(Players[Player_num].energy) * 2 * mine_level;
+		shield_points = f2i(Players[Player_num].shields) *
+			(Current_level_D1 ? 10 * (Difficulty_level+1) : 5 * mine_level);
+		energy_points = f2i(Players[Player_num].energy) *
+			(Current_level_D1 ? 5 * (Difficulty_level+1) : 2 * mine_level);
 		hostage_points = Players[Player_num].hostages_on_board * 500 * (Difficulty_level+1);
 
-		shield_points -= shield_points % 50;
-		energy_points -= energy_points % 50;
+		if (!Current_level_D1) {
+			shield_points -= shield_points % 50;
+			energy_points -= energy_points % 50;
+		}
 	} else {
 		skill_points = 0;
 		shield_points = 0;

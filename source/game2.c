@@ -1,5 +1,12 @@
+#include "config.h"
+#ifndef EMSCRIPTEN
 #define SDL2
+#endif
+#ifdef SDL2
 #include "SDL2/SDL.h"
+#else
+#include "SDL/SDL.h"
+#endif
 #include "sdlkeymap.h"
 #include <stdarg.h>
 #include <stdint.h>
@@ -9,12 +16,17 @@
 #include "fix.h"
 #include "effects.h"
 #include "deslog.h"
+#include "pa_gl.h"
 
 
 long lastTicks;
+#ifdef SDL2
 static SDL_Texture *texture;
 static SDL_Renderer *render;
 static SDL_Window *window;
+#else
+static SDL_Surface *window;
+#endif
 
 int EventLoop(int sync);
 extern void on_key(int, int);
@@ -30,17 +42,38 @@ void error_set(char *msg, ...) {
 extern void copy_screen_to_texture(uint32_t *texture);
 
 void draw() {
+    #ifdef GL
+    #ifdef SDL2
+    SDL_GL_SwapWindow(window);
+    #else
+    SDL_GL_SwapBuffers();
+    #endif
+    #else
     void *pixels;
     int pitch;
+
+    #ifdef SDL2
     if (SDL_LockTexture(texture, NULL, &pixels, &pitch) != 0) {
+    #else
+    if (SDL_LockSurface(window) != 0) {
+    #endif
             error_set("SDL_LockTexture %s", SDL_GetError());
             abort();
             return;
     }
+    #ifndef SDL2
+    pixels = window->pixels;
+    #endif
     copy_screen_to_texture(pixels);
+    #ifdef SDL2
     SDL_UnlockTexture(texture);
     SDL_RenderCopy(render, texture, NULL, NULL);
     SDL_RenderPresent(render);
+    #else
+    SDL_UnlockSurface(window);
+    SDL_UpdateRect(window, 0, 0, 0, 0);
+    #endif
+    #endif
     EventLoop(0);
     long now;
     long timeout = lastTicks + 1000/60;
@@ -51,6 +84,11 @@ void draw() {
     lastTicks = now;
 }
 
+void gr_sync_display() {
+	EventLoop(1);
+}
+
+#ifdef SDL2
 static void *CreateTexture(int w, int h) {
 	void *texture = SDL_CreateTexture(render, SDL_PIXELFORMAT_ARGB8888,
 									  SDL_TEXTUREACCESS_STREAMING, w, h);
@@ -60,28 +98,74 @@ static void *CreateTexture(int w, int h) {
 	}
 	return texture;
 }
+#endif
+
+#ifndef EMSCRIPTEN
+#include <signal.h>
+#endif
 
 int sdl_init() {
     SDL_Init(SDL_INIT_EVERYTHING);
+    #ifndef EMSCRIPTEN
+    signal(SIGINT, SIG_DFL);
+    #endif
+
+    #ifdef SDL2
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetSwapInterval(0);
+    #else
+    #endif
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    #ifdef SDL2
     if (SDL_CreateWindowAndRenderer(640, 480,
-                                                                    SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN,
-                                                                    &window, &render) != 0) {
+       SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL,
+       &window, &render) != 0) {
             error_set("SDL_CreateWindow %s", SDL_GetError());
             return 1;
     }
     SDL_SetWindowTitle(window, "Test");
+    #else
+    SDL_EnableKeyRepeat(0, 0);
+    if (!(window = SDL_SetVideoMode( 640, 480, 32, SDL_OPENGL ))) {
+        error_set("SDL_CreateWindow %s", SDL_GetError());
+        return 1;
+    }
+    #ifndef EMSCRIPTEN
+    glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), 0);
+    #endif
+    #endif
+
+    gl_init();
+
     return 0;
 }
 
 extern int cur_w, cur_h;
 void video_set_res(int w, int h) {
-    if (!cur_w)
-        sdl_init();
+    if (!cur_w) {
+	cur_w = w;
+	cur_h = h;
+        if (sdl_init())
+            abort();
+	/*
+	extern void gl_test();
+	gl_test();
+	SDL_GL_SwapBuffers();
+	//draw();
+	getchar();
+	*/
+    }
     cur_w = w;
     cur_h = h;
+    //gl_set_screen_size(cur_w, cur_h);
+#ifdef SDL2
     if (texture != NULL)
         SDL_DestroyTexture(texture);
     texture = CreateTexture(w, h);
+#endif
 }
 
 int EventLoop(int sync) {
@@ -96,6 +180,7 @@ int EventLoop(int sync) {
 		case SDL_QUIT:
 			keep_running = 0;
 			break;
+		#ifdef SDL2
 		case SDL_WINDOWEVENT:
 			switch (evt.window.type) {
 			case SDL_WINDOWEVENT_CLOSE:
@@ -107,7 +192,9 @@ int EventLoop(int sync) {
 				break;
 			}
 			break;
+		#endif
 		case SDL_KEYDOWN: {
+			#ifdef SDL2
 			if (evt.key.keysym.sym == SDLK_RETURN &&
 				(int)(evt.key.keysym.mod & KMOD_ALT) != 0) {
 				if ((SDL_GetWindowFlags(window) &
@@ -119,11 +206,18 @@ int EventLoop(int sync) {
 				break;
 			}
 			int pckey = sdlkeymap[(int)evt.key.keysym.scancode];
+			#else
+			int pckey = sdlkeymap[(int)evt.key.keysym.sym];
+			#endif
 			on_key(pckey, 1);
 			break;
 		}
 		case SDL_KEYUP: {
+			#ifdef SDL2
 			int pckey2 = sdlkeymap[(int)evt.key.keysym.scancode];
+			#else
+			int pckey2 = sdlkeymap[(int)evt.key.keysym.sym];
+			#endif
 			on_key(pckey2, 0);
 			break;
 		}
@@ -149,6 +243,7 @@ int EventLoop(int sync) {
 #include "kconfig.h"
 int timer_get_fixed_seconds() { return fixmuldiv(SDL_GetTicks(), 65536, 1000); } 
 void my_reset_time() { reset_time(); }
+void start_player_death_sequence(object *obj);
 void my_start_player_death_sequence(object *obj) { start_player_death_sequence(obj); }
 void game_render_frame();
 void my_game_render_frame() { game_render_frame(); }
@@ -163,7 +258,7 @@ void my_StartNewLevelSub(int level, int page_in, int secret) { StartNewLevelSub(
 #include "joy.h"
 #include "sdlkeymap.h"
 #include "pa_gl.h"
-int grd_fades_disabled;
+extern int grd_fades_disabled;
 void timer_init() { InitKeyMap(); grd_fades_disabled = 1; }
 int mouse_init(int cyberman) { return 1; }
 int digi_init() { return 0; }
@@ -174,22 +269,3 @@ void mouse_show_cursor() { SDL_ShowCursor(SDL_ENABLE); printf("show_cursor\n"); 
 void mouse_hide_cursor() { SDL_ShowCursor(SDL_DISABLE); printf("hide_cursor\n"); }
 
 void mouse_get_pos(int *x, int *y) { SDL_GetMouseState(x, y); printf("pos %d,%d\n", *x, *y); }
-
-#include "gr.h"
-#include "3d.h"
-void gl_free_bitmap(grs_bitmap *bm) {}
-void gl_draw_tmap(grs_bitmap *bm,int nv,g3s_point **vertlist) {}
-void bm_bind_tex(grs_bitmap *bm) {}
-void bm_bind_tex_pal(grs_bitmap *bm, ubyte *pal) {}
-void gl_draw_rod(g3s_point *pnt, fix width, fix height, grs_bitmap *bm, int o) {}
-void gl_get_rgb(ubyte color, float *r, float *g, float *b) {}
-void gl_draw_flat(ubyte color, int nv, g3s_point**pnts) {}
-void gl_start_frame() {}
-void gl_end_frame() {}
-void gl_draw_bitmap_2d(int sx, int sy, grs_bitmap *bm) {}
-void gl_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *bm) {}
-void gl_font_start(grs_font *font, ubyte color) {}
-void gl_draw_char(int sx, int sy, grs_font *font, int c) {}
-void gl_init_font(grs_font *font) {}
-void gl_init_canvas(grs_canvas *canv) {}
-

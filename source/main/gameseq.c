@@ -1065,6 +1065,8 @@ extern int N_secret_levels;
 #define STARS_BACKGROUND (MenuHires?"starsb.pcx":"stars.pcx")
 #endif
 
+int skip_endlevel;
+
 //	-----------------------------------------------------------------------------
 //	Does the bonus scoring.
 //	Call with dead_flag = 1 if player died, but deserves some portion of bonus (only skill points), anyway.
@@ -1180,7 +1182,7 @@ void DoEndLevelScoreGlitz(int network)
 
 	Assert(c <= N_GLITZITEMS);
 
-#if 0
+	if (!skip_endlevel) {
 	gr_palette_fade_out(gr_palette, 32, 0);
 
 	mprintf((0,"doing menu\n"));
@@ -1193,7 +1195,7 @@ void DoEndLevelScoreGlitz(int network)
 		newmenu_do2(NULL, title, c, m, NULL, 0, STARS_BACKGROUND);
 
 	mprintf((0,"done DoEndLevelScoreGlitz\n"));
-#endif	
+	}
 }
 
 //give the player the opportunity to save his game

@@ -91,7 +91,7 @@ void gr_rle_decode( ubyte * src, ubyte * dest, int dest_len )
 
 	dest_end = gr_rle_decode_asm( src, dest );
 
-	Assert(dest_end-src < dest_len);
+	Assert(dest_end-dest < dest_len);
 }
 
 #else 		// !defined(MACINTOSH)

@@ -14,6 +14,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _STRUTILS_
 #define _STRUTILS_
 
+#ifndef __WATCOMC__
 //extern char *strdup(char *s);
 extern int stricmp(char *str1, char *str2);
 extern int strnicmp(char *str1, char *str2, int n);
@@ -23,5 +24,6 @@ char * strlwr( char *s1 );
 void strrev( char *s1 );
 
 void _splitpath(const char *name, char *drive, char *path, char *base, char *ext);
+#endif
 
 #endif

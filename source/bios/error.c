@@ -142,7 +142,10 @@ void Error(char *fmt,...)
 	#endif
 	Int3();
 
-	if (!initialized) print_exit_message();
+	#ifndef NDOS
+	if (!initialized)
+	#endif
+		print_exit_message();
 
 	exit(1);
 }

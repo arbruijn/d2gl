@@ -1,3 +1,4 @@
+//#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -226,10 +227,15 @@ void do_morph_frame(object *obj)
 
 	pm = &Polygon_models[md->obj->rtype.pobj_info.model_num];
 
-	//printf("morph_frame active = ");
-	//for (i=0;i<pm->n_models;i++)
-	//	printf("%d ",submodel_active[i]);
-	//printf("\n");
+	#ifdef VERBOSE
+	printf("obj %d morph_frame active = ", obj-Objects);
+	for (i=0;i<pm->n_models;i++)
+		printf("%d.%d ",md->submodel_active[i], md->n_morphing_points[i]);
+	printf("times0 = ");
+	for (i=0;i<md->n_morphing_points[0];i++)
+    	printf("%x ",md->morph_times[i]);
+	printf("\n");
+	#endif
 
 
 	for (i=0;i<pm->n_models;i++)

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "joy.h"
 #include "mouse.h"
 #include "dpmi.h"
@@ -73,10 +74,12 @@ void on_mousemove(int dx, int dy) {
 }
 static int dombtns[] = { MB_LEFT, MB_MIDDLE, MB_RIGHT, 3, 4, 5, 6, 7, 8, 9, 10 };
 void on_mousebutton(int dombtn, int down) {
+	int btn;
+
 	if (dombtn >= sizeof(dombtns) / sizeof(dombtns[0]))
 		return;
 	Mouse.ctime = timer_get_fixed_seconds();
-	int btn = dombtns[dombtn];
+	btn = dombtns[dombtn];
 	if (down) {
 		if (!Mouse.pressed[btn]) {
 			Mouse.pressed[btn] = 1;
@@ -156,9 +159,11 @@ int gr_vesa_checkmode(int mode) { return 0; }
 #endif
 void vfx_set_palette_sub(ubyte *pal) {}
 
+#ifndef __WATCOMC__
 unsigned int gr_var_color;
 unsigned char *gr_var_bitmap;
 unsigned int gr_var_bwidth;
+#endif
 
 int serial_active;
 

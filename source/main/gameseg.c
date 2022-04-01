@@ -743,7 +743,7 @@ int	Doing_lighting_hack_flag=0;
 
 //figure out what seg the given point is in, tracing through segments
 //returns segment number, or -1 if can't find segment
-int trace_segs(vms_vector *p0,int oldsegnum)
+int trace_segs(vms_vector *p0,int oldsegnum,int olddist)
 {
 	int centermask;
 	segment *seg;
@@ -800,7 +800,7 @@ int trace_segs(vms_vector *p0,int oldsegnum)
 
 				side_dists[biggest_side] = 0;
 
-				check = trace_segs(p0,seg->children[biggest_side]);	//trace into adjacent segment
+				check = trace_segs(p0,seg->children[biggest_side],biggest_val);	//trace into adjacent segment
 
 				if (check != -1)		//we've found a segment
 					return check;	
@@ -830,7 +830,7 @@ int find_point_seg(vms_vector *p,int segnum)
 	Assert((segnum <= Highest_segment_index) && (segnum >= -1));
 
 	if (segnum != -1) {
-		newseg = trace_segs(p,segnum);
+		newseg = trace_segs(p,segnum,0);
 
 		if (newseg != -1)			//we found a segment!
 			return newseg;
@@ -1056,6 +1056,7 @@ fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, 
 
 			if (WALL_IS_DOORWAY(segp, snum) & wid_flag) {
 				int	this_seg = segp->children[snum];
+				//if (wid_flag == 1) printf("fcd %d adding %d\n", cur_seg, this_seg);
 
 				if (!visited[this_seg]) {
 					seg_queue[qtail].start = cur_seg;

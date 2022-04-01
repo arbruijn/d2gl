@@ -318,6 +318,7 @@ int key_inkey()
 	return key;
 }
 
+int key_inkey_time_sync = 1;
 int key_inkey_time(fix * time)
 {
 	int key = 0;
@@ -332,7 +333,7 @@ int key_inkey_time(fix * time)
 		key_data.keyhead = add_one(key_data.keyhead);
 	}
 	_enable();
-	if (!key) gr_sync_display(); // FIXME
+	if (!key && key_inkey_time_sync) gr_sync_display(); // FIXME
 	return key;
 }
 

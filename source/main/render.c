@@ -430,6 +430,8 @@ fix	Min_n0_n1_dot	= (F1_0*15/16);
 extern int contains_flare(segment *segp, int sidenum);
 extern fix	Obj_light_xlate[16];
 
+int no_render;
+
 // -----------------------------------------------------------------------------------
 //	Render a side.
 //	Check for normal facing.  If so, render faces on side dictated by sidep->type.
@@ -444,6 +446,9 @@ void render_side(segment *segp, int sidenum)
 	vms_vector  normals[2];
 	int			wid_flags;
 
+
+	if (no_render)
+		return;
 
 	wid_flags = WALL_IS_DOORWAY(segp,sidenum);
 
@@ -1349,9 +1354,15 @@ typedef struct sort_item {
 sort_item sort_list[SORT_LIST_SIZE];
 int n_sort_items;
 
+#ifdef REPRO_FIX
+#include "wqsort.h"
+#define qsort wqsort
+#endif
+
 //compare function for object sort. 
-int sort_func(const sort_item *a,const sort_item *b)
+int sort_func(const void *av,const void *bv)
 {
+	sort_item *a = av, *b = bv;
 	fix delta_dist;
 	object *obj_a,*obj_b;
 

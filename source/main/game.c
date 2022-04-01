@@ -516,7 +516,9 @@ void init_cockpit()
 	case CM_FULL_COCKPIT:
 	case CM_REAR_VIEW:		{
 		grs_bitmap *bm = &GameBitmaps[cockpit_bitmap[Cockpit_mode+(Current_display_mode?(Num_cockpits/2):0)].index];
+		#ifdef NASM
 		cockpit_cur_bm = bm;
+		#endif
 
 		PIGGY_PAGE_IN(cockpit_bitmap[Cockpit_mode+(Current_display_mode?(Num_cockpits/2):0)]);
 
@@ -1163,6 +1165,8 @@ void game_flush_inputs()
 	#endif
 		mouse_get_delta( &dx, &dy );	// Read mouse
 	memset(&Controls,0,sizeof(control_info));
+	void sdl_time_sync();
+	sdl_time_sync();
 }
 
 void reset_time()
@@ -2770,6 +2774,8 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 
 		if (Endlevel_sequence) {
 			do_endlevel_frame();
+			if (!Endlevel_sequence)
+				return;
 			powerup_grab_cheat_all();
 			do_special_effects();
 			return;					//skip everything else
@@ -2815,10 +2821,6 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 				return;
 
 			fuelcen_update_all();
-			if (Current_level_D1) {
-				void do_countdown_frame();
-				do_countdown_frame();
-			}
 
 			do_ai_frame_all();
 

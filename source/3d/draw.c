@@ -51,6 +51,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "globvars.h"
 #include "texmap.h"
 #include "clipper.h"
+#include "pa_gl.h"
 
 void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist) = draw_tmap;
 void (*flat_drawer_ptr)(int nv,int *vertlist) = gr_upoly_tmap;
@@ -100,6 +101,10 @@ bool g3_draw_line(g3s_point *p0,g3s_point *p1)
 	if (p0->p3_codes & p1->p3_codes)
 		return 0;
 
+	if (grd_curcanv->cv_bitmap.bm_type == BM_GL) {
+		gl_line(grd_curcanv->cv_color, p0, p1);
+		return 0;
+	}
 	codes_or = p0->p3_codes | p1->p3_codes;
 
 	if (codes_or & CC_BEHIND)
@@ -242,7 +247,6 @@ bool g3_draw_poly(int nv,g3s_point **pointlist)
 		return 1;	//all points off screen
 
 	if (grd_curcanv->cv_bitmap.bm_type == BM_GL) {
-		void gl_draw_flat(ubyte color, int nv, g3s_point**pnts);
 		gl_draw_flat(grd_curcanv->cv_color, nv, pointlist);
 		return 0;
 	}
@@ -304,7 +308,6 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,grs_bitmap *bm)
 		return 1;	//all points off screen
 
 	if (grd_curcanv->cv_bitmap.bm_type == BM_GL) {
-		void gl_draw_tmap(grs_bitmap*,int,g3s_point**);
 		gl_draw_tmap(bm,nv,bufptr);
 		return 0;
 	}

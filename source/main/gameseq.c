@@ -1615,6 +1615,8 @@ void DoEndGame(void)
 //from which level each do you get to each secret level 
 int Secret_level_table[MAX_SECRET_LEVELS_PER_MISSION];
 
+void my_StartNewLevelSub(int, int, int);
+
 //called to go to the next level (if there is one)
 //if secret_flag is true, advance to secret level, else next normal one
 //	Return true if game over.
@@ -1653,7 +1655,8 @@ void AdvanceLevel(int secret_flag)
 		
 		mprintf((0,"Finished last level!\n"));
 
-		DoEndGame();
+		void my_DoEndGame();
+		my_DoEndGame();
 
 	} else {
 
@@ -1663,7 +1666,6 @@ void AdvanceLevel(int secret_flag)
 			DoEndlevelMenu(); // Let use save their game
 
 		//StartNewLevel(Next_level_num, 0);
-		void my_StartNewLevelSub(int, int, int);
 		my_StartNewLevelSub(Next_level_num, 1, 0);
 
 	}
@@ -1929,6 +1931,7 @@ void DoPlayerDead()
 }
 
 extern int BigWindowSwitch;
+int no_read_player_file;
 
 //called when the player is starting a new level for normal game mode and restore state
 //	secret_flag set if came from a secret level
@@ -2026,6 +2029,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 
 	turn_cheats_off();
 
+	if (!no_read_player_file)
 	if (!(Game_mode & GM_MULTI) && !Cheats_enabled)
 		set_highest_level(Current_level_num);
 	else

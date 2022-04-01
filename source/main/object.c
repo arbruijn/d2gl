@@ -1,4 +1,5 @@
-#define VERBOSE
+//#define VERBOSE
+//#define VERBOSE_CHECK_FIRE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -157,6 +158,7 @@ char	Object_type_names[MAX_OBJECT_TYPES][9] = {
 void AdjustMineSpawn();
 void obj_detach_one(object *sub);
 void obj_detach_all(object *parent);
+int free_object_slots(int num_used);
 
 #ifndef RELEASE
 //set viewer object to next object in array
@@ -417,14 +419,14 @@ draw_cloaked_object(object *obj,fix light,fix *glow,fix cloak_start_time,fix clo
 		new_light = fixmul(light,light_scale);
 		save_glow = glow[0];
 		glow[0] = fixmul(glow[0],light_scale);
-		draw_polygon_model(&obj->pos,&obj->orient,&obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,new_light,glow, alt_textures );
+		draw_polygon_model(&obj->pos,&obj->orient,obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,new_light,glow, alt_textures );
 		glow[0] = save_glow;
 	}
 	else {
 		Gr_scanline_darkening_level = cloak_value;
 		gr_setcolor(BM_XRGB(0,0,0));	//set to black (matters for s3)
 		g3_set_special_render(draw_tmap_flat,NULL,NULL);		//use special flat drawer
-		draw_polygon_model(&obj->pos,&obj->orient,&obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,light,glow,NULL );
+		draw_polygon_model(&obj->pos,&obj->orient,obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,light,glow,NULL );
 		g3_set_special_render(NULL,NULL,NULL);
 		Gr_scanline_darkening_level = GR_FADE_LEVELS;
 	}
@@ -497,7 +499,7 @@ void draw_polygon_object(object *obj)
 		for (i=0;i<12;i++)		//fill whole array, in case simple model needs more
 			bm_ptrs[i] = Textures[obj->rtype.pobj_info.tmap_override];
 
-		draw_polygon_model(&obj->pos,&obj->orient,&obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,light,engine_glow_value,bm_ptrs);
+		draw_polygon_model(&obj->pos,&obj->orient,obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,light,engine_glow_value,bm_ptrs);
 	}
 	else {
 
@@ -522,11 +524,11 @@ void draw_polygon_object(object *obj)
 					light = 2*light + F1_0;
 			}
 
-			draw_polygon_model(&obj->pos,&obj->orient,&obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,light,engine_glow_value,alt_textures);
+			draw_polygon_model(&obj->pos,&obj->orient,obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,obj->rtype.pobj_info.subobj_flags,light,engine_glow_value,alt_textures);
 			if (obj->type == OBJ_WEAPON && (Weapon_info[obj->id].model_num_inner > -1 )) {
 				fix dist_to_eye = vm_vec_dist_quick(&Viewer->pos, &obj->pos);
 				if (dist_to_eye < Simple_model_threshhold_scale * F1_0*2)
-					draw_polygon_model(&obj->pos,&obj->orient,&obj->rtype.pobj_info.anim_angles,Weapon_info[obj->id].model_num_inner,obj->rtype.pobj_info.subobj_flags,light,engine_glow_value,alt_textures);
+					draw_polygon_model(&obj->pos,&obj->orient,obj->rtype.pobj_info.anim_angles,Weapon_info[obj->id].model_num_inner,obj->rtype.pobj_info.subobj_flags,light,engine_glow_value,alt_textures);
 			}
 		}
 	}
@@ -610,6 +612,9 @@ void set_robot_location_info(object *objp)
 		//the code below to check for object near the center of the screen
 		//completely ignores z, which may not be good
 
+		#ifdef VERBOSE_CHECK_FIRE
+		printf("obj %d check fire x=%x y=%x\n", objp-Objects, temp.p3_x, temp.p3_y);
+		#endif
 		if ((abs(temp.p3_x) < F1_0*4) && (abs(temp.p3_y) < F1_0*4)) {
 			objp->ctype.ai_info.danger_laser_num = Player_fired_laser_this_frame;
 			objp->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
@@ -698,6 +703,11 @@ void render_object(object *obj)
 {
 	int	mld_save;
 
+	extern int no_render;
+	if ( no_render && obj->render_type != RT_POLYOBJ &&
+		( obj->render_type != RT_WEAPON_VCLIP || obj->lifeleft != ONE_FRAME_TIME ) )
+		return;
+
 	if ( obj == Viewer ) return;		
 
 	if ( obj->type==OBJ_NONE )	{
@@ -717,7 +727,8 @@ void render_object(object *obj)
 
 		case RT_POLYOBJ:
 
-			draw_polygon_object(obj); 
+			if (!no_render)
+				draw_polygon_object(obj); 
 
 			//"warn" robot if being shot at
 			if (obj->type == OBJ_ROBOT)

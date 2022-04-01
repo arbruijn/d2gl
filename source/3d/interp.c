@@ -82,7 +82,8 @@ int uninit_flag;
 #include <stdio.h>
 int find_color_index(int rgb15)
 {
-	for (int i = 0; i < n_interp_colors; i++)
+	int i;
+	for (i = 0; i < n_interp_colors; i++)
 		if (interp_color_table[i].rgb15 == rgb15)
 			return i;
 	Assert(n_interp_colors < MAX_INTERP_COLORS);
@@ -93,7 +94,8 @@ int find_color_index(int rgb15)
 
 int find_color_index_pal(int pal_entry)
 {
-	for (int i = 0; i < n_interp_colors; i++)
+	int i;
+	for (i = 0; i < n_interp_colors; i++)
 		if (interp_color_table[i].pal_entry == pal_entry)
 			return i;
 	Assert(n_interp_colors < MAX_INTERP_COLORS);
@@ -104,7 +106,8 @@ int find_color_index_pal(int pal_entry)
 
 void g3_remap_interp_colors()
 {
-	for (int i = 0; i < n_interp_colors; i++)
+	int i;
+	for (i = 0; i < n_interp_colors; i++)
 		if (interp_color_table[i].rgb15 != -1)
 			interp_color_table[i].pal_entry =
 				gr_find_closest_color_15bpp(interp_color_table[i].rgb15);
@@ -582,6 +585,7 @@ bool g3_draw_morphing_model(void *model_ptr,grs_bitmap **model_bitmaps,vms_angve
 	return 1;
 }
 
+extern int data_d1;
 void init_model_sub(ubyte *p)
 {
 	Assert(++nest_count < 1000);
@@ -603,12 +607,11 @@ void init_model_sub(ubyte *p)
 			}
 
 			case OP_FLATPOLY: {
-				int nv = w(p+2);
+				int nv = w(p+2), c;
 
 				Assert(nv > 2);		//must have 3 or more points
 
-				int c = w(p+28);
-				extern int data_d1;
+				c = w(p+28);
 				c = uninit_flag ? interp_color_table[c].rgb15 : data_d1 ? find_color_index_pal(c) : find_color_index(c);
 				*wp(p+28) = c;
 

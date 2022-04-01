@@ -82,9 +82,11 @@ int hmp_song_play(char *data, int size, int loop) {
 	return 0;
 }
 
+#ifndef __WATCOMC__
 #include "dos.h"
 int _dos_findfirst(const char *spec, int attr, find_t *data) { return 1; }
 int _dos_findnext(find_t *data) { return 1; }
+#endif
 
 #ifdef EM_CC
 #endif
@@ -96,10 +98,13 @@ uint32_t *get_screen() {
 */
 
 void copy_screen_to_texture(uint32_t *texture) {
-	uint32_t pal[256];
+	uint32_t pal[256], *dst;
 	extern ubyte gr_visible_pal[256 * 3];
+	int i;
+	ubyte *src, *srcend;
+
 	#define UP(x) ((((x) & 0x3f) << 2) | (((x) & 0x3f) >> 4))
-	for (int i = 0; i < 256; i++)
+	for (i = 0; i < 256; i++)
 		pal[i] = UP(gr_visible_pal[i * 3 + 2]) +
 			(UP(gr_visible_pal[i * 3 + 1]) << 8) +
 			(UP(gr_visible_pal[i * 3 + 0]) << 16) +
@@ -109,9 +114,9 @@ void copy_screen_to_texture(uint32_t *texture) {
 		for (int i = 0; i < SCR_W; i++)
 			texture[j * SCR_W + i] = pal[gr_screen_buffer[(SCR_H - j - 1) * SCR_W + i]];
 	*/
-	uint32_t *dst = texture;
-	ubyte *srcend = gr_screen_buffer + cur_w * cur_h;
-	for (ubyte *src = gr_screen_buffer; src < srcend; src++, dst++)
+	dst = texture;
+	srcend = gr_screen_buffer + cur_w * cur_h;
+	for (src = gr_screen_buffer; src < srcend; src++, dst++)
 		*dst = pal[*src];
 }
 
@@ -166,13 +171,18 @@ void on_key(int keycode, int down) {
 }
 #endif
 
+//#ifndef __WATCOMC__
 int kconfig_read_external_controls() { return -1; }
+//#endif
 
 
 #ifdef EM_CC
 static double start_time;
 void timer_init() { start_time = emscripten_get_now(); }
 fix timer_get_fixed_seconds() { return (fix)((emscripten_get_now() - start_time) * ((double)F1_0 / 1000.0)); }
+#elif defined(__WATCOMC__)
+//fix timer_get_fixed_seconds() { abort(); return 0; }
+void delay(int n) {}
 #else
 #ifdef SDL2
 #include "sdl2/include/SDL.h"
@@ -185,12 +195,14 @@ fix timer_get_fixed_seconds() { return (fix)((emscripten_get_now() - start_time)
 #endif
 fix timer_get_approx_seconds() { return timer_get_fixed_seconds(); }
 
+#ifndef __WATCOMC__
 int filelength(int fd) {
 	struct stat st;
 	if (fstat(fd, &st))
 		return -1;
 	return st.st_size;
 }
+#endif
 
 void _mprintf_at( int n, int row, int col, char * format, ... ) {
 	va_list vp;
@@ -265,7 +277,7 @@ EM_JS(int, load_filenames, (char *buf, int fnsize, int fnmax, const char *filesp
 });
 #endif
 
-#ifndef EM_CC
+#ifndef __EMSCRIPTEN__
 #if 0
 using namespace System;
 namespace ClassLibrary1 {
@@ -318,6 +330,7 @@ void save_file(const char *filename, void *buf, int size) {
 }
 
 void music_volume_set(int mvolume) {}
+void digi_volume_set(int dvolume) {}
 void play_stop(){}
 void play_start(){}
 int play_sample(int num, int pan, int vol, int repeat) { return 0; }
@@ -355,10 +368,14 @@ int descent_critical_error = 0;
 
 void outp(int port, int val) {}
 
-void timer_delay(fix time) { SDL_Delay(fixmul(time, 1000)); }
+#ifndef __WATCOMC__
 void delay(int ms) { SDL_Delay(ms); }
+#endif
+
+void timer_delay(fix time) { delay(fixmul(time, 1000)); }
 
 #include "findfile.h"
+#ifndef __WATCOMC__
 #include <dirent.h>
 #include <fnmatch.h>
 static char ff_search_str[13];
@@ -394,6 +411,11 @@ int FileFindClose(void) {
 	ff_dir = NULL;
 	return 0;
 }
+#else
+int FileFindFirst(char *search_str, FILEFINDSTRUCT *ffstruct) { return -1; }
+int FileFindNext(FILEFINDSTRUCT *ffstruct) { return -1; }
+int FileFindClose(void) { return 0; }
+#endif
 int GetFileDateTime(int filehandle, FILETIMESTRUCT *ftstruct) { return -1; }
 int SetFileDateTime(int filehandle, FILETIMESTRUCT *ftstruct) { return -1; }
 int GetDiskFree () { return -1; }
@@ -404,7 +426,7 @@ int PlayMovie(const char *filename, int allow_abort) { return -1; }
 int PlayMovies(int num_files, const char *filename[], int graphmode, int allow_abort) { return -1; }
 int InitRobotMovie (char *filename) { return -1; }
 void DeInitRobotMovie(void) {}
-int init_movies() { return -1; }
+void init_movies() { }
 int init_subtitles(char *filename) { return -1; }
 void close_subtitles() {}
 
@@ -444,7 +466,9 @@ int robot_movies;
 void RotateRobot() { }
 int send_sequence_packet() { return -1; }
 int show_cursor() { return -1; }
-int stackavail() { return 1048576; }
+#ifndef __WATCOMC__
+unsigned int stackavail() { return 1048576; }
+#endif
 int StackSpace() { return -1; }
 int swapint() { return -1; }
 int swap_object() { return -1; }
@@ -471,8 +495,8 @@ void digi_set_channel_pan(int ch, int pan) { }
 int joy_have_mousestick() { return -1; }
 int RBAEjectDisk() { return -1; }
 int send_netplayers_packet() { return -1; }
-int gr_set_mode(int mode);
-short vga_set_mode(short mode) { return gr_set_mode(mode); }
+//int gr_set_mode(int mode);
+//short vga_set_mode(short mode) { return gr_set_mode(mode); }
 int game_3dmax_on() { return -1; }
 int game_3dmax_off() { return -1; }
 
@@ -488,7 +512,9 @@ int CD_blast_mixer(){ return -1; }
 extern void mprintf( int n, char * format, ... ) { va_list vp; va_start(vp, format); vfprintf(stderr, format, vp); va_end(vp); }
 void WinInt3() {
 #ifndef EMSCRIPTEN
+#ifndef __WATCOMC__
 asm volatile("int $3");
+#endif
 #endif
 }
 
@@ -500,3 +526,13 @@ void mclose(int n){}
 void mprintf_at(int n, int row, int col, char * format, ...){va_list vp; va_start(vp, format); vfprintf(stderr, format, vp); va_end(vp);}
 #endif
 int PAEnabled;
+
+#ifdef __WATCOMC__
+int Current_level_D1;
+int data_d1;
+void key_putkey(int k) {}
+int GetCd() { return 0; }
+void *com_port;
+//ubyte *gr_ibitblt_create_mask_svga(grs_bitmap * mask_bmp, int sx, int sy, int sw, int sh, int srowsize) { return NULL; }
+#endif
+

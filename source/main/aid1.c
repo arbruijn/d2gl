@@ -1,5 +1,5 @@
 #define VERBOSE
-#define debug_objnum 23
+#define debug_objnum 15
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1551,13 +1551,12 @@ static void make_random_vector(vms_vector *vec)
 }
 #endif
 
-#if 0
-//#ifndef NDEBUG
+#ifndef NDEBUG
 #undef mprintf
 #include <stdarg.h>
 static void mmprintf(int n, const char *msg, ...) { va_list vp;va_start(vp,msg);vprintf(msg, vp);va_end(vp); }
 #define mprintf(x) mmprintf x
-static void mprintf_animation_info(object *objp)
+void mprintf_animation_info(object *objp)
 {
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
@@ -1605,7 +1604,6 @@ static void mprintf_animation_info(object *objp)
 }
 #undef mprintf
 #define mprintf(x)
-//#endif
 #endif
 
 //	-------------------------------------------------------------------------------------------------------------------
@@ -1669,13 +1667,11 @@ static void do_ai_robot_hit(object *objp, int type)
 }
 #endif
 
-#if 0
 #ifndef NDEBUG
 int	Do_ai_flag=1;
 int	Cvv_test=0;
 int	Cvv_last_time[MAX_OBJECTS];
 int	Gun_point_hack=0;
-#endif
 #endif
 
 #define	CHASE_TIME_LENGTH		(F1_0*8)
@@ -2622,7 +2618,7 @@ void do_ai_frame_d1(object *obj)
 	}
 
 	//if (obj-Objects==102) mprintf_animation_info((obj));
-#ifndef NDEBUG
+#if 0 //ndef NDEBUG
 	if ((aip->behavior == AIB_RUN_FROM) && (ailp->mode != AIM_RUN_FROM_OBJECT))
 		Int3();	//	This is peculiar.  Behavior is run from, but mode is not.  Contact Mike.
 
@@ -3133,11 +3129,13 @@ void do_ai_frame_d1(object *obj)
 			int	anger_level = 65;
 			#endif
 
+			#if 0
 			if (aip->behavior == AIB_STATION)
 				if (Point_segs[aip->hide_index + aip->path_length - 1].segnum == aip->hide_segment) {
 					//anger_level = 64;
 					// mprintf((0, "Object %i, station, lowering anger to 64.\n"));
 				}
+			#endif
 
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 

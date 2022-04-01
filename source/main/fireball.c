@@ -367,11 +367,14 @@ object *object_create_debris(object *parent, int subobj_num)
 
 	vm_vec_add2(&obj->mtype.phys_info.velocity,&parent->mtype.phys_info.velocity);
 
-	if (Current_level_D1)
+	if (Current_level_D1) {
 		vm_vec_make(&obj->mtype.phys_info.rotvel,10*0x2000/3,10*0x4000/3,10*0x7000/3);
-	else
-		vm_vec_make(&obj->mtype.phys_info.rotvel, psrand() + 0x1000,
-			    psrand()*2 + 0x4000, psrand()*3 + 0x2000);
+	} else {
+		fix z = psrand()*3 + 0x2000;
+		fix y = psrand()*2 + 0x4000;
+		fix x = psrand() + 0x1000;
+		vm_vec_make(&obj->mtype.phys_info.rotvel, x, y, z);
+	}
 	vm_vec_zero(&obj->mtype.phys_info.rotthrust);
 
 	obj->lifeleft = Current_level_D1 ? DEBRIS_LIFE :
@@ -1293,6 +1296,7 @@ void do_explosion_sequence(object *obj)
 #define EXPL_WALL_TIME					(f1_0)
 #define EXPL_WALL_TOTAL_FIREBALLS	32
 #define EXPL_WALL_FIREBALL_SIZE 		(0x48000*6/10)	//smallest size
+#define EXPL_WALL_FIREBALL_SIZE_D1 		0x48000	//smallest size
 
 expl_wall expl_wall_list[MAX_EXPLODING_WALLS];
 
@@ -1400,7 +1404,9 @@ void do_exploding_wall_frame()
 				vm_vec_scale_add(&pos,v1,&vv0,psrand()*2);
 				vm_vec_scale_add2(&pos,&vv1,psrand()*2);
 
-				size = EXPL_WALL_FIREBALL_SIZE + (2*EXPL_WALL_FIREBALL_SIZE * e / EXPL_WALL_TOTAL_FIREBALLS);
+				size = Current_level_D1 ?
+					EXPL_WALL_FIREBALL_SIZE_D1 + (2*EXPL_WALL_FIREBALL_SIZE_D1 * e / EXPL_WALL_TOTAL_FIREBALLS) :
+					EXPL_WALL_FIREBALL_SIZE + (2*EXPL_WALL_FIREBALL_SIZE * e / EXPL_WALL_TOTAL_FIREBALLS);
 
 				//fireballs start away from door, with subsequent ones getting closer
 				#ifdef COMPACT_SEGS	

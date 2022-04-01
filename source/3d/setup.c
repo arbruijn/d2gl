@@ -50,6 +50,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "globvars.h"
 #include "clipper.h"
 //#include "div0.h"
+#include "pa_gl.h"
 
 //initialize the 3d system
 void g3_init(void)
@@ -95,7 +96,6 @@ void g3_start_frame(void)
 
 	init_interface_vars_to_assembler();		//for the texture-mapper
 
-	void gl_start_frame();
 	gl_start_frame();
 }
 
@@ -105,7 +105,6 @@ void g3_end_frame(void)
 //	Assert(free_point_num==0);
 	free_point_num = 0;
 
-	void gl_end_frame();
 	gl_end_frame();
 }
 

@@ -1,5 +1,6 @@
 //#include "sdl2/include/SDL.h"
-#include "config.h"
+#include "glconfig.h"
+#ifndef __WATCOMC__
 #ifdef EMSCRIPTEN
 #include "SDL/SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
@@ -13,10 +14,18 @@
 #include <SDL2/SDL_opengl.h>
 #endif
 #include "sdlkeymap.h"
+#endif
+#include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+
+#ifdef __WATCOMC__
+#undef stdout
+#define stdout (__get_std_file(1))
+#endif
 
 #include "fix.h"
 #include "effects.h"
@@ -27,17 +36,22 @@
 #include "mission.h"
 #include "cfile.h"
 #include "pa_gl.h"
-
+#include "gamepal.h"
+#include "vga.h"
+#include "weapon.h"
+#include "newdemo.h"
 
 //#define SDL_Window SDL_Surface
 
 long lastTicks;
+#ifndef __WATCOMC__
 #ifdef SDL2
 static SDL_Texture *texture;
 static SDL_Renderer *render;
 static SDL_Window *window;
 #else
 static SDL_Surface *window;
+#endif
 #endif
 
 int EventLoop(int sync);
@@ -56,34 +70,40 @@ extern void copy_screen_to_texture(uint32_t *texture);
 int last_time;
 int sdl_time_start;
 int time_speed = 1;
-int play_speed = 16;
-int play_show = 1;
+int play_speed = 32;
+int play_show = 0;
+int record_demo = 0;
 
 FILE *log_file = NULL;
 int is_record = 1;
 int is_play = 0;
 int is_continue = 0;
+int last_time_menu;
 
 void frame_delay() {
+    #ifndef __WATCOMC__
     EventLoop(0);
     #if 0
     SDL_Delay(1);
     #else
-    int timeout = sdl_time_start + fixmuldiv(last_time, 1000, 65536 * time_speed);
+    int timeout = sdl_time_start + fixmuldiv(last_time + last_time_menu, 1000, 65536 * time_speed);
     while (SDL_GetTicks() < timeout) {
         EventLoop(0);
         SDL_Delay(1);
     }
+    #endif
     #endif
 }
 
 void maybe_swap_delay() {
     if (is_play && !play_show)
         return;
+    #ifndef __WATCOMC__        
     #ifdef SDL2
     SDL_GL_SwapWindow(window);
     #else
     SDL_GL_SwapBuffers();
+    #endif
     #endif
     frame_delay();
 }
@@ -91,6 +111,7 @@ void maybe_swap_delay() {
 void draw() {
     if (is_play && !play_show)
         return;
+    #ifndef __WATCOMC__
     #ifdef GL
     SDL_GL_SwapWindow(window);
     #else
@@ -127,15 +148,20 @@ void draw() {
             }
             lastTicks = now;
     }
+    #endif
     return;
 }
 
 void gr_sync_display() {
+    last_time_menu += 65536 / 64;
     draw();
 }
 
 void sdl_time_sync() {
+    last_time_menu = 0;
+    #ifndef __WATCOMC__
     sdl_time_start = SDL_GetTicks() - fixmuldiv(last_time, 1000, 65536 * time_speed);
+    #endif
 }
 
 #ifdef SDL2
@@ -151,9 +177,12 @@ static void *CreateTexture(int w, int h) {
 #endif	
 
 int sdl_init() {
-    if (is_play && !play_show)
+    if (is_play && !play_show) {
+        gl_init();
         return 0;
+    }
 
+    #ifndef __WATCOMC__
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -190,26 +219,10 @@ int sdl_init() {
     if (!(window = SDL_SetVideoMode( 640, 480, 32, SDL_OPENGL )))
         return 1;
     #endif
+    #endif
 
     gl_init();
 
-    #if 0
-    //glViewport(0, 0, 640, 480);
-    //glViewport(-10, -10, 10, 10);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    //glOrthof(0, 640, 480, 0, -65536.0f, 65536.0f); //, 1.0f/256.0f); //, 65536.0f);
-    //glOrtho(0, 640, 480, 0, -1, 1);
-    //glOrthof(-2.0f, 2.0f, -2.0f, 2.0f, -100.0f, 100.0f);
-    //glFrustum(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0);
-    //glFrustum(-10.0, 10.0, -10.0, 10.0, 1.0, 10.0);
-    glFrustum(-0.01, 0.01, -0.01, 0.01, 0.01, 5000.0);
-    //glCullFace(GL_FRONT);
-    //glClear(GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode( GL_MODELVIEW );
-    glLoadIdentity();
-    #endif
     return 0;
 }
 
@@ -232,6 +245,8 @@ void video_set_res(int w, int h) {
 }
 
 int EventLoop(int sync) {
+    int keep_running = 1;
+    #ifndef __WATCOMC__
         if (sync) {
             #ifdef SDL2
             SDL_GL_SwapWindow(window);
@@ -241,7 +256,6 @@ int EventLoop(int sync) {
             glClear(GL_COLOR_BUFFER_BIT);
             SDL_Delay(10);
         }
-	int keep_running = 1;
 	// while (keep_running)
 	//{
 	/*
@@ -301,7 +315,8 @@ int EventLoop(int sync) {
     }
 		}
 	}
-  return keep_running;
+    #endif
+    return keep_running;
 }
 
 #include "types.h"
@@ -352,21 +367,30 @@ void *pAi_cloak_info = &Ai_cloak_info;
 int *pLast_gate_time = &Last_gate_time;
 int *pLast_teleport_time = &Last_teleport_time;
 int *pBoss_cloak_end_time = &Boss_cloak_end_time;
-int Fuelcen_seconds_left;
-int *pFuelcen_seconds_left = &Fuelcen_seconds_left;
+extern int Countdown_seconds_left;
+int *pCountdown_seconds_left = &Countdown_seconds_left;
 extern unsigned int d_rand_seed;
 unsigned int *pRandNext = &d_rand_seed;
 extern int Num_awareness_events;
 int *pNum_awareness_events = &Num_awareness_events;
 extern int Laser_offset;
 extern int Missile_gun;
+extern fix Time_flash_last_played;
+extern fix Afterburner_charge;
+extern ubyte PrimaryOrder[];
+extern ubyte SecondaryOrder[];
+extern int Spreadfire_toggle;
+extern int Helix_orientation;
 
 int level = 1;
 int skipped_levels = 0;
 int end_level = 0;
 int reset_effects = 0;
+#define ELMS(x) (sizeof(x)/sizeof((x)[0]))
 void load_stat(FILE *f, int have_level) {
     char line[256], *p, *arg;
+    unsigned short matcen_creator_obj[64];
+    unsigned char matcen_creator_num[64];
 
     if (!have_level) {
         if (!fgets(line, sizeof(line), f))
@@ -411,9 +435,9 @@ void load_stat(FILE *f, int have_level) {
         if (strcmp(line, "secondary_flags") == 0)
             Player->secondary_weapon_flags = (int)strtoul(arg, NULL, 16);
         if (strcmp(line, "primary_ammo") == 0)
-            parse_ammo(arg, Player->primary_ammo);
+            parse_ushort_array(arg, Player->primary_ammo, 10);
         if (strcmp(line, "secondary_ammo") == 0)
-            parse_ammo(arg, Player->secondary_ammo);
+            parse_ushort_array(arg, Player->secondary_ammo, 10);
         if (strcmp(line, "score") == 0)
             Player->score = (int)strtol(arg, NULL, 10);
         if (strcmp(line, "time_total") == 0)
@@ -440,6 +464,25 @@ void load_stat(FILE *f, int have_level) {
             Missile_gun = (int)strtol(arg, NULL, 10);
         if (strcmp(line, "reset_effects") == 0)
             reset_effects = (int)strtol(arg, NULL, 10);
+        if (strcmp(line, "primary_last_was_super") == 0)
+            parse_ubyte_array(arg, Primary_last_was_super, SUPER_WEAPON);
+        if (strcmp(line, "secondary_last_was_super") == 0)
+            parse_ubyte_array(arg, Secondary_last_was_super, SUPER_WEAPON);
+        if (strcmp(line, "time_flash_last_played") == 0)
+            Time_flash_last_played = (int)strtol(arg, NULL, 16);
+        if (strcmp(line, "afterburner_charge") == 0)
+            Afterburner_charge = (int)strtol(arg, NULL, 16);
+        if (strcmp(line, "matcen_creator_obj") == 0)
+            parse_ushort_array(arg, matcen_creator_obj, ELMS(matcen_creator_obj));
+        if (strcmp(line, "matcen_creator_num") == 0) {
+            int i, n = parse_ubyte_array(arg, matcen_creator_num, ELMS(matcen_creator_num));
+            for (i = 0; i < n; i++)
+                Objects[matcen_creator_obj[i]].matcen_creator = matcen_creator_num[i] | 0x80;
+        }
+        if (strcmp(line, "primary_order") == 0)
+            parse_ubyte_array(arg, PrimaryOrder, MAX_PRIMARY_WEAPONS + 1);
+        if (strcmp(line, "secondary_order") == 0)
+            parse_ubyte_array(arg, SecondaryOrder, MAX_SECONDARY_WEAPONS + 1);
     }
     if ((p = strchr(line, '\n')))
         *p = 0;
@@ -449,33 +492,44 @@ void load_stat(FILE *f, int have_level) {
     }
 }
 
+extern int Buddy_last_seen_player, Buddy_last_player_path_created;
+extern int Escort_last_path_created;
 void my_StartNewLevelSub(int arg_level, int flag, int secret) {
+    int i;
+
     level = arg_level;
     if (is_play) {
-        if (level == end_level)
+        if (level == end_level) {
+        	printf("got end_level\n");
             exit(0);
+		}
         load_stat(log_file, skipped_levels);
     }
     skipped_levels = 0;
 
     // clear AI globals
-    memset(pAi_local_info, 0, 184 * 350);
+    for (i = 0; i < MAX_OBJECTS; i++)
+    	Objects[i].control_type = 0; // prevent init_ai_objects
+    memset(pAi_local_info, 0, sizeof(Ai_local_info)); //184 * 350);
     memset(pAi_cloak_info, 0, 8 * 16);
     *pLast_gate_time = *pLast_teleport_time = *pBoss_cloak_end_time = 0;
     *pNum_awareness_events = 0;
     
-    *pFuelcen_seconds_left = 0;
+    *pCountdown_seconds_left = 0;
 
-    extern int Buddy_last_seen_player, Buddy_last_player_path_created;
-    extern int Escort_last_path_created;
 
     Buddy_last_seen_player = 0;
     Buddy_last_player_path_created = 0;
     Escort_last_path_created = 0;
 
-    #if 0
+    Last_fired_upon_player_pos.x = Last_fired_upon_player_pos.y = Last_fired_upon_player_pos.z = 0;
+    
+    Spreadfire_toggle = 0;
+    Helix_orientation = 0;
+
+    #if 1
     init_special_effects();
-    for (int i = 0; i < Num_effects; i++)
+    for (i = 0; i < Num_effects; i++)
         Effects[i].frame_count = 0;
     #endif
 
@@ -484,8 +538,19 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
 
 
 void init_data_files();
+extern int grd_fades_disabled;
+extern int skip_endlevel;
+extern int no_ambient_sounds;
+extern int key_inkey_time_sync;
+extern int VR_screen_mode;
+extern int Missile_view_enabled;
+extern int Guided_in_big_window;
+extern int no_render;
+extern int no_read_player_file;
+
 int test_main2(int argc, char **argv) {
-	int d1 =  0;
+	int d1 = 0;
+	int display_mode, ret;
 	//init_data_files();
 	
 	#ifdef SHAREWARE
@@ -496,12 +561,10 @@ int test_main2(int argc, char **argv) {
 	load_text();
 	Lighting_on = 1;
 
-	extern int grd_fades_disabled;
 	grd_fades_disabled = 1;
-	extern int skip_endlevel;
 	skip_endlevel = 1;
-	extern int no_ambient_sounds; // depends on loaded bitmaps for previous level
-	no_ambient_sounds = 1;
+	no_ambient_sounds = 1; // depends on loaded bitmaps for previous level
+        key_inkey_time_sync = 0;
 
 	#define SM_320x200C 0
 	#define SM_640x480V 14
@@ -515,15 +578,15 @@ int test_main2(int argc, char **argv) {
 	int use_double_buffer = 0;
 	call_reg5(game_init_render_buffers, screen_mode, screen_width, screen_height, 0, 0); //use_double_buffer, vr_mode, screen_compatible );
 	#endif
-	int display_mode = !is_play || play_show ? 1 : 0;
+	display_mode = 1; //!is_play || play_show ? 1 : 0;
 	set_display_mode(display_mode);
 
-	int ret = call_reg0(gr_init);
-	(void)ret;
-	//printf("gr_init=%d\n", ret);
+	no_render = is_play && !play_show;
+	no_read_player_file = 1;
+
+	call_reg0(gr_init);
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
-	extern int VR_screen_mode;
-	ret = call_reg1(gr_set_mode, VR_screen_mode);
+	call_reg1(vga_set_mode, VR_screen_mode);
 	//grd_curcanv->cv_bitmap.bm_type = BM_GL;
 	//printf("gr_set_mode=%d\n", ret);
 	//printf("cur canv %p data=%08x\n", *cur_canvas, (*cur_canvas)[3]);
@@ -566,9 +629,9 @@ int test_main2(int argc, char **argv) {
 
 	read_player_file();
 	Cockpit_mode = CM_FULL_SCREEN;
-	extern int Missile_view_enabled;
 	Missile_view_enabled = 0;
 	Difficulty_level = 0;
+	Guided_in_big_window = 1;
 	write_player_file();
 	//extern int Current_display_mode;
 	//Current_display_mode = display_mode;
@@ -593,10 +656,11 @@ int test_main2(int argc, char **argv) {
 	cur_time = 0;
 	#endif
 
+	#if 0
 	if (skipped_levels) {
 	    char *level_name = Level_names[level-1];
 	    CFILE *f = cfopen(level_name, "rb");
-	    char buf[64];
+	    char buf[64], *pal, *p;
 	    if (!f) {
 	        fprintf(stderr, "cannot open %s for palette peek\n", level_name);
 	        return 1;
@@ -607,15 +671,16 @@ int test_main2(int argc, char **argv) {
                 fprintf(stderr, "invalid level for palette peek %s\n", level_name);
                 return 1;
             }
-            char *pal = buf + 16 + (buf[5] >= 8 ? 7 : 0);
-            char *p = memchr(pal, '\n', buf + 64 - pal);
+            pal = buf + 16 + (buf[5] >= 8 ? 7 : 0);
+            p = memchr(pal, '\n', buf + 64 - pal);
             if (!p) {
                 fprintf(stderr, "invalid level for palette peek %s\n", level_name);
                 return 1;
             }
             *p = 0;
-             load_palette(pal,1,1); 
+            load_palette(pal,1,1); 
 	}
+	#endif
 
 	//call_reg2(StartNewLevelSub, start_level, 1);
 	my_StartNewLevelSub(level, 1, 0);
@@ -642,13 +707,15 @@ int main(int argc, char **argv) {
     init_play_args(argc, argv);
     if (start_play_record())
         return 1;
+    #ifndef __WATCOMC__
     InitKeyMap();
+    #endif
     #if 0
     if (!is_play || play_show)
         if (sdl_init())
             return 1;
     #endif
-    test_main2(argc, argv);
+    return test_main2(argc, argv);
 }
 
 
@@ -687,21 +754,25 @@ struct {
 };
 };
 } my_control_info;
-my_control_info *controls = &Controls;
+my_control_info *controls = (void *)&Controls;
 
 #include "itoa.h"
 
 void timer_init() {}
-fix timer_get_fixed_seconds() { return last_time; } //fixmuldiv(SDL_GetTicks(), F1_0, 1000); }
+fix timer_get_fixed_seconds() { return last_time + last_time_menu; } //fixmuldiv(SDL_GetTicks(), F1_0, 1000); }
 //fix timer_get_fixed_seconds() { return fixmuldiv(SDL_GetTicks(), F1_0, 1000); }
 
 void my_controls_read_all() {
+    //printf("controls_read_all FrameTime=%x\n", FrameTime);
     char line[256];
     if (is_record) {
+        int key, li, i;
+        char *p;
+    
         controls_read_all();
         if (!log_file)
             return;
-        int key = key_last & 0xff;
+        key = key_last & 0xff;
         //if (key == KEY_ESC)
         //    printf("key=esc, elseq=%d\n", *pEndlevel_sequence);
         if ((key >= KEY_1 && key <= KEY_0)) {
@@ -711,9 +782,9 @@ void my_controls_read_all() {
         } else {
             game_key = 0;
         }
-        int li = 0;
-        char *p = line;
-        for (int i = 0; i < 6; i++)
+        li = 0;
+        p = line;
+        for (i = 0; i < 6; i++)
             if (controls->thrust[i]) {
                 while (li < i) {
                     *p++ = ',';
@@ -726,7 +797,7 @@ void my_controls_read_all() {
             fprintf(log_file, "th=%s\n", line);
         p = line;
         li = 0;
-        for (int i = 0; i < BTN_COUNT; i++)
+        for (i = 0; i < BTN_COUNT; i++)
             if (controls->buttons[i]) {
                 while (li < i) {
                     *p++ = ',';
@@ -744,16 +815,18 @@ void my_controls_read_all() {
         //fprintf(log_file, "hashscr=%x\n", XXH32(vga_screen, vga_w * vga_h, 0));
         fprintf(log_file, "\n");
     } else {
+        char *ret, *p;
+        int i;
+
         memset(controls, 0, sizeof(*controls));
         game_key = 0;
-        char *ret;
         while ((ret = fgets(line, sizeof(line), log_file)) &&
             line[0] && line[0] != '\n') {
             if (line[0] == '!') {
                 printf("unexpected state change in recording: %s\n", line);
                 abort();
             }
-            char *p = strchr(line, '=');
+            p = strchr(line, '=');
             if (!p)
                 continue;
             p++;
@@ -761,14 +834,14 @@ void my_controls_read_all() {
                 case 't':
                     if (line[1] != 'h')
                         break;
-                    for (int i = 0; i < 6; i++) {
+                    for (i = 0; i < 6; i++) {
                         controls->thrust[i] = (int)strtol(p, &p, 16);
                         if (*p++ != ',')
                             break;
                     }
                     break;
                 case 'b':
-                    for (int i = 0; i < BTN_COUNT; i++) {
+                    for (i = 0; i < BTN_COUNT; i++) {
                         controls->buttons[i] = (int)strtol(p, &p, 10);
                         if (*p++ != ',')
                             break;
@@ -783,8 +856,8 @@ void my_controls_read_all() {
                 case 's': {
                     int seed = strtoul(p, NULL, 16);
                     if (seed != *pRandNext) {
-                        printf("seed mismatch read %x is %x\n", seed, *pRandNext);
-                        *pRandNext = seed;
+                        printf("seed mismatch read %x is %x at %x\n", seed, *pRandNext, *pGameTime);
+                        //*pRandNext = seed;
                         exit(1);
                     }
                     break;
@@ -802,8 +875,10 @@ void my_controls_read_all() {
                 #endif
             }
         }
-        if (!ret)
+        if (!ret) {
+            printf("play: eof\n");
             exit(1);
+        }
     }
 }
 
@@ -819,6 +894,8 @@ void my_game_render_frame() {
     maybe_swap_delay();
     //draw();
     //printf("%d\n", Players[0].shields / 65536);
+    //printf("energy=%x\n", Players[0].energy);
+    //printf("rendered time=%x count=%d\n", last_time, FrameCount);
 }
 
 #if 0
@@ -829,6 +906,13 @@ int psrand_pal() {
 
 
 void print_stat(FILE *f) {
+    ushort *ps;
+    ubyte *pb;
+    char line1[256], *p1;
+    char line2[256], *p2;
+    char buf[256];
+    int i;
+
     fprintf(f, "!newlevel\n");
     fprintf(f, "level=%d\n", *pCurrent_level_num);
     fprintf(f, "difficulty=%d\n", *pDifficulty_level);
@@ -843,10 +927,10 @@ void print_stat(FILE *f) {
     fprintf(f, "laser_level=%d\n", Player->laser_level);
     fprintf(f, "primary_flags=%x\n", Player->primary_weapon_flags);
     fprintf(f, "secondary_flags=%x\n", Player->secondary_weapon_flags);
-    ushort *p = Player->primary_ammo;
-    fprintf(f, "primary_ammo=%d,%d,%d,%d,%d\n", p[0], p[1], p[2], p[3], p[4]);
-    p = Player->secondary_ammo;
-    fprintf(f, "secondary_ammo=%d,%d,%d,%d,%d\n", p[0], p[1], p[2], p[3], p[4]);
+    ps = Player->primary_ammo;
+    fprintf(f, "primary_ammo=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4], ps[5], ps[6], ps[7], ps[8], ps[9]);
+    ps = Player->secondary_ammo;
+    fprintf(f, "secondary_ammo=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4], ps[5], ps[6], ps[7], ps[8], ps[9]);
     fprintf(f, "score=%d\n", Player->score);
     fprintf(f, "time_total=%x\n", Player->time_total);
     fprintf(f, "num_kills_total=%d\n", Player->num_kills_total);
@@ -860,8 +944,29 @@ void print_stat(FILE *f) {
     fprintf(f, "explosion_wait2=%x\n", explosion_wait2);
     #endif
     fprintf(f, "missile_gun=%d\n", Missile_gun);
+    pb = Primary_last_was_super;
+    fprintf(f, "primary_last_was_super=%d,%d,%d,%d,%d\n", pb[0], pb[1], pb[2], pb[3], pb[4]);
+    pb = Secondary_last_was_super;
+    fprintf(f, "secondary_last_was_super=%d,%d,%d,%d,%d\n", pb[0], pb[1], pb[2], pb[3], pb[4]);
+    fprintf(f, "time_flash_last_played=%x\n", Time_flash_last_played);
+    fprintf(f, "afterburner_charge=%x\n", Afterburner_charge);
+    
+    p1 = line1; p2 = line2;
+    for (i = 0; i < Highest_object_index; i++)
+        if (Objects[i].type == OBJ_ROBOT && Objects[i].matcen_creator & 0x80) {
+            if (p1 + 4 >= line1 + sizeof(line1) || p2 + 4 >= line2 + sizeof(line2))
+                break;
+            p1 += sprintf(p1, "%d,", i);
+            p2 += sprintf(p2, "%d,", (byte)(Objects[i].matcen_creator-0x80));
+        }
+    if (p1 > line1) {
+        p1[-1] = p2[-1] = 0;
+        fprintf(f, "matcen_creator_obj=%s\n", line1);
+        fprintf(f, "matcen_creator_num=%s\n", line2);
+    }
+    fprintf(f, "primary_order=%s\n", fmt_ubyte_array(buf, sizeof(buf), PrimaryOrder, MAX_PRIMARY_WEAPONS + 1));
+    fprintf(f, "secondary_order=%s\n", fmt_ubyte_array(buf, sizeof(buf), SecondaryOrder, MAX_SECONDARY_WEAPONS + 1));
 }
-
 
 void reset_time();
 void my_reset_time() {
@@ -875,6 +980,13 @@ void my_reset_time() {
     set_screen_mode(SCREEN_GAME);
     gr_palette_load(gr_palette);
     sdl_time_sync();
+    
+    if (record_demo && Newdemo_state == ND_STATE_NORMAL) {
+    	extern int Newdemo_no_rename;
+    	Newdemo_no_rename = 1;
+	    newdemo_start_recording();
+	    atexit(newdemo_stop_recording);
+	}
 }
 
 void inferno_init() {}
@@ -882,7 +994,12 @@ void inferno_done() {}
 void inferno_loop() {}
 
 void my_start_player_death_sequence(object *obj) {
-    printf("player died");
+    printf("player died\n");
+    exit(1);
+}
+
+void my_DoEndGame() {
+    printf("game finished\n");
     exit(1);
 }
 

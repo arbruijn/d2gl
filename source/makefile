@@ -1,4 +1,4 @@
-NASM=1
+#NASM=1
 #
 # $Source: f:/miner/source/2d/rcs/makefile $
 # $Revision: 1.44 $
@@ -30,6 +30,7 @@ GR_OBJS = canvas.obj bitmap.obj gr.obj font.obj \
 	bitblt.obj scanline.obj pixel.obj poly.obj disc.obj rect.obj box.obj  \
 	gpixel.obj line.obj  macstubs.obj \
 	scalemac.obj circle.obj ibitblt.obj rle.obj pcx.obj
+WATCOM_OBJ += $(patsubst %.obj,%.o,2d/lbitblt.obj 2d/linear.obj)
 #blit.obj
 
 #effects.obj roller.obj 
@@ -195,6 +196,7 @@ TEST_PROGS = fixtest
 
 # What object files for the lib
 FIX_OBJS = fix.obj tables.obj
+FIXASM_OBJS = fix.obj
 
 # What object files and libs for the test programs
 FIXTEST_SRCS = fixtest.c
@@ -311,7 +313,7 @@ endif
 DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	scores.c object.c laser.c physics.c bm.c \
 	menu.c gamesave.c switch.c effects.c texmerge.c polyobj.c \
-	gamemine.c fireball.c ai.c ai2.c aipath.c aid1.c hostage.c \
+	gamemine.c fireball.c ai.c ai2.c aipath.c hostage.c \
 	powerup.c fuelcen.c render.c piggy.c digiobj.c \
 	gameseg.c wall.c collide.c lighting.c \
 	robot.c morph.c vclip.c weapon.c fvi.c newdemo.c titles.c \
@@ -325,6 +327,7 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	3dmax.c
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
+DESCENT2_SRCS += aid1.c
 #DESCENT2_SRCS += terrain.c
 
 #ifeq ($(TARGSYS),WIN32)
@@ -579,14 +582,14 @@ LIBS = texmap
 
 TEXMAP_OBJS = 	ntmap.obj tmapflat.obj  
 
-ifndef NASM
-TEXMAP_OBJS +=	tmap_per.obj tmap_flt.obj tmapfade.obj tmap_ed.obj 
-TEXMAP_OBJS +=  tmap_pnn.obj tmap_pln.obj tmap_plt.obj tmap_pnt.obj
-TEXMAP_OBJS +=  tmap_qnn.obj tmap_qln.obj tmap_qlt.obj tmap_qnt.obj
-TEXMAP_OBJS +=  tmap_lnn.obj tmap_lln.obj tmap_llt.obj tmap_lnt.obj
-else
-TEXMAP_OBJS += scanline.obj
-endif
+TEXMAPASM_OBJS +=	tmap_per.obj tmap_flt.obj tmapfade.obj tmap_ed.obj 
+TEXMAPASM_OBJS +=  tmap_pnn.obj tmap_pln.obj tmap_plt.obj tmap_pnt.obj
+TEXMAPASM_OBJS +=  tmap_qnn.obj tmap_qln.obj tmap_qlt.obj tmap_qnt.obj
+TEXMAPASM_OBJS +=  tmap_lnn.obj tmap_lln.obj tmap_llt.obj tmap_lnt.obj
+TEXMAPNASM_OBJS += scanline.obj
+WATCOM_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPASM_OBJS))
+#TEXMAP_OBJS += $(TEXMAPASM_OBJS)
+UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
 
 # What to clean
 CLEAN_TARGS = $(OBJDIR)\*.obj
@@ -733,7 +736,7 @@ EXTLIBS = $(MINERLOCAL)\source\extlib\dd
 
 ### OPUS MKMF:  Do not remove this line!  Generated dependencies follow.
 
-WATCOM = /c/watcomo10
+#WATCOM = /c/watcomo10
 #WATCOM = /c/watcom
 JWASM = /c/temp/jwasm
 #SOS = /c/temp/kitchensink/sdks/dos/sosaudio
@@ -748,7 +751,7 @@ INC =  -I=lib -I=includes -I=pa_null -I=2d -I=3d -I=texmap \
 SOSLIBS = $(addprefix $(SOSLIB)/,sosdw1pr.lib sosmw1pr.lib)
 EXT_LIBS = $(patsubst /c/%,c:/%,$(SOSLIBS))
 #WCFLAGS = $(INC) -dNETWORK=1 -u_WIN32 -u__NT__ -d2 -hw -bt=dos
-WCFLAGS = $(INC) -dNETWORK=1 -d2 -hw -bt=dos -zq -zld -w3 -on -oa -s -zp=1
+#WCFLAGS = $(INC) -dNETWORK=1 -d2 -hw -bt=dos -zq -zld -w3 -on -oa -s -zp=1
 #WCFLAGS = $(INC) -I=win95 -dNETWORK=1 -d2 -hw -dWINDOWS=1 -zq -zld -w3 -on -oa -s -zp=1
 DESCENT2_LFLAGS += op stub=$(WATCOM)/binw/wstub.exe
 # -u__NT__
@@ -763,20 +766,27 @@ MAINDOS_OBJS = $(patsubst %.c,%.obj,$(DESCENT2DOS_SRCS))
 MAINWIN_OBJS = $(patsubst %.c,%.obj,$(DESCENT2WIN_SRCS))
 
 
-ALL_DOSOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
+ALL_DOSOBJS = $(addprefix 2d/,$(GR_OBJS))  \
 	$(addprefix texmap/,$(TEXMAP_OBJS)) \
-	$(addprefix fix/,$(FIX_OBJS)) \
-	$(addprefix vecmat/,$(VECMAT_OBJS)) \
 	$(addprefix bios/,$(IO_OBJS)) \
 	$(addprefix cfile/,$(CFILE_OBJS)) \
 	$(addprefix misc/,$(MISC_OBJS)) \
 	$(addprefix mem/,$(MEM_OBJS)) \
 	$(addprefix iff/,$(IFF_OBJS)) \
 	$(addprefix vga/,$(VGA_OBJS)) \
-	$(addprefix div/,$(DIV0_OBJS)) \
-	$(addprefix main/,$(MAIN_OBJS)) \
-	$(addprefix main/,$(MAINDOS_OBJS))
+	$(addprefix div/,$(DIV0_OBJS))
 #	fake/fake.obj
+WATCOM_OBJ += $(patsubst %.obj,%.o,$(addprefix fixasm/,$(FIXASM_OBJS)) \
+	$(addprefix vecmatasm/,$(VECMAT_OBJS)) \
+	$(addprefix 3dasm/,$(3D_OBJS)) \
+	$(addprefix main/,$(MAIN_OBJS) aid1.obj) \
+	$(addprefix main/,$(MAINDOS_OBJS)))
+
+UNIX_OBJ += $(patsubst %.obj,%.o,$(addprefix fix/,$(FIX_OBJS)) \
+	$(addprefix vecmat/,$(VECMAT_OBJS)) \
+	$(addprefix 3d/,$(3D_OBJS)) \
+	$(addprefix main/,$(MAIN_OBJS) aid1.obj) \
+	$(addprefix main/,$(MAINDOS_OBJS)))
 
 ALL_WINOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
 	$(addprefix texmap/,$(TEXMAP_OBJS)) \
@@ -792,46 +802,113 @@ ALL_WINOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
 	fake/fake.obj \
 	novga/novesa.obj win95/smfread.obj
 
-ACFLAGS += -DNDOS -DNASM -Dfar="" -D_far="" -DKEY_COMMAND=512 -Dnear="" -Dcdecl=""
+ACFLAGS += -DNDOS -DREPRO_FIX
+#ACFLAGS += -DNASM
+# -DKEY_COMMAND=512 
+UCFLAGS += -DNASM
+UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
 #ACFLAGS += -DENDLEVEL
-ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE
-ACFLAGS += -DNETWORK -DNPACK
+ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
+ACFLAGS += -DNETWORK=1 -DNPACK
 #ACFLAGS += -DD1SW -DSHAREWARE
 #ACFLAGS += -DSHAREWARE -DMACSW
-ACFLAGS += -Ilib -Iincludes -Ipa_null -I2d -I3d -Itexmap \
-	-Ifix -Ivecmat -Ibios -Imem -Icfile -Imisc -Iiff \
-	-Ivga -Idiv -Iarch -Imain
+ACFLAGS += -Ilib -Iincludes -Ipa_null -I2d -Itexmap \
+	 -Ibios -Imem -Icfile -Imisc -Iiff \
+	-Ivga -Idiv -Imain -Iarch
+UCFLAGS += -Iarch/compat -Ifix -Ivecmat -I3d
+WCFLAGS += -Ifixasm -Ivecmatasm -I3dasm -Iarch/watcom
 ACFLAGS += -I../../desrun/deslog
-CFLAGS += $(ACFLAGS)
-CFLAGS += -Wno-implicit-int
-CFLAGS += -Og -g -fno-pie -fcf-protection=none
+CFLAGS += $(ACFLAGS) $(UCFLAGS)
+CFLAGS += -Wno-implicit-int -Wno-unused-result -Wno-missing-braces -Wno-multichar
+CFLAGS += -O3 -ggdb -fno-pie -fcf-protection=none 
+CFLAGS += -fno-stack-protector
 #CFLAGS += -fpack-struct
-LDFLAGS += --disable-auto-image-base -Wl,--section-start=.text=0x08000000
-EMCFLAGS += $(ACFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s USE_SDL=1
+EMCFLAGS += $(ACFLAGS) $(UCFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s USE_SDL=1
+EMCFLAGS += -DSHAREWARE -DMACSW
 #-s LEGACY_GL_EMULATION=1
 
-CC = clang
-CFLAGS += -I/usr/include/SDL2 -Wno-parentheses-equality -fwrapv
-LDFLAGS =
+CFLAGS += -fwrapv
 CFLAGS += -m32
 LDFLAGS += -m32
-#CFLAGS += -fsanitize=memory -fsanitize-recover=all
-#LDFLAGS += -fsanitize=memory -fsanitize-recover=all
+LDLIBS = -lSDL2 -lm -lGL
+
+#USE_CLANG = 1
+CCC = clang
+CFLAGSC += -I/usr/include/SDL2 -Wno-parentheses-equality -Wno-dangling-else -Wno-format-security
+#CFLAGSC += -fsanitize=memory
+#LDFLAGSC += -fsanitize=memory
+CFLAGSC += -fsanitize=undefined -fno-sanitize=alignment
+LDFLAGSC += -fsanitize=undefined -fno-sanitize=alignment
+ifdef USE_CLANG
+CC = $(CCC)
+CFLAGS += $(CFLAGSC)
+LDFLAGS += $(LDFLAGSC)
+else
+CFLAGSC += $(CFLAGS)
+LDFLAGSC += $(LDFLAGS)
+endif
+#CFLAGSC += -fsanitize=memory -fsanitize-recover=all
+#LDFLAGSC += -fsanitize=memory -fsanitize-recover=all
+# -Wl,--disable-auto-image-base -Wl,--section-start=.text=0x08000000
+CCG = gcc
+CFLAGSG += $(CFLAGS)
+LDFLAGSG += $(LDFLAGS) --disable-auto-image-base -Wl,--section-start=.text=0x08000000
+
+CCT = tcc
+CFLAGST += $(CFLAGS) -I/usr/include/SDL2
+LDFLAGST += $(LDFLAGS) -L/usr/lib/i386-linux-gnu/pulseaudio
+
+OW2=1
+ifdef OW2
+export WATCOM = $(HOME)/binwin/ow2
+WPS = /
+CCW = $(WATCOM)/binl/wcc386
+export INCLUDE = $(WATCOM)/h
+else
+export WATCOM = $(HOME)/.wine/drive_c/WATCOM
+WPS = \\
+CCW = wcc386
+export INCLUDE = $(HOME)/binwin/watcom/h
+endif
+CCLDW = PATH="$(WATCOM)/binl:$(PATH)" $(HOME)/.wine/drive_c/WATCOM/binl/wcl386
+CFLAGSW += -zp1 -d2 -ox -oe -ot -on -oa -s -u__NT__ $(subst /,$(WPS),$(ACFLAGS) $(WCFLAGS))
+#CFLAGSW += -zp1 -d2 -s -u__NT__ $(subst /,$(WPS),$(ACFLAGS) $(WCFLAGS))
+LDFLAGSW += -d2 -fm
+
 
 #all: game2
-all: descent2
+all: descent2g
 
-GAME2_OBJ = testiface.o game2.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
+GAME2_OBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
+	testiface.o game2.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
 	myipx.o myvga.o cfile_ext.o main/inferno.o unadpcm.o dos.o pa_gl.o
 
 
-descent2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
+REPRO_OBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
-	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o
-	$(CC) $(LDFLAGS) -m32 -o $@ $^ -lSDL2 -lm -lGL
+	myipx.o myvga.o cfile_ext.o deslog.o
+REPROU_OBJ = $(REPRO_OBJ) $(UNIX_OBJ)
 
-game2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) $(GAME2_OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^ -lSDL2 -lm -lGL
+deslog.g.o: ../../desrun/deslog/deslog.c
+	$(CCG) $(CFLAGSG) -c -o $@ $^
+
+descent2: $(REPROU_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+descent2g: $(patsubst %.o,%.g.o,$(REPROU_OBJ))
+	$(CCG) $(LDFLAGSG) -o $@ $^ $(LDLIBS)
+
+descent2c: $(patsubst %.o,%.c.o,$(REPROU_OBJ))
+	$(CCC) $(LDFLAGSC) -o $@ $^ $(LDLIBS)
+
+descent2t: $(patsubst %.o,%.t.o,$(REPROU_OBJ)) dsohandle.t.o
+	$(CCT) $(LDFLAGST) -o $@ $^ $(LDLIBS)
+
+descent2w: $(patsubst %.o,%.w.o,$(REPRO_OBJ) $(WATCOM_OBJ))
+	 $(CCLDW) $(LDFLAGSW) -fe=$@ $^
+
+game2: $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) $(UNIX_OBJ) $(GAME2_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 #all: $(ALL_DOSOBJS)
 #	wlink system dos4g $(WLFLAGS) $(addprefix file ,$^) $(addprefix file ,$(subst /,\,$(EXT_LIBS))) name descent2.exe
@@ -850,12 +927,25 @@ win: $(ALL_WINOBJS) fake/fakewin.obj
 	jwasm $(WAFLAGS) -Fo$@ $<
 	#/c/masm615/bin/ml -c -Fo$@ $(patsubst -I=%,-I%,$(INC)) $<
 
-clean:
-	rm -f $(ALL_DOSOBJS) $(ALL_WINOBJS) $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) *.o $(GAME2_OBJ)
 
 
 %.em.o: %.c
 	emcc $(EMCFLAGS) -O3 -c -o $@ $^ 
+
+%.g.o: %.c
+	$(CCG) $(CFLAGSG) -c -o $@ $^
+
+%.c.o: %.c
+	$(CCC) $(CFLAGSC) -c -o $@ $^
+
+%.t.o: %.c
+	$(CCT) $(CFLAGST) -c -o $@ $^
+
+%.w.o: %.c
+	$(CCW) $(CFLAGSW) -fo=$(subst /,$(WPS),$@) $(subst /,$(WPS),$^)
+
+%.w.o: %.asm
+	ml -c $(AFLAGS) /Iincludes /Ifixasm /Ivecmatasm /I2d /Fo$(subst /,\\,$@) $(subst /,\\,$<) 
 
 #EMFILES = descent2.hog groupa.pig descent.hog descent.pig descent.mn2 descent2.ham descent.256 .plr
 #EMFILES = d2demo.hog d2demo.pig d2demo.ham demo.plr
@@ -865,7 +955,7 @@ EMFILES = d2demo.hog d2demo.pig d2demo.ham demo.plr descent2.s11 exit.ham descen
 #	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
 #	myipx.o myvga.o cfile_ext.o ../../desrun/deslog/deslog.o orderform.o
 
-EMOBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
+EMOBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) $(UNIX_OBJ) \
 	$(GAME2_OBJ)
 
 #	-s ASYNCIFY \
@@ -879,7 +969,7 @@ d2wasm.html: $(patsubst %.o,%.em.o,$(EMOBJ))
 	 -s LLD_REPORT_UNDEFINED \
 	 -s ASYNCIFY \
 	 -s ASYNCIFY_IGNORE_INDIRECT \
-	 -s EXPORTED_FUNCTIONS='["_main","_on_key","_on_mousemove","_on_mousebutton","_key_flush","_gl_set_screen_size"]' \
+	 -s EXPORTED_FUNCTIONS='["_main","_on_key","_on_mousemove","_on_mousebutton","_key_flush","_gl_set_screen_size","_get_sample_data","_get_sample_size"]' \
 	 -s 'ASYNCIFY_IMPORTS=["play_ad","emscripten_sleep"]' \
 	 --source-map-base / \
 	 -s ASSERTIONS=1 \
@@ -892,3 +982,12 @@ d2wasm.html: $(patsubst %.o,%.em.o,$(EMOBJ))
 
 emclean:
 	rm -f $(patsubst %.o,%.em.o,$(EMOBJ))
+
+wclean:
+	find . ../../desrun -name \*.w.o -delete
+gclean:
+	find . ../../desrun -name \*.g.o -delete
+cclean:
+	find . ../../desrun -name \*.c.o -delete
+clean: gclean wclean cclean
+	rm -f $(ALL_DOSOBJS) $(ALL_WINOBJS) $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) *.o $(UNIX_OBJ) $(GAME2_OBJ)

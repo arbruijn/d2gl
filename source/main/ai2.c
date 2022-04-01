@@ -1,3 +1,6 @@
+//#define debug_objnum 83
+#define XYZ(v) (v)->x,(v)->y,(v)->z
+//#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -508,7 +511,17 @@ void ai_turn_towards_vector(vms_vector *goal_vector, object *objp, fix rate)
 		vm_vec_scale_add2(&new_fvec, &rand_vec, scale);
 	}
 
+	#ifdef VERBOSE
+	printf("obj %d turn_towards_vector %x %x %x was %x %x %x; %x %x %x; %x %x %x\n", objp-Objects, goal_vector->x, goal_vector->y, goal_vector->z,
+                XYZ(&objp->orient.rvec), XYZ(&objp->orient.uvec), XYZ(&objp->orient.fvec));
+	#endif
+
+
 	vm_vector_2_matrix(&objp->orient, &new_fvec, NULL, &objp->orient.rvec);
+
+	#ifdef VERBOSE
+	printf("- now %x %x %x; %x %x %x; %x %x %x\n", XYZ(&objp->orient.rvec), XYZ(&objp->orient.uvec), XYZ(&objp->orient.fvec));
+	#endif
 }
 
 // -- unused, 08/07/95 -- // --------------------------------------------------------------------------------------------------------------------
@@ -1160,6 +1173,11 @@ void move_towards_vector(object *objp, vms_vector *vec_goal, int dot_based)
 		pptr->velocity.y = (pptr->velocity.y*3)/4;
 		pptr->velocity.z = (pptr->velocity.z*3)/4;
 	}
+
+#ifdef debug_objnum
+	if (objp-Objects==debug_objnum)
+		printf("obj %d move_towards_vector %x %x %x\n", objp-Objects, vec_goal->x, vec_goal->y, vec_goal->z);
+#endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1262,7 +1280,9 @@ void move_around_player(object *objp, vms_vector *vec_to_player, int fast_flag)
 		pptr->velocity.y = (pptr->velocity.y*3)/4;
 		pptr->velocity.z = (pptr->velocity.z*3)/4;
 	}
+	#ifdef VERBOSE
 	printf("move_around_player obj=%d newvel=%x,%x,%x\n", objp-Objects, pptr->velocity.x, pptr->velocity.y, pptr->velocity.z);
+	#endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1299,6 +1319,9 @@ void move_away_from_player(object *objp, vms_vector *vec_to_player, int attack_t
 		pptr->velocity.z = (pptr->velocity.z*3)/4;
 	}
 
+	#ifdef VERBOSE
+	printf("move_away_from_player obj=%d newvel=%x,%x,%x\n", objp-Objects, pptr->velocity.x, pptr->velocity.y, pptr->velocity.z);
+	#endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1344,6 +1367,9 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 				vm_vec_normalize_quick(&laser_vec_to_robot);
 				laser_robot_dot = vm_vec_dot(&laser_fvec, &laser_vec_to_robot);
 
+				#ifdef debug_objnum
+				if (objp - Objects == debug_objnum) printf("obj %d laser %d maybe move_around_player dot=%x dist=%x\n", objp-Objects, dobjp-Objects, laser_robot_dot, dist_to_laser);
+				#endif
 				if ((laser_robot_dot > F1_0*7/8) && (dist_to_laser < F1_0*80)) {
 					int	evade_speed;
 
@@ -1866,7 +1892,8 @@ int openable_doors_in_segment(int segnum)
 	for (i=0; i<MAX_SIDES_PER_SEGMENT; i++) {
 		if (Segments[segnum].sides[i].wall_num != -1) {
 			int	wall_num = Segments[segnum].sides[i].wall_num;
-			if ((Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys == KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) && !(WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN))
+			if ((Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys == KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
+				(!(WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN) || Current_level_D1))
 				return i;
 		}
 	}

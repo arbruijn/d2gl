@@ -16,12 +16,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "pstypes.h"
 
-typedef long fix;				//16 bits int, 16 bits frac
+typedef int fix;				//16 bits int, 16 bits frac
 typedef short fixang;		//angles
 
 typedef struct quad {
-	ulong low;
-	long high;
+	uint low;
+	int high;
 } quad;
 
 //Convert an int to a fix
@@ -97,10 +97,10 @@ fix fixmuldiv(fix a,fix b,fix c);
 	"idiv	ebx";
 
 //computes the square root of a long, returning a short
-ushort long_sqrt(long a);
+ushort long_sqrt(int a);
 
 //computes the square root of a quad, returning a long
-ulong quad_sqrt(long low,long high);
+ulong quad_sqrt(int low,int high);
 
 //computes the square root of a fix, returning a fix
 fix fix_sqrt(fix a);
@@ -112,7 +112,7 @@ void fixmulaccum(quad *q,fix a,fix b);
 fix fixquadadjust(quad *q);
 
 //divide a quad by a long
-long fixdivquadlong(ulong qlow,long qhigh,long d);
+int fixdivquadlong(uint qlow,int qhigh,int d);
 
 //negate a quad
 void fixquadnegate(quad *q);
@@ -143,5 +143,9 @@ fixang fix_atan2(fix cos,fix sin);
 #pragma aux long_sqrt "*" parm [eax] value [ax] modify [];
 #pragma aux fix_sqrt "*" parm [eax] value [eax] modify [];
 #pragma aux quad_sqrt "*" parm [eax] [edx] value [eax] modify [];
+
+#pragma aux fixquadinit "*_" parm [eax] value [eax] modify exact [] = \
+	"mov 0[eax],0"	\
+	"mov 4[eax],0"
 
 #endif

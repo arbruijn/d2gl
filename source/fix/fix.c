@@ -312,7 +312,7 @@ static inline unsigned int adddiv2(unsigned int a, unsigned int b) { return (a >
 //computes the square root of a quad, returning a long 
 int quad_sqrt(uint low,int high)
 {
-	int cnt;
+	int cnt, idx;
 	unsigned int r,old_r,t;
 	quad tq;
 
@@ -322,7 +322,6 @@ int quad_sqrt(uint low,int high)
 	if (high==0 && ((int)low)>=0)
 		return long_sqrt(low);
 
-	int idx;
 	if (high & 0xff000000) {
 		cnt=12+16;
 		idx=high>>24;
@@ -632,12 +631,11 @@ fix fixmuldiv(fix a,fix b,fix c)
 //computes the square root of a long, returning a short
 ushort long_sqrt(int a)
 {
-	int cnt,r,old_r,t;
+	int cnt,idx,r,old_r,t;
 
 	if (a<=0)
 		return 0;
 
-	int idx;
 	if (a & 0xff000000) {
 		idx = a >> 24;
 		cnt=12;
@@ -732,10 +730,10 @@ fixang fix_asin(fix v)
 	fix vv;
 	int i,f,aa;
 
-	vv = labs(v);
+	vv = abs(v);
 
 	if (vv >= f1_0)		//check for out of range
-		return 0x4000;
+		return v < 0 ? -0x4000 : 0x4000;
 
 	i = (vv>>8)&0xff;
 	f = vv&0xff;
@@ -755,10 +753,10 @@ fixang fix_acos(fix v)
 	fix vv;
 	int i,f,aa;
 
-	vv = labs(v);
+	vv = abs(v);
 
 	if (vv >= f1_0)		//check for out of range
-		return 0;
+		return v < 0 ? 0x8000 : 0;
 
 	i = (vv>>8)&0xff;
 	f = vv&0xff;

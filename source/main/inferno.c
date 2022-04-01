@@ -1336,7 +1336,7 @@ int main(int argc,char **argv)
 	else
 #endif
 		//NOTE LINK TO ABOVE!
-		MenuHires = MenuHiresAvailable = 1;
+		MenuHires = MenuHiresAvailable = MovieHires = 1;
 #ifdef SHAREWARE
 	if (cfexist("descentb.pcx"))
 		MovieHires = MenuHires = MenuHiresAvailable = 1;

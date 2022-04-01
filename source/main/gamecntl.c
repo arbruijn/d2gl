@@ -1983,6 +1983,7 @@ void HandleTestKey(int key)
 			break;
 		}
 
+		#ifndef NMONO
 		case KEY_DEBUGGED + KEY_M:
 			Debug_spew = !Debug_spew;
 			if (Debug_spew) {
@@ -1993,6 +1994,7 @@ void HandleTestKey(int key)
 				HUD_init_message( "Debug Spew: OFF" );
 			}
 			break;
+		#endif
 
 		case KEY_DEBUGGED + KEY_C:
 

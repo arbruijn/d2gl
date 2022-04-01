@@ -124,6 +124,7 @@ void insert_center_points(point_seg *psegs, int *num_points)
 		fix			dot;
 
 		dot = vm_vec_dot(vm_vec_sub(&temp1, &psegs[i].point, &psegs[i-1].point), vm_vec_sub(&temp2, &psegs[i+1].point, &psegs[i].point));
+		//printf("safe path opt %d dot %x mag1 %x mag2 %x\n", i, dot, vm_vec_mag(&temp1), vm_vec_mag(&temp2));
 
 		if (dot * 9/8 > fixmul(vm_vec_mag(&temp1), vm_vec_mag(&temp2)))
 			psegs[i].segnum = -1;
@@ -315,7 +316,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 //	}
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	memset(depth, 0, sizeof(depth[0])*(Highest_segment_index+1));
-	memset(seg_queue - 2, 0, sizeof(seg_queue[0]) * 2); // make oob access predictable...
+	//memset(seg_queue - 2, 0, sizeof(seg_queue[0]) * 2); // make oob access predictable...
 
 	//	If there is a segment we're not allowed to visit, mark it.
 	if (avoid_seg != -1) {
@@ -350,7 +351,9 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 				snum = random_xlate[sidenum];
 
 			if (IS_CHILD(segp->children[snum]) && ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
+				//if (GameTime==0x4c2b800) printf("create_path openable %d %d\n", cur_seg, snum);
 				int			this_seg = segp->children[snum];
+				if (visited[this_seg]) continue; // temporary? d2x-xl compat
 				Assert(this_seg != -1);
 				if (((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
 					vms_vector	center_point;
@@ -370,6 +373,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 					fq.flags					= 0;
 
 					hit_type = find_vector_intersection(&fq, &hit_data);
+					//printf("create_path fvi %x,%x,%x - %x,%x,%x -> %d\n", XYZ(&objp->pos), XYZ(&center_point), hit_type);
 					if (hit_type != HIT_NONE) {
 						// -- mprintf((0, "hit_type = %i, object = %i\n", hit_type, hit_data.hit_object));
 						goto dont_add;
@@ -393,7 +397,7 @@ dont_add: ;
 
 		if (qhead >= qtail) {
 			//	Couldn't get to goal, return a path as far as we got, which probably acceptable to the unparticular caller.
-			end_seg = seg_queue[qtail-1].end;
+			end_seg = qtail ? seg_queue[qtail-1].end : 0x1003; // dos compatible...
 			end_seg_is_qtail_min_1 = 1;
 			break;
 		}
@@ -555,8 +559,14 @@ int polish_path(object *objp, point_seg *psegs, int num_points)
 	
 		if (hit_type == HIT_NONE)
 			first_point = i+1;
-		else
-			break;		
+		else {
+			#ifdef VERBOSE
+			printf("polish_path idx %d hit %d at %x %x %x seg %d side %d\n", psegs-Point_segs, hit_type,
+				hit_data.hit_pnt.x,hit_data.hit_pnt.y,hit_data.hit_pnt.z,
+				hit_data.hit_seg, hit_data.hit_side);
+			#endif
+			break;
+		}
 	}
 
 	if (first_point) {
@@ -565,6 +575,10 @@ int polish_path(object *objp, point_seg *psegs, int num_points)
 			psegs[i-first_point] = psegs[i];
 	}
 
+	#ifdef VERBOSE
+	if (first_point)
+		printf("polish_path idx=%d cleaned %d\n", psegs-Point_segs, first_point);
+	#endif
 	return num_points - first_point;
 }
 
@@ -1014,6 +1028,9 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 
 // mprintf((0, "Obj %i, dist=%6.1f index=%i len=%i seg=%i pos = %6.1f %6.1f %6.1f.\n", objp-Objects, f2fl(vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos)), aip->cur_path_index, aip->path_length, objp->segnum, f2fl(objp->pos.x), f2fl(objp->pos.y), f2
+#ifdef VERBOSE
+printf("obj %i index=%i len=%i seg=%i hide_idx=%i path_len=%i\n", objp-Objects, aip->cur_path_index, aip->path_length, objp->segnum, aip->hide_index, aip->path_length);
+#endif
 
 	if ((aip->hide_index == -1) || (aip->path_length == 0))
 		if (ailp->mode == AIM_RUN_FROM_OBJECT) {
@@ -1459,7 +1476,9 @@ void ai_path_garbage_collect(void)
 	Point_segs_free_ptr = &Point_segs[free_path_index];
 
 	// mprintf((0, "new = %i\n", free_path_index));
-//printf("After garbage collection, free index = %i\n", Point_segs_free_ptr - Point_segs);
+#ifdef VERBOSE
+printf("After garbage collection, free index = %i\n", Point_segs_free_ptr - Point_segs);
+#endif
 #ifndef NDEBUG
 	{
 	int i;
@@ -1520,6 +1539,9 @@ void ai_reset_all_paths(void)
 			Objects[i].ctype.ai_info.path_length = 0;
 		}
 
+#ifdef VERBOSE
+	printf("ai_reset_all_paths\n");
+#endif
 	ai_path_garbage_collect();
 
 }

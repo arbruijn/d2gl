@@ -15,19 +15,71 @@ function mydraw() {
 	ctx.putImageData(img, 0, 0);
 }
 
+var playerModule;
+
 function fixAudio() {
-return;
-	  if (!audioContext)
-	    nextBuf();
-	  else if (audioContext.state == 'suspended')
-	    audioContext.resume().then(() => {
-	      console.log('Playback resumed successfully');
-	      nextBuf();
-	    });
+	console.log('fixAudio');
+	if (!playerModule)
+		return;
+	if (!audioContext)
+		nextBuf();
+	else if (audioContext.state == 'suspended')
+		audioContext.resume().then(() => {
+			console.log('Playback resumed successfully');
+			audioInit2();
+			nextBuf();
+		});
+}
+
+async function loadInto(url, buf, ofs) {
+	var data = await (await fetch(url)).arrayBuffer();
+	var data8 = new Uint8Array(data)
+	buf.set(data8, ofs);
+	return data8.length;
+}
+
+function wasmStr(buf, ofs) {
+	if (!ofs)
+		return null;
+	var c, s = '';
+	while ((c = buf[ofs++]))
+		s += String.fromCharCode(c);
+	return s;
+}
+
+async function loadAudio() {
+	var imports = {
+		env: {
+			memory: new WebAssembly.Memory({initial: 4})
+		}
+	};
+	var resp = await fetch('hmpweb/hmpweb.wasm');
+	var lib = await WebAssembly.instantiate(await resp.arrayBuffer(), imports);
+	//Object.assign(playerModule = {}, lib.instance.exports);
+	playerModule = {};
+	for (var x in lib.instance.exports)
+		playerModule['_' + x] = lib.instance.exports[x];
+	var mbuf = lib.instance.exports.memory.buffer;
+	var buf = playerModule.HEAP8 = new Uint8Array(mbuf);
+	playerModule.HEAP16 = new Int16Array(mbuf);
+	var slen = await loadInto('descent.hmq', buf, playerModule._playerweb_get_data(0));
+	var mlen = await loadInto('hammelo.bnk', buf, playerModule._playerweb_get_data(1));
+	var dlen = await loadInto('hamdrum.bnk', buf, playerModule._playerweb_get_data(2));
+	console.log({slen, mlen, dlen});
+	var msg = playerModule._playerweb_play(slen, mlen, dlen, 0);
+	console.log('play msg: ' + msg + ' ' + wasmStr(buf, msg));
+	//playerModule._playerweb_init(48000);
+	console.log('calling gen');
+	//console.log('data: ' + playerModule._playerweb_gen(128));
+	console.log('ret: ' + playerModule._playerweb_get_last_rc());
+	fixAudio();
 }
 
 function libinit() {
-return;
+	console.log('libinit');
+	loadAudio();
+	window.addEventListener('click', fixAudio);
+	return;
 	document.addEventListener("visibilitychange", function(ev) {
 		console.log('vischange', ev);
 	});
@@ -79,12 +131,14 @@ return;
 
 
 var musicVolume = 128 / 2, musicGain;
+var digiVolume = 128 / 2, digiGain;
 var audioContext, rate, samps, time;
 var audioStarting;
 function audioInit() {
   if (audioContext)
     audioContext.close();
   musicGain = null;
+  digiGain = null;
   audioContext = new AudioContext();
   rate = 48000; //audioContext.sampleRate;
   samps = 48000 >> 3;
@@ -97,17 +151,24 @@ function audioInit() {
   }
   //playerweb._playerweb_init(rate);
   console.log('playerweb init done');
+  audioInit2();
+}
+
+function audioInit2() {
   musicVolumeSet(musicVolume);
+  digiGain = audioContext.createGain();
+  digiGain.connect(audioContext.destination);
+  digiVolumeSet(digiVolume);
 }
 
 function fillBuf(myBuffer) {
   let ch0 = myBuffer.getChannelData(0);
   let ch1 = myBuffer.getChannelData(1);
-  let ofs = Module._playerweb_gen(samps * 2) >> 1;
+  let ofs = playerModule._playerweb_gen(samps * 2) >> 1;
   if (!ofs)
-    throw new Error("playerweb: " + Module._playerweb_get_last_rc());
+    throw new Error("playerweb: " + playerModule._playerweb_get_last_rc());
   //ofs >>= 1;
-  let sndBuf = Module.HEAP16; //playerwebMem16s;
+  let sndBuf = playerModule.HEAP16; //playerwebMem16s;
   //let sndBuf = playerwebMem16s.subarray(ofs, ofs + samps * 2);
   //console.log(sndBuf);
   for (var i = 0, p = ofs; i < samps; i++, p += 2) {
@@ -129,6 +190,7 @@ function nextBuf() {
   if (!audioContext)
     audioInit();
   if (!musicGain) {
+    console.log('no audio');
     audioStarting && musicVolumeSet(musicVolume);
     return;
   }
@@ -181,6 +243,8 @@ var freePans = [];
 var repeatSamples = [];
 var repeatFree = [];
 function playSample(num, pan, vol, repeat) {
+	if (!digiGain)
+		return;
 	var srcNodes = freeSources.pop();
 	var srcNode, gainNode, panNode;
 	if (srcNodes) {
@@ -192,7 +256,7 @@ function playSample(num, pan, vol, repeat) {
 		//srcNodes = [srcNode, gainNode, panNode];
 		srcNode.connect(gainNode);
 		gainNode.connect(panNode);
-		panNode.connect(audioContext.destination);
+		panNode.connect(digiGain);
 		//srcNode.onended = function() { freeSources.push(srcNodes); }
 	}
 	gainNode.gain.value = vol / (65536 * 2);
@@ -253,6 +317,13 @@ function musicVolumeSet(n) {
 		} else
 			musicGain.gain.setTargetAtTime(vol, audioContext.currentTime, 0.1);
 	}
+}
+
+function digiVolumeSet(n) {
+	console.log('digiVolumeSet ', n);
+	digiVolume = n;
+	if (digiGain)
+		digiGain.gain.value = n / 128;
 }
 
 function playAd(wakeUp) {

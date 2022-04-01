@@ -417,7 +417,8 @@ PA_DFX (for (i=0; i<ROW_SPACING; i += (MenuHires?2:1) )	{)
 //@@		);
 
 //			mprintf( ( 0, "Fr = %d", (timer_get_fixed_seconds() - last_time) ));
-			while( timer_get_fixed_seconds() < last_time+time_delay );
+			void gr_sync_display();
+			while( timer_get_fixed_seconds() < last_time+time_delay ) gr_sync_display();
 			last_time = timer_get_fixed_seconds();
 		
 		#ifdef WINDOWS

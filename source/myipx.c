@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "pstypes.h"
 #include "ipx.h"
+#include "timer.h"
 
 void net_init(ubyte *node) { }
 void net_send(ubyte *node, ubyte *data, int len) { }
@@ -12,8 +13,10 @@ int ipx_init( int socket_number, int show_address ) { return 0; }
 int ipx_change_default_socket( ushort socket_number ) { return 0; }
 ubyte ipx_net[4], ipx_node[6], ipx_has_addr;
 static void ipx_init_addr() {
+	int i;
+
 	pssrand(timer_get_fixed_seconds());
-	for (int i = 0; i < 6; i++)
+	for (i = 0; i < 6; i++)
 		ipx_node[i] = psrand() / (PSRAND_MAX >> 8);
 	//printf("ipx address %02x:%02x:%02x:%02x:%02x:%02x\n", ipx_node[0], ipx_node[1], ipx_node[2], ipx_node[3], ipx_node[4], ipx_node[5]);
 	ipx_has_addr = 1;

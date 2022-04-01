@@ -3,11 +3,13 @@
 #include "palette.h"
 #include "modes.h"
 #include "pa_gl.h"
+#include "vga.h"
 
 extern ubyte gr_screen_buffer[];
 int VGA_current_mode;
+extern void video_set_res(int w, int h);
 
-int gr_set_mode(int mode) {
+short vga_set_mode(short mode) {
 	int w,h,t,r;
 	int ret;
 	if (mode < 0 || mode > sizeof(modes) / sizeof(modes[0]))
@@ -15,7 +17,6 @@ int gr_set_mode(int mode) {
 
 	w = modes[mode][0]; r = w; h = modes[mode][1]; t=BM_LINEAR;
 	memset(gr_screen_buffer, 0, w * h);
-	extern void video_set_res(int w, int h);
 	video_set_res(w, h);
 
 	VGA_current_mode = mode;

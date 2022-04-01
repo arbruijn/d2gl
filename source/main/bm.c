@@ -150,7 +150,7 @@ void read_vclip_info(CFILE *fp, int inNumVClipsToRead, int inOffset)
 #define VCLIP_MAX_FRAMES_D1	30
 void read_effect_info(CFILE *fp, int inNumEffectsToRead, int inOffset)
 {
-	int i, j;
+	int i, j, n;
 
 
 	for (i = inOffset; i < (inNumEffectsToRead + inOffset); i++)
@@ -160,7 +160,7 @@ void read_effect_info(CFILE *fp, int inNumEffectsToRead, int inOffset)
 		Effects[i].vc.frame_time = cfile_read_fix(fp);
 		Effects[i].vc.flags = cfile_read_int(fp);
 		Effects[i].vc.sound_num = cfile_read_short(fp);
-		int n = data_d1 ? VCLIP_MAX_FRAMES_D1 : VCLIP_MAX_FRAMES;
+		n = data_d1 ? VCLIP_MAX_FRAMES_D1 : VCLIP_MAX_FRAMES;
 		for (j = 0; j < n; j++)
 			Effects[i].vc.frames[j].index = cfile_read_short(fp);
 		Effects[i].vc.light_value = cfile_read_fix(fp);
@@ -182,13 +182,13 @@ void read_effect_info(CFILE *fp, int inNumEffectsToRead, int inOffset)
 
 void read_wallanim_info(CFILE *fp, int inNumWallAnimsToRead, int inOffset)
 {
-	int i, j;
+	int i, j, n;
 	
 	for (i = inOffset; i < (inNumWallAnimsToRead + inOffset); i++)
 	{
 		WallAnims[i].play_time = cfile_read_fix(fp);;
 		WallAnims[i].num_frames = cfile_read_short(fp);;
-		int n = data_d1 ? MAX_CLIP_FRAMES_D1 : MAX_CLIP_FRAMES;
+		n = data_d1 ? MAX_CLIP_FRAMES_D1 : MAX_CLIP_FRAMES;
 		for (j = 0; j < n; j++)
 			WallAnims[i].frames[j] = cfile_read_short(fp);
 		WallAnims[i].open_sound = cfile_read_short(fp);
@@ -201,12 +201,12 @@ void read_wallanim_info(CFILE *fp, int inNumWallAnimsToRead, int inOffset)
 
 void read_robot_info(CFILE *fp, int inNumRobotsToRead, int inOffset)
 {
-	int i, j, k;
+	int i, j, k, n_guns, boss_flag;
 	
 	for (i = inOffset; i < (inNumRobotsToRead + inOffset); i++)
 	{
 		Robot_info[i].model_num = cfile_read_int(fp);
-		int n_guns = data_d1 ? cfile_read_int(fp) : 0;
+		n_guns = data_d1 ? cfile_read_int(fp) : 0;
 		for (j = 0; j < MAX_GUNS; j++)
 			cfile_read_vector(&(Robot_info[i].gun_points[j]), fp);
 		for (j = 0; j < MAX_GUNS; j++)
@@ -263,7 +263,7 @@ void read_robot_info(CFILE *fp, int inNumRobotsToRead, int inOffset)
 			cfread(&(Robot_info[i].evade_speed[j]), sizeof(byte), 1, fp);
 		Robot_info[i].cloak_type = cfile_read_byte(fp);
 		Robot_info[i].attack_type = cfile_read_byte(fp);
-		int boss_flag = data_d1 ? cfile_read_byte(fp) : 0;
+		boss_flag = data_d1 ? cfile_read_byte(fp) : 0;
 
 		Robot_info[i].see_sound = cfile_read_byte(fp);
 		Robot_info[i].attack_sound = cfile_read_byte(fp);
@@ -287,7 +287,7 @@ void read_robot_info(CFILE *fp, int inNumRobotsToRead, int inOffset)
 
 		Robot_info[i].deathroll_sound = data_d1 ? SOUND_BOSS_SHARE_DIE : cfile_read_byte(fp);
 		Robot_info[i].glow = data_d1 ? 0 : cfile_read_byte(fp);
-		Robot_info[i].behavior = data_d1 ? AIB_NORMAL : cfile_read_byte(fp);
+		Robot_info[i].behavior = data_d1 ? i == 10 ? AIB_RUN_FROM : AIB_NORMAL : cfile_read_byte(fp);
 		Robot_info[i].aim = data_d1 ? 255 : cfile_read_byte(fp);
 
 		for (j = 0; j < MAX_GUNS + 1; j++) {
@@ -318,20 +318,23 @@ void read_weapon_info(CFILE *fp, int inNumWeaponsToRead, weapon_info *weapon_inf
 	
 	for (i = inOffset; i < (inNumWeaponsToRead + inOffset); i++)
 	{
+		short flash_sound, robot_hit_sound, wall_hit_sound;
+		byte persistent;
+
 		weapon_info[i].render_type = cfile_read_byte(fp);
-		byte persistent = data_d1 ? 0 : cfile_read_byte(fp);
+		persistent = data_d1 ? 0 : cfile_read_byte(fp);
 		weapon_info[i].model_num = data_d1 ? cfile_read_byte(fp) : cfile_read_short(fp);
 		weapon_info[i].model_num_inner = data_d1 ? cfile_read_byte(fp) : cfile_read_short(fp);
 		weapon_info[i].persistent = data_d1 ? cfile_read_byte(fp) : persistent;
 
 		weapon_info[i].flash_vclip = cfile_read_byte(fp);
-		short flash_sound = data_d1 ? cfile_read_short(fp) : 0;
+		flash_sound = data_d1 ? cfile_read_short(fp) : 0;
 		weapon_info[i].robot_hit_vclip = cfile_read_byte(fp);
-		short robot_hit_sound = data_d1 ? cfile_read_short(fp) : 0;
+		robot_hit_sound = data_d1 ? cfile_read_short(fp) : 0;
 		weapon_info[i].flash_sound = data_d1 ? flash_sound : cfile_read_short(fp);
 
 		weapon_info[i].wall_hit_vclip = cfile_read_byte(fp);
-		short wall_hit_sound = data_d1 ? cfile_read_short(fp) : 0;
+		wall_hit_sound = data_d1 ? cfile_read_short(fp) : 0;
 		weapon_info[i].fire_count = cfile_read_byte(fp);
 		weapon_info[i].robot_hit_sound = data_d1 ? robot_hit_sound : cfile_read_short(fp);
 		
@@ -595,7 +598,7 @@ int bm_init(int is_d1)
 #define ELMS(x) (sizeof(x) / sizeof((x)[0]))
 void bm_read_all(CFILE * fp, int ham_version)
 {
-	int i,t;
+	int i,t,Reactor_model_num_d1;
 
 	int is_d1 = data_d1 = !ham_version;
 	data_sw = ham_version == 2;
@@ -759,14 +762,16 @@ void bm_read_all(CFILE * fp, int ham_version)
 //@@	cfread( ObjId, sizeof(byte), Num_total_object_types, fp );
 //@@	cfread( ObjStrength, sizeof(fix), Num_total_object_types, fp );
 
-	int Reactor_model_num_d1 = -1;
+	Reactor_model_num_d1 = -1;
 	if (is_d1) {
-		cfseek(fp, MAX_SOUNDS_D1 * 2, SEEK_CUR);
-
-		int Num_total_object_types = cfile_read_int(fp);
-		Assert(Num_total_object_types > 0 && Num_total_object_types <= MAX_OBJTYPE_D1);
 		byte ObjType[MAX_OBJTYPE_D1], ObjId[MAX_OBJTYPE_D1];
 		fix ObjStrength[MAX_OBJTYPE_D1];
+		int Num_total_object_types;
+
+		cfseek(fp, MAX_SOUNDS_D1 * 2, SEEK_CUR);
+
+		Num_total_object_types = cfile_read_int(fp);
+		Assert(Num_total_object_types > 0 && Num_total_object_types <= MAX_OBJTYPE_D1);
 		cfread(ObjType, sizeof(byte), MAX_OBJTYPE_D1, fp);
 		cfread(ObjId, sizeof(byte), MAX_OBJTYPE_D1, fp);
 		cfread(ObjStrength, sizeof(fix), MAX_OBJTYPE_D1, fp);
@@ -823,43 +828,47 @@ void bm_read_all(CFILE * fp, int ham_version)
 void bm_read_part_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_gauges, bitmap_index cockpit_bms[], int *n_cockpit_bms,
 	bitmap_index weapon_hires[], int *n_weapon_hires)
 {
-	int i;
+	int i, num_textures, t, num_vclips;
+	int num_effects, num_wall_anims, n_robot_types, n_robot_joints;
+	int n_weapon_types, pic_idx;
+	int n_powerup_types, n_polygon_models, data_size, num_cockpits;
+	polymodel polygon_models[MAX_POLYGON_MODELS];
 
 	data_d1 = data_sw = 0;
 
-	int num_textures = cfile_read_int(fp);
+	num_textures = cfile_read_int(fp);
 	Assert(num_textures > 0 && num_textures <= ELMS(Textures));
 	cfseek( fp, num_textures * (2 + 20), SEEK_CUR );
 
-	int t = cfile_read_int(fp);
+	t = cfile_read_int(fp);
 	Assert(t > 0 && t <= ELMS(Sounds));
 	cfseek( fp, t * (1 + 1), SEEK_CUR );
 
-	int num_vclips = cfile_read_int(fp);
+	num_vclips = cfile_read_int(fp);
 	Assert(num_vclips > 0 && num_vclips <= ELMS(Vclip));
 	cfseek( fp, num_vclips * 82, SEEK_CUR );
 
-	int num_effects = cfile_read_int(fp);
+	num_effects = cfile_read_int(fp);
 	Assert(num_effects > 0 && num_effects <= ELMS(Effects));
 	cfseek( fp, num_effects * 130, SEEK_CUR );
 
-	int num_wall_anims = cfile_read_int(fp);
+	num_wall_anims = cfile_read_int(fp);
 	Assert(num_wall_anims > 0 && num_wall_anims <= ELMS(WallAnims));
 	cfseek( fp, num_wall_anims * 126, SEEK_CUR );
 
-	int n_robot_types = cfile_read_int(fp);
+	n_robot_types = cfile_read_int(fp);
 	Assert(n_robot_types > 0 && n_robot_types <= MAX_ROBOT_TYPES);
 	cfseek( fp, n_robot_types * 480, SEEK_CUR );
 
-	int n_robot_joints = cfile_read_int(fp);
+	n_robot_joints = cfile_read_int(fp);
 	Assert(n_robot_joints > 0 && n_robot_joints <= ELMS(Robot_joints));
 	cfseek( fp, n_robot_joints * 8, SEEK_CUR );
 
-	int n_weapon_types = cfile_read_int(fp);
+	n_weapon_types = cfile_read_int(fp);
 	Assert(n_weapon_types > 0 && n_weapon_types <= MAX_WEAPON_TYPES);
 	//cfseek( fp, n_weapon_types * 125, SEEK_CUR );
-	int pic_idx = 0;
-	for (int i = 0; i < n_weapon_types; i++) {
+	pic_idx = 0;
+	for (i = 0; i < n_weapon_types; i++) {
 		weapon_info wi;
 		read_weapon_info(fp, 1, &wi, 0);
 		if (wi.hires_picture.index && pic_idx < 20)
@@ -867,20 +876,19 @@ void bm_read_part_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_ga
 	}
 	*n_weapon_hires = pic_idx;
 
-	int n_powerup_types = cfile_read_int(fp);
+	n_powerup_types = cfile_read_int(fp);
 	Assert(n_powerup_types > 0 && n_powerup_types <= MAX_POWERUP_TYPES);
 	cfseek( fp, n_powerup_types * 16, SEEK_CUR );
 
-	int n_polygon_models = cfile_read_int(fp);
+	n_polygon_models = cfile_read_int(fp);
 	Assert(n_polygon_models > 0 && n_polygon_models <= MAX_POLYGON_MODELS);
-	polymodel polygon_models[MAX_POLYGON_MODELS];
 #ifndef NPACK
 	cfread( polygon_models, sizeof(polymodel), n_polygon_models, fp );
 #else
 	read_polygon_models(fp, n_polygon_models, polygon_models, 0);
 #endif
 
-	int data_size = 0;
+	data_size = 0;
 	for (i=0; i<n_polygon_models; i++ )
 		data_size += polygon_models[i].model_data_size;
 
@@ -905,7 +913,7 @@ void bm_read_part_gauges_hires(CFILE *fp, bitmap_index gauges_hires[], int *n_ga
 
 	cfseek( fp, 132, SEEK_CUR ); // skip player_ship
 	
-	int num_cockpits = *n_cockpit_bms = cfile_read_int(fp);
+	num_cockpits = *n_cockpit_bms = cfile_read_int(fp);
 	Assert(num_cockpits > 0 && num_cockpits <= N_COCKPIT_BITMAPS);
 	cfread( cockpit_bms, sizeof(bitmap_index), num_cockpits, fp );
 }
@@ -993,7 +1001,7 @@ void bm_read_extra_robots(char *fname,int type)
 		Assert( Polygon_models[i].model_data != NULL );
 		cfread( Polygon_models[i].model_data, sizeof(ubyte), Polygon_models[i].model_data_size, fp );
 		
-		#ifdef NPACK
+		#ifdef MACINTOSH
 			swap_polygon_model_data(Polygon_models[i].model_data);
 		#endif
 		
@@ -1092,18 +1100,19 @@ void load_robot_replacements(char *level_name)
 		if (i<0 || i>=N_polygon_models)
 			Error("Polygon model (%d) out of range in (%s).  Range = [0..%d].",i,level_name,N_polygon_models-1);
 	
+		free(Polygon_models[i].model_data);
+
 		#ifdef NPACK
 			read_polygon_models(fp, 1, Polygon_models, i);
 		#else
 			cfread( &Polygon_models[i], sizeof(polymodel), 1, fp );
 		#endif
 	
-		free(Polygon_models[i].model_data);
 		Polygon_models[i].model_data = malloc(Polygon_models[i].model_data_size);
 		Assert( Polygon_models[i].model_data != NULL );
 
 		cfread( Polygon_models[i].model_data, sizeof(ubyte), Polygon_models[i].model_data_size, fp );
-		#ifdef NPACK
+		#ifdef MACINTOSH
 			swap_polygon_model_data(Polygon_models[i].model_data);
 		#endif
 		g3_init_polygon_model(Polygon_models[i].model_data);

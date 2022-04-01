@@ -1,3 +1,5 @@
+//#define VERBOSE
+#define XYZ(v) (v)->x,(v)->y,(v)->z
 
 #define NEW_FVI_STUFF 1
 
@@ -62,11 +64,9 @@ int oflow_check(fix a,fix b);
 	"setnz al"		\
 	"movzx eax,al";
 #else
-// probably should come up with better routine than this!!!
-// it was this way for D1 mac -- wonder what problems it caused?
 int oflow_check(fix a, fix b)
 {
-	return 0;
+	return (((unsigned long long)abs(a)*abs(b)) >> 47) != 0;
 }
 #endif
 
@@ -824,6 +824,10 @@ if (hit_seg!=-1 && fq->flags&FQ_GET_SEGLIST)
 
 //	if(hit_seg!=-1 && get_seg_masks(&hit_data->hit_pnt,hit_data->hit_seg,0).centermask!=0)
 //		Int3();
+
+	#ifdef VERBOSE
+	printf("fvi %x %x %x - %x %x %x => %d at %x %x %x obj %d\n", XYZ(fq->p0), XYZ(fq->p1), hit_type, XYZ(&hit_pnt), fvi_hit_object);
+	#endif
 
 	return hit_type;
 

@@ -1,4 +1,4 @@
-#include "config.h"
+#include "glconfig.h"
 #ifndef EMSCRIPTEN
 #define SDL2
 #endif
@@ -75,12 +75,23 @@ void draw() {
     #endif
     #endif
     EventLoop(0);
+	#ifdef EM_CC
+	emscripten_sleep(1);
+	#endif    
     long now;
     long timeout = lastTicks + 1000/60;
+#if 0 //EM_CC
+	int t = last_frame + 1000.0/60.0 - emscripten_get_now();
+	if (t > 17)
+		t = 17;
+	if (t > 0)
+		emscripten_sleep(t);
+#else
     while ((now = SDL_GetTicks()) < timeout) {
         EventLoop(0);
         SDL_Delay(1);
     }
+#endif    
     lastTicks = now;
 }
 
@@ -262,10 +273,15 @@ extern int grd_fades_disabled;
 void timer_init() { InitKeyMap(); grd_fades_disabled = 1; }
 int mouse_init(int cyberman) { return 1; }
 int digi_init() { return 0; }
+#ifndef minit
 int minit() { return -1; }
+#endif
 short vga_init() { return 0; }
 int joy_init() { return 1; }
 void mouse_show_cursor() { SDL_ShowCursor(SDL_ENABLE); printf("show_cursor\n"); }
 void mouse_hide_cursor() { SDL_ShowCursor(SDL_DISABLE); printf("hide_cursor\n"); }
 
 void mouse_get_pos(int *x, int *y) { SDL_GetMouseState(x, y); printf("pos %d,%d\n", *x, *y); }
+
+void sdl_time_sync() {}
+void my_DoEndGame() { void DoEndGame(); DoEndGame(); }

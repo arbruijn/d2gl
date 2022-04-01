@@ -936,7 +936,7 @@ void show_extra_views()
 
 int BigWindowSwitch=0;
 extern int force_cockpit_redraw;
-#ifndef MACINTOSH
+#ifndef NASM
 extern ubyte * Game_cockpit_copy_code;
 #else
 extern ubyte Game_cockpit_copy_code;
@@ -1377,15 +1377,16 @@ void game_render_frame_mono(void)
 
 			}
 		} else	{
+			#ifdef NASM
 			extern grs_bitmap *cockpit_cur_bm;
 			if (cockpit_cur_bm && grd_curcanv->cv_bitmap.bm_type  == BM_GL) {
 				gr_set_current_canvas(get_current_game_screen());
 				gr_ubitmapm(0, 0, cockpit_cur_bm);
 				init_gauges();
 			} else {
-			#ifdef NASM
 				gr_ibitblt( &VR_render_sub_buffer[0].cv_bitmap, &VR_screen_pages[0].cv_bitmap, Scanline_double );
 			#else
+			{
 			#ifndef WINDOWS
 				gr_ibitblt( &VR_render_buffer[0].cv_bitmap, &VR_screen_pages[0].cv_bitmap, Game_cockpit_copy_code );
 			#else

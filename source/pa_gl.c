@@ -1,4 +1,4 @@
-#include "config.h"
+#include "glconfig.h"
 #ifdef GL
 #include <stdio.h>
 #include <string.h>
@@ -40,8 +40,24 @@ const GLchar* sh_atest_frag =
     "  gl_FragColor = vec4(s.rgb * color.rgb * v_light, 1.0);\n"
     "}";
 
+const GLchar* sh_line_vert =
+    "precision mediump float;\n"
+    "attribute vec3 pos;\n"
+    "uniform mat4 mat;\n"
+    "void main() {\n"
+    " gl_Position = mat * vec4(pos, 1.0);\n"
+    "}";
+const GLchar* sh_line_frag =
+    "precision mediump float;\n"
+    "uniform vec4 color;\n"
+    "void main() {\n"
+    "  gl_FragColor = color;\n"
+    "}";
+
 GLuint gl_create_shader_part(int tp, const char *src) {
     GLuint id = glCreateShader(tp);
+    if (!id)
+        return 0;
     glShaderSource(id, 1, &src, NULL);
     glCompileShader(id);
     int success;
@@ -86,15 +102,22 @@ GLuint glGetUniformLocation_check(GLuint prog, const char *name) {
     return id;
 }
 
-GLuint sh_atest;
+GLuint sh_atest, sh_line;
 GLint sh_atest_pos, sh_atest_uv, sh_atest_color, sh_atest_mat, sh_atest_light;
-void gl_init_shaders() {
-    sh_atest = gl_create_shader(sh_atest_vert, sh_atest_frag);
+GLint sh_line_pos, sh_line_color, sh_line_mat;
+int gl_init_shaders() {
+    if (!(sh_atest = gl_create_shader(sh_atest_vert, sh_atest_frag)))
+        return -1;
     sh_atest_pos = glGetAttribLocation_check(sh_atest, "pos");
     sh_atest_uv = glGetAttribLocation_check(sh_atest, "uv");
     sh_atest_light = glGetAttribLocation_check(sh_atest, "light");
     sh_atest_color = glGetUniformLocation_check(sh_atest, "color");
     sh_atest_mat = glGetUniformLocation_check(sh_atest, "mat");
+    sh_line = gl_create_shader(sh_line_vert, sh_line_frag);
+    sh_line_pos = glGetAttribLocation_check(sh_line, "pos");
+    sh_line_color = glGetUniformLocation_check(sh_line, "color");
+    sh_line_mat = glGetUniformLocation_check(sh_line, "mat");
+    return 0;
 }
 
 GLuint gl_quad;
@@ -166,6 +189,8 @@ ubyte *rle_buf;
 void bm_bind_tex_pal32(grs_bitmap *bm, int *pal32) {
     ubyte *data, *dst, *end;
     int *dsti;
+    if (!sh_atest)
+        return;
     if (!bm->bm_handle || bm->bm_flags & BM_FLAG_CHANGED) {
         if (!bm->bm_handle) {
             GLuint tex;
@@ -439,6 +464,9 @@ void gl_start_frame() {
     glUseProgram(sh_atest);
     glUniformMatrix4fv(sh_atest_mat, 1, GL_FALSE, proj);
     glUniform4f(sh_atest_color, 1, 1, 1, 1);
+    glUseProgram(sh_line);
+    glUniformMatrix4fv(sh_line_mat, 1, GL_FALSE, proj);
+    glUniform4f(sh_line_color, 1, 1, 1, 1);
     glUseProgram(0);
 }
 
@@ -575,6 +603,7 @@ void gl_init_font(grs_font *font) {
     font->ft_bitmap.bm_w = font->ft_bitmap.bm_rowsize = tex_w;
     font->ft_bitmap.bm_h = tex_h;
     font->ft_bitmap.bm_flags = 0;
+    font->ft_bitmap.bm_handle = 0;
     if (!(font->ft_bitmap.bm_data = malloc(tex_w * tex_h)))
         abort();
     ubyte *dst = font->ft_bitmap.bm_data;
@@ -607,6 +636,10 @@ void gl_init_font(grs_font *font) {
     font->ft_bm_row_chars = ncol;
     //if (!(font->ft_flags & FT_COLOR))
     //    pcx_write_bitmap("monofnt.pcx", &font->ft_bitmap, gr_palette);
+}
+
+void gl_done_font(grs_font *font) {
+    free(font->ft_bitmap.bm_data);
 }
 
 void gl_font_start(grs_font *font, ubyte color) {
@@ -690,7 +723,7 @@ void gl_init_viewport() {
     glGetIntegerv(GL_VIEWPORT, viewport);
     gl_w = viewport[2];
     gl_h = viewport[3];
-    printf("gl screen size %d %d\n", gl_w, gl_h);
+    //printf("gl screen size %d %d\n", gl_w, gl_h);
     gl_end_frame(); // set ortho
 }
 
@@ -698,13 +731,15 @@ void gl_init() {
     #ifndef EMSCRIPTEN
     // During init, enable debug output
     glEnable              ( GL_DEBUG_OUTPUT );
+    void glDebugMessageCallback(void *, int);
     glDebugMessageCallback( MessageCallback, 0 );
     #endif
-    gl_init_shaders();
+    if (gl_init_shaders() == -1)
+        return;
     gl_init_buffers();
     gl_init_textures();
-    tex_buf_init();
     gl_init_viewport();
+    tex_buf_init();
 }
 
 void gl_set_screen_size(int w, int h) {
@@ -726,6 +761,39 @@ void gl_clear() {
         (c >> 24) / 255.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 }
+
+void gl_line_2d(ubyte color, int x1, int y1, int x2, int y2) {
+    float r, g, b;
+    gl_get_rgb(color, &r, &g, &b);
+    float buf[] = {x1, y1, 0, x2, y2, 0 };
+    glUseProgram(sh_line);
+    glUniform4f(sh_line_color, r, g, b, 1);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_quad);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(buf), buf);
+    glVertexAttribPointer(sh_line_pos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glEnableVertexAttribArray(sh_line_pos);
+    glDrawArrays(GL_LINES, 0, 4);
+    glUseProgram(0);
+}
+
+void gl_line(ubyte color, g3s_point *p0, g3s_point *p1) {
+    float r, g, b;
+    gl_get_rgb(color, &r, &g, &b);
+
+    float buf[] = {
+        f2fl(p0->p3_x), f2fl(p0->p3_y), -f2fl(p0->p3_z),
+        f2fl(p1->p3_x), f2fl(p1->p3_y), -f2fl(p1->p3_z) };
+
+    glUseProgram(sh_line);
+    glUniform4f(sh_line_color, r, g, b, 1);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_quad);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(buf), buf);
+    glVertexAttribPointer(sh_line_pos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glEnableVertexAttribArray(sh_line_pos);
+    glDrawArrays(GL_LINES, 0, 2);
+    glUseProgram(0);
+}
+
 #else
 #include "gr.h"
 #include "3d.h"
@@ -743,10 +811,13 @@ void gl_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *bm) {}
 void gl_font_start(grs_font *font, ubyte color) {}
 void gl_draw_char(int sx, int sy, grs_font *font, int c) {}
 void gl_init_font(grs_font *font) {}
+void gl_done_font() {}
 void gl_init_canvas(grs_canvas *canv) {}
 void gl_init() {}
 void gl_font_end() {}
 void gl_pal_changed() {}
 void gl_set_screen_size(int x, int y) {}
 void gl_clear() {}
+void gl_line_2d() {}
+void gl_line(ubyte color, int nv, g3s_point **pointlist) {}
 #endif

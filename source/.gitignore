@@ -50,3 +50,11 @@ lst[vpcr]
 lst[0-9]
 lst[vpcr][0-9]
 lst[vpcr]_[0-9]
+lst[0-9][0-9][a-z]
+*.err
+*.dem
+descent2[cgtw]
+*.bnk
+*.hmq
+*.dat
+out

@@ -12,9 +12,6 @@
 //extern void play_sample(int gsndnum, int pan, int volume);
 
 int digi_volume = 32768; // 0 .. 32768
-void digi_set_digi_volume(int dvolume) {
-    digi_volume = dvolume;
-}
 #if 0
 void digi_play_sample_once(int sndnum, fix max_volume) {
     digi_play_sample(sndnum, max_volume);
@@ -24,14 +21,21 @@ void digi_play_sample_once(int sndnum, fix max_volume) {
 EM_JS(void, music_volume_set, (int mvolume), {
 	musicVolumeSet(mvolume);
 });
+EM_JS(void, digi_volume_set, (int dvolume), {
+	digiVolumeSet(dvolume);
+});
 #else
 void music_volume_set(int mvolume);
+void digi_volume_set(int dvolume);
 #endif
+void digi_set_digi_volume(int dvolume) {
+	digi_volume_set(dvolume / 256);
+}
 
 void digi_set_midi_volume(int mvolume) {
 	music_volume_set(mvolume);
 	//hmp_set_volume(mvolume);
-	//printf("mvolume %d\n", mvolume);
+	printf("mvolume %d\n", mvolume);
 	//extern void playerweb_set_volume(int volume);
 	//playerweb_set_volume(mvolume);
 }
@@ -200,10 +204,10 @@ void digi_stop_all() {
 
 int digi_new_sound( int org_soundnum, fix max_volume, fix max_distance, int volume, int pan )
 {
-	int i;
+	int i, soundnum;
 	if ( max_volume < 0 ) return -1;
 	//if (!Digi_initialized) return -1;
-        int soundnum = Sounds[org_soundnum];
+	soundnum = Sounds[org_soundnum];
 	if (soundnum == 255) return -1;
 	if (GameSounds[soundnum].data==NULL) {
 		//Int3();
@@ -378,8 +382,10 @@ void digi_kill_sound_linked_to_segment(int segnum, int sidenum, int soundnum) {
 void digi_stop_current_song() {}
 char CDROM_dir[256];
 void digi_stop_sound(int channel) {}
-int digi_start_sound(short soundnum, fix volume, int pan, int looping, int loop_start, int loop_end, int persistant) { return -1; }
-int digi_sample_rate;
+int digi_start_sound(short soundnum, fix volume, int pan, int looping, int loop_start, int loop_end, int persistant) {
+	return play_sample(soundnum, pan, volume, looping);
+}
+int digi_sample_rate = SAMPLE_RATE_22K;
 int digi_find_channel(int soundno) { return -1; }
 int digi_max_channels;
 void digi_pause_midi() {}

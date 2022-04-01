@@ -1,6 +1,6 @@
-#define debug_objnum 105
-#define EXTRA_DEBUG_OBJ
 //#define VERBOSE_MIN
+//#define debug_objnum 15
+//#define EXTRA_DEBUG_OBJ
 //#define VERBOSE
 int printf(const char*msg,...);
 /*
@@ -333,6 +333,15 @@ void do_physics_sim_rot(object *obj)
 	}
 
 	check_and_fix_matrix(&obj->orient);
+
+	#ifdef debug_objnum
+	if (obj-Objects == debug_objnum)
+		printf("obj %d sim_rot vel %x %x %x thrust %x %x %x new orient %x %x %x; %x %x %x; %x %x %x\n",
+			obj-Objects,
+			XYZ(&obj->mtype.phys_info.rotvel),
+			XYZ(&obj->mtype.phys_info.rotthrust),
+			XYZ(&obj->orient.rvec), XYZ(&obj->orient.uvec), XYZ(&obj->orient.fvec));
+	#endif
 }
 
 //	-----------------------------------------------------------------------------------------------------------
@@ -564,7 +573,7 @@ save_p1 = *fq.p1;
 
 		#ifdef EXTRA_DEBUG_OBJ
 		if (objnum == debug_objnum)
-			printf("   fate  = %d, hit_pnt = %8x %8x %8x obj %d\n",fate,XYZ(&hit_info.hit_pnt),hit_info.hit_object);;
+			printf("   fate  = %d, hit_pnt = %8x %8x %8x obj %d seg,side=%d,%d\n",fate,XYZ(&hit_info.hit_pnt),hit_info.hit_object,hit_info.hit_side_seg,hit_info.hit_side);;
 		#endif
 
 		ipos = hit_info.hit_pnt;
@@ -602,14 +611,16 @@ save_p1 = *fq.p1;
 			printf("   new pos = %x %x %x\n",XYZ(&obj->pos));
 		#endif
 #ifdef VERBOSE_MIN
-int o0 = obj->type==OBJ_WEAPON&&obj->orient.rvec.x==F1_0&&!obj->orient.rvec.y&&!obj->orient.rvec.z&&
-	!obj->orient.uvec.x&&obj->orient.uvec.y==F1_0&&!obj->orient.uvec.z&&!obj->orient.fvec.x&&!obj->orient.fvec.y&&obj->orient.fvec.z==F1_0;
+{
+int o0 = 0; //obj->type==OBJ_WEAPON&&obj->orient.rvec.x==F1_0&&!obj->orient.rvec.y&&!obj->orient.rvec.z&&
+	//!obj->orient.uvec.x&&obj->orient.uvec.y==F1_0&&!obj->orient.uvec.z&&!obj->orient.fvec.x&&!obj->orient.fvec.y&&obj->orient.fvec.z==F1_0;
 static vms_vector vnull;
 printf("obj %d type %d id %d parent %d "
  "new pos = %x %x %x orient %x %x %x; %x %x %x; %x %x %x\n",objnum,obj->type,
  obj->id,obj->type==OBJ_WEAPON ? obj->ctype.laser_info.parent_num : -1,
  XYZ(&obj->pos),
  XYZ(o0?&vnull:&obj->orient.rvec), XYZ(o0?&vnull:&obj->orient.uvec), XYZ(o0?&vnull:&obj->orient.fvec));
+}
 #endif 
 
 		if ( iseg != obj->segnum )
@@ -1039,10 +1050,10 @@ void phys_apply_force(object *obj,vms_vector *force_vec)
 	//Add in acceleration due to force
 	vm_vec_scale_add2(&obj->mtype.phys_info.velocity,force_vec,fixdiv(f1_0,obj->mtype.phys_info.mass));
 
-//#ifdef debug_objnum
-//if (obj-Objects==debug_objnum)
-printf("obj %d apply force %x,%x,%x\n", obj-Objects, XYZ(force_vec));
-//#endif
+#ifdef debug_objnum
+if (obj-Objects==debug_objnum)
+printf("obj %d force %x,%x,%x\n", obj-Objects, XYZ(force_vec));
+#endif
 }
 
 //	----------------------------------------------------------------
@@ -1086,6 +1097,11 @@ void physics_turn_towards_vector(vms_vector *goal_vector, object *obj, fix rate)
 
 	vm_extract_angles_vector(&dest_angles, goal_vector);
 	vm_extract_angles_vector(&cur_angles, &obj->orient.fvec);
+
+	#ifdef VERBOSE
+	printf("ph_turn_tow dest_ang %x %x %x cur_ang %x %x %x rate %x\n", dest_angles.p, dest_angles.b, dest_angles.h,
+		cur_angles.p, cur_angles.b, cur_angles.h, rate);
+	#endif
 
 	delta_p = (dest_angles.p - cur_angles.p);
 	delta_h = (dest_angles.h - cur_angles.h);
@@ -1148,10 +1164,21 @@ void phys_apply_rot(object *obj,vms_vector *force_vec)
 		}
 	}
 
+#ifdef VERBOSE
+printf("obj %d apply rot %x,%x,%x rotvel was %x %x %x fvec %x %x %x\n", obj-Objects, XYZ(force_vec), XYZ(&obj->mtype.phys_info.rotvel), XYZ(&obj->orient.fvec));
+#endif
+
 	//	Turn amount inversely proportional to mass.  Third parameter is seconds to do 360 turn.
 	physics_turn_towards_vector(force_vec, obj, rate);
 
+#ifdef VERBOSE
+printf("obj %d apply rot %x,%x,%x rate %x rotvel %x %x %x\n", obj-Objects, XYZ(force_vec), rate, XYZ(&obj->mtype.phys_info.rotvel));
+#endif
 
+#ifdef debug_objnum
+if (obj-Objects==debug_objnum)
+printf("obj %d apply_rot force %x,%x,%x\n", obj-Objects, XYZ(force_vec));
+#endif
 }
 
 

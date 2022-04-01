@@ -1,3 +1,4 @@
+#ifndef __WATCOMC__
 void itoa(int n, char *ret, int base) {
     char buf[10], *p = buf;
     if (n < 0) {
@@ -14,3 +15,4 @@ void itoa(int n, char *ret, int base) {
         *ret++ = *--p;
     *ret = 0;
 }
+#endif

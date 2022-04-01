@@ -1,4 +1,5 @@
 //#include "sdl2/include/SDL.h"
+#ifndef __WATCOMC__
 #ifdef EMSCRIPTEN
 //#if 1
 #include "SDL/SDL.h"
@@ -363,3 +364,4 @@ void InitKeyMap() {
 	sdlkeymap[SDLK_PAUSE] = KEY_PAUSE;
 #endif
 }
+#endif

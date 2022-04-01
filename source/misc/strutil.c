@@ -21,6 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 // string compare without regard to case
 
+#ifndef __WATCOMC__
 #if 0
 char *strdup(char *s)
 {
@@ -156,4 +157,5 @@ void main()
 	drive[0] = path[0] = name[0] = ext[0] = '\0';
 	_splitpath(".\\tmp\\*.dem", drive, path, NULL, NULL);
 }
+#endif
 #endif

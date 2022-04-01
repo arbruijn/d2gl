@@ -151,6 +151,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fix.h"
 
 //#define INLINE 1		//are some of these functions inline?
+#undef INLINE
 
 //The basic fixed-point vector.  Access elements by name or position
 typedef struct vms_vector {
@@ -194,7 +195,7 @@ typedef struct vms_matrix {
 										m->uvec.x = m->uvec.z = \
 										m->fvec.x = m->fvec.y = 0;} while (0)
 
-inline __attribute__((always_inline)) vms_vector *vm_vec_make(vms_vector *v,fix x,fix y,fix z) { v->x = x; v->y = y; v->z = z; return v; }
+FORCE_INLINE vms_vector *vm_vec_make(vms_vector *v,fix x,fix y,fix z) { v->x = x; v->y = y; v->z = z; return v; }
 
 #if 0
 #pragma aux vm_vec_make "*_" parm [eax] [edx] [ebx] [ecx] value [eax] modify exact [] = \
@@ -203,7 +204,7 @@ inline __attribute__((always_inline)) vms_vector *vm_vec_make(vms_vector *v,fix 
 	"mov 8[eax],ecx";
 #endif
 
-inline vms_angvec *vm_angvec_make(vms_angvec *v,fixang p,fixang b,fixang h) { v->p = p; v->b = b; v->h = h; return v; }
+FORCE_INLINE vms_angvec *vm_angvec_make(vms_angvec *v,fixang p,fixang b,fixang h) { v->p = p; v->b = b; v->h = h; return v; }
 
 #if 0
 #pragma aux vm_angvec_make "*_" parm [eax] [dx] [bx] [cx] value [eax] modify exact [] = \

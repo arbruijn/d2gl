@@ -30,7 +30,6 @@ static char rcsid[] = "$Id: ibitblt.c 1.16 1996/12/19 16:51:38 matt Exp $";
 #include "gr.h"
 #include "mem.h"
 #include "error.h"
-#include "bitblt.h"
 #include "ibitblt.h"
 #include "grdef.h"
 
@@ -608,6 +607,7 @@ void	gr_ibitblt_find_hole_size( grs_bitmap * mask_bmp, int *minx, int *miny, int
 
 #else		// ifdef NASM
 
+#include <stdlib.h>
 #include "pa_enabl.h"
 #include "pstypes.h"
 #include "gr.h"
@@ -875,6 +875,9 @@ void gr_ibitblt_find_hole_size_rle(grs_bitmap *mask_bmp, int *minx, int *miny, i
 {
 	ubyte c;
 	int x, y, count = 0;
+	ubyte *p1, *ofsb, *p2;
+	short *ofsw;
+	int usew;
 
 	Assert( mask_bmp->bm_flags&BM_FLAG_RLE );
 	Assert( mask_bmp->bm_flags&BM_FLAG_TRANSPARENT );
@@ -884,11 +887,11 @@ void gr_ibitblt_find_hole_size_rle(grs_bitmap *mask_bmp, int *minx, int *miny, i
 	*miny = mask_bmp->bm_h - 1;
 	*maxy = 0;
 
-	ubyte *p1 = mask_bmp->bm_data + 4;
-	ubyte *ofsb = p1;
-	short *ofsw = (void *)p1;
-	int usew = mask_bmp->bm_flags & BM_FLAG_RLE_BIG;
-	ubyte *p2 = p1 + (usew ? 2 : 1) * mask_bmp->bm_h;
+	p1 = mask_bmp->bm_data + 4;
+	ofsb = p1;
+	ofsw = (void *)p1;
+	usew = mask_bmp->bm_flags & BM_FLAG_RLE_BIG;
+	p2 = p1 + (usew ? 2 : 1) * mask_bmp->bm_h;
 	//	mask_bmp->bm_h *
 	//	(mask_bmp->bm_flags & BM_FLAG_RLE_BIG ? 2 : 1);
 	for (y = 0; y < mask_bmp->bm_h; y++) {

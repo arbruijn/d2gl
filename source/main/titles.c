@@ -88,6 +88,7 @@ int	Current_color = 0;
 int	Erase_color;
 
 extern int check_button_press();
+void gr_sync_display();
 
 #ifdef MACINTOSH
 extern void macintosh_quit(void);
@@ -566,6 +567,7 @@ int show_char_delay(char the_char, int delay, int robot_num, int cursor_flag)
 		 {
         if (RobotPlaying && delay != 0)
          RotateRobot();
+        gr_sync_display();
 	  	 }	
 
 		start_time = timer_get_fixed_seconds();
@@ -967,10 +969,14 @@ int show_briefing_message(int screen_num, char *message)
 		} else if (ch == 10) {
 			if (prev_ch != '\\') {
 				prev_ch = ch;
+				#ifndef SHAREWARE
 				if (DumbAdjust==0)
+				#endif
 					Briefing_text_y += (8*(MenuHires+1));
+				#ifndef SHAREWARE
 				else
 	            DumbAdjust--;
+	            #endif
 				Briefing_text_x = bsp->text_ulx;
 				if (Briefing_text_y > bsp->text_uly + bsp->text_height) {
 					load_briefing_screen(screen_num);
@@ -1008,7 +1014,7 @@ int show_briefing_message(int screen_num, char *message)
 		}
 
 		//	Check for Esc -> abort.
-		key_check = local_key_inkey();
+		key_check = delay_count ? local_key_inkey() : 0;
 
 	#ifdef WINDOWS
 		if (_RedrawScreen) {
@@ -1061,7 +1067,7 @@ int show_briefing_message(int screen_num, char *message)
 			#endif
 
 				while (timer_get_fixed_seconds() < start_time + KEY_DELAY_DEFAULT/2)
-					;
+					gr_sync_display();
 				flash_cursor(flashing_cursor);
          
 				if (RobotPlaying) RotateRobot();

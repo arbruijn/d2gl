@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #if defined(POLY_ACC)
 #include "poly_acc.h"
 #endif
+#include "pa_gl.h"
 
 extern void gr_modex_line();
 int modex_line_vertincr;
@@ -284,6 +285,9 @@ int gr_uline(fix _a1, fix _b1, fix _a2, fix _b2)
 		modex_line_y2 = b2+YOFFSET;		
 		modex_line_Color = grd_curcanv->cv_color;
 		gr_modex_line();
+		return 0;
+	case BM_GL:
+		gl_line_2d( grd_curcanv->cv_color, a1, b1, a2, b2 );
 		return 0;
 	default:
 		gr_universal_uline( a1, b1, a2, b2 );

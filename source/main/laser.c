@@ -1,6 +1,6 @@
 #include <stdio.h>
 #define XYZ(v) (v)->x,(v)->y,(v)->z
-#define debug_obj_num 105
+//#define debug_obj_num 119
 int printf(const char *msg,...);
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -331,6 +331,7 @@ void delete_old_omega_blobs(object *parent_objp)
 }
 
 // ---------------------------------------------------------------------------------
+int omega_lock_objnum;
 void create_omega_blobs(int firing_segnum, vms_vector *firing_pos, vms_vector *goal_pos, object *parent_objp)
 {
 	int			i, last_segnum, last_created_objnum = -1;
@@ -383,6 +384,10 @@ void create_omega_blobs(int firing_segnum, vms_vector *firing_pos, vms_vector *g
 			perturb_array[i] = F1_0*i + F1_0/4;
 			perturb_array[num_omega_blobs-1-i] = F1_0*i;
 		}
+		//if (num_omega_blobs&1)
+		//	perturb_array[num_omega_blobs/2] = F1_0*(num_omega_blobs/2);
+        if (num_omega_blobs&1)
+            perturb_array[num_omega_blobs/2] = num_omega_blobs < 4 || num_omega_blobs == 11 || (num_omega_blobs == 7 && omega_lock_objnum == -1) ? 0x10042000 : 0;
 	}
 
 	//	Create random perturbation vector, but favor _not_ going up in player's reference.
@@ -588,6 +593,7 @@ void do_omega_stuff(object *parent_objp, vms_vector *firing_pos, object *weapon_
 		goal_pos = Objects[lock_objnum].pos;
 
 	//	This is where we create a pile of omega blobs!
+	omega_lock_objnum = lock_objnum;
 	create_omega_blobs(firing_segnum, firing_pos, &goal_pos, parent_objp);
 
 }
@@ -1024,7 +1030,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 
 				vm_vec_sub(&vec_to_curobj, &curobjp->pos, curpos);
 				dist = vm_vec_normalize_quick(&vec_to_curobj);
-				if (dist < max_trackable_dist) {
+				if (dist < max_trackable_dist || Current_level_D1) {
 					dot = vm_vec_dot(&vec_to_curobj, &tracker->orient.fvec);
 
 					// mprintf(0, "Object %i: dist = %7.3f, dot = %7.3f\n", objnum, f2fl(dist), f2fl(dot));
@@ -1144,6 +1150,9 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 			// mprintf((0, "fho_complete:        [%3i] %7.3f, min = %7.3f\n", curobjp-Objects, f2fl(dot), f2fl(MIN_TRACKABLE_DOT)));
 			if (dot > min_trackable_dot) {
 				// mprintf(0, "Object %i: dist = %7.3f, dot = %7.3f\n", objnum, f2fl(dist), f2fl(dot));
+#ifdef debug_obj_num
+//if (tracker-Objects==debug_obj_num)printf("obj %d track to %d dist = %x, dot = %x\n", objnum, dist, dot);
+#endif				
 				if (dot > max_dot) {
 					if (object_to_object_visibility(tracker, &Objects[objnum], FQ_TRANSWALL)) {
 						max_dot = dot;
@@ -1547,7 +1556,7 @@ void Laser_do_weapon_sequence(object *obj)
 				vm_vec_scale(&obj->mtype.phys_info.velocity, speed);
 #ifdef debug_obj_num
 if (obj-Objects==debug_obj_num)
-	printf("obj %d set homing vel %x %x %x\n", obj-Objects,XYZ(&obj->mtype.phys_info.velocity));
+	printf("obj %d set homing vel %x %x %x goal %d\n", obj-Objects,XYZ(&obj->mtype.phys_info.velocity),track_goal);
 #endif
 				if (Current_level_D1) // d1 erroneously uses scaled vector in turn_towards
 					temp_vec = obj->mtype.phys_info.velocity;
@@ -1609,6 +1618,8 @@ int	Zbonkers = 0;
 //	--------------------------------------------------------------------------------------------------
 // Assumption: This is only called by the actual console player, not for network players
 
+/*	static*/ int Spreadfire_toggle=0;
+/*	static*/ int Helix_orientation = 0;
 int do_laser_firing_player(void)
 {
 	player	*plp = &Players[Player_num];
@@ -1618,8 +1629,6 @@ int do_laser_firing_player(void)
 	int		rval = 0;
 	int 		nfires = 1;
 	fix		addval;
-	static int Spreadfire_toggle=0;
-	static int Helix_orientation = 0;
 
 	if (Player_is_dead)
 		return 0;
@@ -1960,20 +1969,21 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			//if (rand() > 24576)
 			//	make_sound = 1;
 			
+			int spreadr = (psrand()/8 - 32767/16)/5;
+			int spreadu = (psrand()/8 - 32767/16)/5;
 			Laser_player_fire_spread( objp, GAUSS_ID, 6,
-						 (psrand()/8 - 32767/16)/5,
-						 (psrand()/8 - 32767/16)/5,
+						 spreadr, spreadu,
 						 make_sound, 0);
 			if (nfires > 1) {
+				spreadr = (psrand()/8 - 32767/16)/5;
+				spreadu = (psrand()/8 - 32767/16)/5;
 				Laser_player_fire_spread( objp, GAUSS_ID, 6,
-							 (psrand()/8 - 32767/16)/5,
-							 (psrand()/8 - 32767/16)/5,
-							 0, 0);
+							 spreadr, spreadu, 0, 0);
 				if (nfires > 2) {
+					spreadr = (psrand()/8 - 32767/16)/5;
+					spreadu = (psrand()/8 - 32767/16)/5;
 					Laser_player_fire_spread( objp, GAUSS_ID, 6,
-								 (psrand()/8 - 32767/16)/5,
-								 (psrand()/8 - 32767/16)/5,
-								 0, 0);
+								 spreadr, spreadu, 0, 0);
 				}
 			}
 			break;

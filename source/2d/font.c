@@ -375,10 +375,11 @@ int gr_internal_string_gl(int x, int y, char *s )
 
 	while (next_row != NULL )
 	{
+		int x;
 		ubyte c, *text_ptr = next_row;
 		next_row = NULL;
 
-		int x = sx == 0x8000 ?
+		x = sx == 0x8000 ?
 			get_centered_x(text_ptr) + grd_curcanv->cv_bitmap.bm_x :
 			sx;
 
@@ -1124,6 +1125,7 @@ int gr_string(int x, int y, char *s )
 	if ( x == 0x8000 )	{
 		if ( y<0 ) clipped |= 1;
 		gr_get_string_size(s, &w, &h, &aw );
+		x = (grd_curcanv->cv_bitmap.bm_w - w) >> 1;
 		// for x, since this will be centered, only look at
 		// width.
 		if ( w > grd_curcanv->cv_bitmap.bm_w ) clipped |= 1;
@@ -1282,6 +1284,8 @@ void gr_close_font( grs_font * font )
 
 		open_font[fontnum].ptr = NULL;
 
+		gl_done_font( font );
+
 		if ( font->ft_chars )
 			free( font->ft_chars );
 		free( font );
@@ -1327,6 +1331,7 @@ grs_font * gr_init_font( char * fontname )
 	CFILE *fontfile;
 	int file_id;
 	int datasize;		//size up to (but not including) palette
+	int data_ofs, chars_ofs, widths_ofs, kerndata_ofs;
 
 	if (first_time) {
 		int i;
@@ -1367,10 +1372,10 @@ grs_font * gr_init_font( char * fontname )
 	font->ft_minchar = cfile_read_byte(fontfile);
 	font->ft_maxchar = cfile_read_byte(fontfile);
 	font->ft_bytewidth = cfile_read_short(fontfile);
-	int data_ofs = cfile_read_int(fontfile);
-	int chars_ofs = cfile_read_int(fontfile); // unused
-	int widths_ofs = cfile_read_int(fontfile);
-	int kerndata_ofs = cfile_read_int(fontfile);
+	data_ofs = cfile_read_int(fontfile);
+	chars_ofs = cfile_read_int(fontfile); // unused
+	widths_ofs = cfile_read_int(fontfile);
+	kerndata_ofs = cfile_read_int(fontfile);
 
 	cfread(font + 1, 1, datasize - FONT_HDR_SIZE, fontfile);
 
@@ -1378,7 +1383,7 @@ grs_font * gr_init_font( char * fontname )
 		(ubyte *)(font + 1) + data_ofs - FONT_HDR_SIZE : (ubyte *)(font + 1);
 	font->ft_chars = NULL;
 	font->ft_widths = font->ft_flags & FT_PROPORTIONAL ?
-		(ubyte *)(font + 1) + widths_ofs - FONT_HDR_SIZE : NULL;
+		(short *)((ubyte *)(font + 1) + widths_ofs - FONT_HDR_SIZE) : NULL;
 	font->ft_kerndata = font->ft_flags & FT_KERNED ?
 		(ubyte *)(font + 1) + kerndata_ofs - FONT_HDR_SIZE : NULL;
 

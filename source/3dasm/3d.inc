@@ -78,7 +78,7 @@ _DATA	segment	dword public USE32 'DATA'
 	extf	Vertex_list
 
 ;Variables local to 3d library
-	extd	free_point_num
+	extd	free_point_num,instance_depth
 
 _DATA	ends
 

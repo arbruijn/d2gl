@@ -397,7 +397,7 @@ void robotmaker_proc( FuelCenter * robotcen )
 		}
 	}
 #ifdef VERBOSE
-printf("robotcen %d flag %d timer %x\n", robotcen-Station,robotcen->Flag,robotcen->Timer);
+printf("robotcen %d flag %d timer %x\n", robotcen->segnum,robotcen->Flag,robotcen->Timer);
 #endif
 
 	// mprintf((0, "Capacity of robot maker #%i is %i\n", robotcen - Station, robotcen->Capacity));
@@ -463,7 +463,7 @@ printf("robotcen %d flag %d timer %x\n", robotcen-Station,robotcen->Flag,robotce
 
  		// mprintf( (0, "Time between morphs %d seconds, dist_to_player = %7.3f\n", f2i(top_time), f2fl(dist_to_player) ));
 		#ifdef VERBOSE
-		printf("Time between morphs %x seconds, dist_to_player = %x\n", top_time, dist_to_player);
+		//printf("Time between morphs %x seconds, dist_to_player = %x\n", top_time, dist_to_player);
 		#endif
 
 
@@ -478,7 +478,7 @@ printf("robotcen %d flag %d timer %x\n", robotcen-Station,robotcen->Flag,robotce
 					if ((byte)(Objects[i].matcen_creator^0x80) == my_station_num)
 						count++;
 			#ifdef VERBOSE
-			printf("robotmaker_proc: mycount=%d\n", count);
+			printf("robotmaker_proc %d: mycount=%d\n", robotcen->segnum, count);
 			#endif
   			if (count > Difficulty_level + 3) {
 				mprintf((0, "Cannot morph: center %i has already put out %i robots.\n", my_station_num, count));
@@ -592,7 +592,8 @@ printf("robotcen %d flag %d timer %x\n", robotcen-Station,robotcen->Flag,robotce
 }
 
 
-#define M_PI 3.14159
+#undef M_PI
+//#define M_PI 3.14159
 
 //-------------------------------------------------------------
 // Called once per frame, replenishes fuel supply.
@@ -609,7 +610,11 @@ void fuelcen_update_all()
 				robotmaker_proc( &Station[i] );
 		} else if ( Station[i].Type == SEGMENT_IS_CONTROLCEN )	{
 			//controlcen_proc( &Station[i] );
-	
+			
+			if (Current_level_D1) {
+				void do_countdown_frame();
+				do_countdown_frame();
+			}
 		} else if ( (Station[i].MaxCapacity > 0) && (PlayerSegment!=&Segments[Station[i].segnum]) )	{
 			if ( Station[i].Capacity < Station[i].MaxCapacity )	{
  				Station[i].Capacity += AmountToreplenish;

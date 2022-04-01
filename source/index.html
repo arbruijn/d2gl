@@ -145,7 +145,7 @@ body{margin:0;display:flex;flex:1 1 0;background:#000}
 </div>
 <script>
 window.addEventListener('resize', dosize);
-function dosize() {
+function dosize1() {
  var outer=document.querySelector('#outer');
  var c=outer.firstChild;w=outer.offsetWidth;h=outer.offsetHeight;
  w=document.documentElement.clientWidth;
@@ -155,10 +155,12 @@ function dosize() {
  c.width=w;
  c.height=h;
  console.log('dosize w='+w+' h='+h);
+}
+function dosize() {
  if (window.Module && Module._gl_set_screen_size)
    Module._gl_set_screen_size(w, h);
 }
-window.requestAnimationFrame(dosize);
+window.requestAnimationFrame(dosize1);
 </script>
 
     <script type='text/javascript'>
@@ -236,6 +238,7 @@ window.requestAnimationFrame(dosize);
         onRuntimeInitialized: function() {
           //this.print("pre init");
           //this.print("ret=" + Module._get_screen());
+          //dosize();
           libinit();
           //this.print("post init");
           //_draw = draw;

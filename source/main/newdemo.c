@@ -164,8 +164,8 @@ byte RenderingWasRecorded[32];
 #define DEMO_GAME_TYPE 			3		//1 was shareware, 2 registered
 
 #ifndef MACINTOSH
-#define DEMO_FILENAME			"demos\\tmpdemo.dem"
-#define DEMO_DIR				"demos\\"
+#define DEMO_FILENAME			"tmpdemo.dem"
+#define DEMO_DIR				"demos/"
 #else
 #define DEMO_FILENAME			":Demos:tmpdemo.dem"
 #define DEMO_DIR				":Demos:"
@@ -2943,7 +2943,11 @@ void newdemo_start_recording()
 	#else
 	if (outfile == NULL) {							//dir doesn't exist and no errno on mac!
 	#endif	
-		mkdir(DEMO_DIR, 0777);								//try making directory
+		mkdir(DEMO_DIR
+			#ifndef __WATCOMC__
+			, 0777
+			#endif
+			);								//try making directory
 		outfile = fopen( DEMO_FILENAME, "wb" );
 	}
 
@@ -2956,6 +2960,8 @@ void newdemo_start_recording()
 		newdemo_record_start_demo();
 		
 }
+
+int Newdemo_no_rename;
 
 char demoname_allowed_chars[] = "azAZ09__--";
 void newdemo_stop_recording()
@@ -3031,6 +3037,10 @@ void newdemo_stop_recording()
 	fclose(outfile);
 	outfile = NULL;
 	Newdemo_state = ND_STATE_NORMAL;
+
+	if (Newdemo_no_rename)
+		return;
+
 	gr_palette_load( gr_palette );
 
 	if (filename[0] != '\0') {
@@ -3112,7 +3122,7 @@ int newdemo_count_demos()
 	FILEFINDSTRUCT find;
 	int NumFiles=0;
 
-	if( !FileFindFirst("demos\\*.DEM", &find ) )	{
+	if( !FileFindFirst(DEMO_DIR "*.dem", &find ) )	{
 		do	{
 			NumFiles++;
 		} while( !FileFindNext( &find ) );
@@ -3144,7 +3154,7 @@ void newdemo_start_playback(char * filename)
 		}
 		RandFileNum = psrand() % NumFiles;
 		NumFiles = 0;
-		if( !FileFindFirst( "demos\\*.DEM", &find ) )	{
+		if( !FileFindFirst( DEMO_DIR "*.dem", &find ) )	{
 			do	{
 				if ( NumFiles==RandFileNum )	{
 					filename = &find.name;

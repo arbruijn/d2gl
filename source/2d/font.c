@@ -1282,6 +1282,8 @@ void gr_close_font( grs_font * font )
 
 		open_font[fontnum].ptr = NULL;
 
+		gl_done_font( font );
+
 		if ( font->ft_chars )
 			free( font->ft_chars );
 		free( font );

@@ -609,6 +609,10 @@ void gl_init_font(grs_font *font) {
     //    pcx_write_bitmap("monofnt.pcx", &font->ft_bitmap, gr_palette);
 }
 
+void gl_done_font(grs_font *font) {
+    free(font->ft_bitmap.bm_data);
+}
+
 void gl_font_start(grs_font *font, ubyte color) {
     if (!font->ft_bitmap.bm_handle) {
         int fontpal[256];
@@ -743,6 +747,7 @@ void gl_ubitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *bm) {}
 void gl_font_start(grs_font *font, ubyte color) {}
 void gl_draw_char(int sx, int sy, grs_font *font, int c) {}
 void gl_init_font(grs_font *font) {}
+void gl_done_font() {}
 void gl_init_canvas(grs_canvas *canv) {}
 void gl_init() {}
 void gl_font_end() {}

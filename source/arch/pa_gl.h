@@ -16,6 +16,7 @@ void gl_font_start(grs_font *font, ubyte color);
 void gl_draw_char(int sx, int sy, grs_font *font, int c);
 void gl_font_end();
 void gl_init_font(grs_font *font);
+void gl_done_font(grs_font *font);
 void gl_init_canvas(grs_canvas *canv);
 void gl_init();
 void gl_pal_changed();

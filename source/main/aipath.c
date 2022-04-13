@@ -1,4 +1,4 @@
-//#define VERBOSE
+#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -351,11 +351,11 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 				snum = random_xlate[sidenum];
 
 			if (IS_CHILD(segp->children[snum]) && ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
-				//if (GameTime==0x4c2b800) printf("create_path openable %d %d\n", cur_seg, snum);
 				int			this_seg = segp->children[snum];
+				//if (GameTime==0x01d3b800) printf("create_path openable %d %d c=%d v=%d d=%d\n", cur_seg, snum, this_seg, visited[this_seg], cur_depth+1);
 				if (visited[this_seg]) continue; // temporary? d2x-xl compat
 				Assert(this_seg != -1);
-				if (((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
+				if (!Current_level_D1 && ((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
 					vms_vector	center_point;
 
 					fvi_query	fq;
@@ -508,9 +508,9 @@ cpp_done1: ;
 #endif
 
 	*num_points = l_num_points;
-#ifdef VERBOSE
+#if defined(VERBOSE)||defined(VERBOSE1)
 printf("create_path_points obj %d start %d end %d idx %d len %d\n",
-	objp-Objects,start_seg,end_seg,psegs-Point_segs,*num_points);
+	objp-Objects,start_seg,end_seg,original_psegs-Point_segs,*num_points);
 #endif	
 	return 0;
 }
@@ -560,7 +560,7 @@ int polish_path(object *objp, point_seg *psegs, int num_points)
 		if (hit_type == HIT_NONE)
 			first_point = i+1;
 		else {
-			#ifdef VERBOSE
+			#if 0 //def VERBOSE
 			printf("polish_path idx %d hit %d at %x %x %x seg %d side %d\n", psegs-Point_segs, hit_type,
 				hit_data.hit_pnt.x,hit_data.hit_pnt.y,hit_data.hit_pnt.z,
 				hit_data.hit_seg, hit_data.hit_side);
@@ -1028,7 +1028,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 
 // mprintf((0, "Obj %i, dist=%6.1f index=%i len=%i seg=%i pos = %6.1f %6.1f %6.1f.\n", objp-Objects, f2fl(vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos)), aip->cur_path_index, aip->path_length, objp->segnum, f2fl(objp->pos.x), f2fl(objp->pos.y), f2
-#ifdef VERBOSE
+#if 0 //def VERBOSE
 printf("obj %i index=%i len=%i seg=%i hide_idx=%i path_len=%i\n", objp-Objects, aip->cur_path_index, aip->path_length, objp->segnum, aip->hide_index, aip->path_length);
 #endif
 
@@ -1050,7 +1050,8 @@ printf("obj %i index=%i len=%i seg=%i hide_idx=%i path_len=%i\n", objp-Objects, 
 		//Int3();	//	Contact Mike: Bad.  Path goes into what is believed to be free space.
 		//	This is debugging code.  Figure out why garbage collection
 		//	didn't compress this object's path information.
-		ai_path_garbage_collect();
+		if (!Current_level_D1)
+			ai_path_garbage_collect();
 		//force_dump_ai_objects_all("Error in ai_follow_path");
 		ai_reset_all_paths();
 	}
@@ -1072,6 +1073,8 @@ printf("obj %i index=%i len=%i seg=%i hide_idx=%i path_len=%i\n", objp-Objects, 
 			} else {
 				ailp->mode = AIM_RUN_FROM_OBJECT;	//	It gets bashed in create_n_segment_path
 			}
+			if (Current_level_D1)
+				return;
 		} else if (robptr->companion == 0) {
 			ailp->mode = AIM_STILL;
 			if (!Current_level_D1)

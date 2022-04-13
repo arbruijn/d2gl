@@ -820,7 +820,7 @@ WCFLAGS += -Ifixasm -Ivecmatasm -I3dasm -Iarch/watcom
 ACFLAGS += -I../../desrun/deslog
 CFLAGS += $(ACFLAGS) $(UCFLAGS)
 CFLAGS += -Wno-implicit-int -Wno-unused-result -Wno-missing-braces -Wno-multichar
-CFLAGS += -O3 -ggdb -fno-pie -fcf-protection=none 
+CFLAGS += -O0 -ggdb -fno-pie -fcf-protection=none 
 CFLAGS += -fno-stack-protector
 #CFLAGS += -fpack-struct
 EMCFLAGS += $(ACFLAGS) $(UCFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s USE_SDL=1

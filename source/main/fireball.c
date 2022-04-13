@@ -159,7 +159,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 									phys_apply_rot(obj0p,&neg_vforce);
 								}
 								if ( obj0p->shields >= 0 ) {
-									if (Robot_info[obj0p->id].boss_flag)
+									if (!Current_level_D1 && Robot_info[obj0p->id].boss_flag)
 										if (Boss_invulnerable_matter[Robot_info[obj0p->id].boss_flag-BOSS_D2])
 											damage /= 4;
 

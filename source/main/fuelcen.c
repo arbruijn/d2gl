@@ -397,7 +397,7 @@ void robotmaker_proc( FuelCenter * robotcen )
 		}
 	}
 #ifdef VERBOSE
-printf("robotcen %d flag %d timer %x\n", robotcen->segnum,robotcen->Flag,robotcen->Timer);
+printf("robotcen %d flag %d timer %x\n", robotcen-Station,robotcen->Flag,robotcen->Timer);
 #endif
 
 	// mprintf((0, "Capacity of robot maker #%i is %i\n", robotcen - Station, robotcen->Capacity));
@@ -478,7 +478,7 @@ printf("robotcen %d flag %d timer %x\n", robotcen->segnum,robotcen->Flag,robotce
 					if ((byte)(Objects[i].matcen_creator^0x80) == my_station_num)
 						count++;
 			#ifdef VERBOSE
-			printf("robotmaker_proc %d: mycount=%d\n", robotcen->segnum, count);
+			printf("robotmaker_proc %d: mycount=%d\n", my_station_num, count);
 			#endif
   			if (count > Difficulty_level + 3) {
 				mprintf((0, "Cannot morph: center %i has already put out %i robots.\n", my_station_num, count));
@@ -610,7 +610,7 @@ void fuelcen_update_all()
 				robotmaker_proc( &Station[i] );
 		} else if ( Station[i].Type == SEGMENT_IS_CONTROLCEN )	{
 			//controlcen_proc( &Station[i] );
-			
+	
 			if (Current_level_D1) {
 				void do_countdown_frame();
 				do_countdown_frame();

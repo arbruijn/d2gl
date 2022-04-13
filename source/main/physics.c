@@ -1,4 +1,4 @@
-//#define VERBOSE_MIN
+#define VERBOSE_MIN
 //#define debug_objnum 15
 //#define EXTRA_DEBUG_OBJ
 //#define VERBOSE

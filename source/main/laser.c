@@ -1152,7 +1152,7 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 				// mprintf(0, "Object %i: dist = %7.3f, dot = %7.3f\n", objnum, f2fl(dist), f2fl(dot));
 #ifdef debug_obj_num
 //if (tracker-Objects==debug_obj_num)printf("obj %d track to %d dist = %x, dot = %x\n", objnum, dist, dot);
-#endif				
+#endif
 				if (dot > max_dot) {
 					if (object_to_object_visibility(tracker, &Objects[objnum], FQ_TRANSWALL)) {
 						max_dot = dot;

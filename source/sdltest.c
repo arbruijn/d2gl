@@ -549,7 +549,7 @@ extern int no_render;
 extern int no_read_player_file;
 
 int test_main2(int argc, char **argv) {
-	int d1 = 0;
+	int d1 = 1;
 	int display_mode, ret;
 	//init_data_files();
 	

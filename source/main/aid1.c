@@ -1,5 +1,5 @@
 #define VERBOSE
-#define debug_objnum 15
+#define debug_objnum 7
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -3446,7 +3446,7 @@ void do_ai_frame_d1(object *obj)
 
 #ifdef VERBOSE
 	if (objnum==debug_objnum)
-		printf("obj %d ai mode %d cur %d goal %d plen %d\n", objnum, ailp->mode, aip->CURRENT_STATE, aip->GOAL_STATE, aip->path_length);
+		printf("obj %d ai mode %d cur %d goal %d plen %d shields %x\n", objnum, ailp->mode, aip->CURRENT_STATE, aip->GOAL_STATE, aip->path_length, obj->shields);
 #endif
 }
 

@@ -1,4 +1,4 @@
-//#define VERBOSE
+#define VERBOSE
 #define XYZ(v) (v)->x,(v)->y,(v)->z
 
 #define NEW_FVI_STUFF 1

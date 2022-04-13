@@ -442,7 +442,7 @@ _exit_cheat:
 	dist_to_player = vm_vec_dist_quick(&Believed_player_pos, &obj->pos);
 
 	#ifdef PRINT_DO_FRAME
-	printf("do_ai_frame time=%x count=%d obj=%d pvis=%d dist=%x beh=%x mode=%d g=%d\n", GameTime, FrameCount, objnum, previous_visibility, dist_to_player, aip->behavior, ailp->mode, aip->CURRENT_GUN);
+	if(Robot_info[obj->id].companion)printf("do_ai_frame obj %d awa=%d pvis=%d beh=%x mode=%d g=%d cs=%d gs=%d\n", objnum, ailp->player_awareness_type, previous_visibility, aip->behavior, ailp->mode, aip->CURRENT_GUN, aip->CURRENT_STATE, aip->GOAL_STATE);
 	#endif
 
 //	if (robptr->companion)
@@ -803,7 +803,8 @@ _exit_cheat:
 				do_stuff = 1;
 			else if (openable_doors_in_segment(Point_segs[aip->hide_index + aip->cur_path_index + aip->PATH_DIR].segnum) != -1)
 				do_stuff = 1;
-			else if (openable_doors_in_segment(Point_segs[aip->hide_index + aip->cur_path_index + 2*aip->PATH_DIR].segnum) != -1)
+			else if (/*aip->cur_path_index + 2*aip->PATH_DIR < aip->path_length &&*/
+				openable_doors_in_segment(Point_segs[aip->hide_index + aip->cur_path_index + 2*aip->PATH_DIR].segnum) != -1)
 				do_stuff = 1;
 			else if ((ailp->mode == AIM_GOTO_PLAYER) && (dist_to_player < 3*MIN_ESCORT_DISTANCE/2) && (vm_vec_dot(&ConsoleObject->orient.fvec, &vec_to_player) > -F1_0/4)) {
 				// mprintf((0, "Firing at player because dot = %7.3f\n", f2fl(vm_vec_dot(&ConsoleObject->orient.fvec, &vec_to_player))));

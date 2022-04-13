@@ -1,4 +1,4 @@
-//#define VERBOSE
+#define VERBOSE
 //#define VERBOSE_CHECK_FIRE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
@@ -1376,7 +1376,7 @@ int obj_create(ubyte type,ubyte id,int segnum,vms_vector *pos,
 		Debris_object_count++;
 
 #ifdef VERBOSE
-printf("obj_create %d type %d id %d sig %d\n", objnum, obj->type, obj->id, obj->signature);
+printf("obj_create %d type %d id %d sig %d at %x %x %x\n", objnum, obj->type, obj->id, obj->signature, obj->pos.x, obj->pos.y, obj->pos.z);
 #endif
 	return objnum;
 }

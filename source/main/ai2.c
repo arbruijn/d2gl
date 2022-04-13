@@ -372,7 +372,7 @@ void init_ai_objects(void)
 	Boss_dying_sound_playing = 0;
 	Boss_dying = 0;
 	// -- unused! MK, 10/21/95 -- Boss_been_hit = 0;
-	Gate_interval = F1_0*4 - Difficulty_level*i2f(2)/3;
+	Gate_interval = Current_level_D1 ? F1_0*5 - Difficulty_level*F1_0/2 : F1_0*4 - Difficulty_level*i2f(2)/3;
 
 	Ai_initialized = 1;
 
@@ -380,7 +380,10 @@ void init_ai_objects(void)
 
 	init_buddy_for_level();
 
-	if (Current_level_num == Last_level) {
+	if (Current_level_D1) {
+		Boss_teleport_interval = F1_0*8;
+		Boss_cloak_interval = F1_0*10;
+	} else if (Current_level_num == Last_level) {
 		Boss_teleport_interval = F1_0*10;
 		Boss_cloak_interval = F1_0*15;					//	Time between cloaks
 	} else {
@@ -1866,7 +1869,8 @@ int openable_doors_in_segment(int segnum)
 	for (i=0; i<MAX_SIDES_PER_SEGMENT; i++) {
 		if (Segments[segnum].sides[i].wall_num != -1) {
 			int	wall_num = Segments[segnum].sides[i].wall_num;
-			if ((Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys == KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) && !(WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN))
+			if ((Walls[wall_num].type == WALL_DOOR) && (Walls[wall_num].keys == KEY_NONE) && (Walls[wall_num].state == WALL_DOOR_CLOSED) && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
+				(!(WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN) || Current_level_D1))
 				return i;
 		}
 	}
@@ -1954,7 +1958,7 @@ int create_gated_robot( int segnum, int object_id, vms_vector *pos)
 			if (Objects[i].matcen_creator == BOSS_GATE_MATCEN_NUM)
 				count++;
 
-	if (count > 2*Difficulty_level + 6) {
+	if (count > 2*Difficulty_level + (Current_level_D1 ? 3 : 6)) {
 		//mprintf((0, "Cannot gate in a robot until you kill one.\n"));
 		Last_gate_time = GameTime - 3*Gate_interval/4;
 		return -1;
@@ -1983,7 +1987,8 @@ int create_gated_robot( int segnum, int object_id, vms_vector *pos)
 
 	//mprintf((0, "Gating in object %i in segment %i\n", objnum, segp-Segments));
 
-	Objects[objnum].lifeleft = F1_0*30;	//	Gated in robots only live 30 seconds.
+	if (!Current_level_D1)
+		Objects[objnum].lifeleft = F1_0*30;	//	Gated in robots only live 30 seconds.
 
 	Net_create_objnums[0] = objnum; // A convenient global to get objnum back to caller for multiplayer
 

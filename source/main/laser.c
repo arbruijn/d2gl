@@ -1024,7 +1024,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 
 				vm_vec_sub(&vec_to_curobj, &curobjp->pos, curpos);
 				dist = vm_vec_normalize_quick(&vec_to_curobj);
-				if (dist < max_trackable_dist) {
+				if (dist < max_trackable_dist || Current_level_D1) {
 					dot = vm_vec_dot(&vec_to_curobj, &tracker->orient.fvec);
 
 					// mprintf(0, "Object %i: dist = %7.3f, dot = %7.3f\n", objnum, f2fl(dist), f2fl(dot));

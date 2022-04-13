@@ -352,7 +352,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 			if (IS_CHILD(segp->children[snum]) && ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
 				int			this_seg = segp->children[snum];
 				Assert(this_seg != -1);
-				if (((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
+				if (!Current_level_D1 && ((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
 					vms_vector	center_point;
 
 					fvi_query	fq;
@@ -1033,7 +1033,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		//Int3();	//	Contact Mike: Bad.  Path goes into what is believed to be free space.
 		//	This is debugging code.  Figure out why garbage collection
 		//	didn't compress this object's path information.
-		ai_path_garbage_collect();
+		if (!Current_level_D1)
+			ai_path_garbage_collect();
 		//force_dump_ai_objects_all("Error in ai_follow_path");
 		ai_reset_all_paths();
 	}
@@ -1055,6 +1056,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			} else {
 				ailp->mode = AIM_RUN_FROM_OBJECT;	//	It gets bashed in create_n_segment_path
 			}
+			if (Current_level_D1)
+				return;
 		} else if (robptr->companion == 0) {
 			ailp->mode = AIM_STILL;
 			if (!Current_level_D1)

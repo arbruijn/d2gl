@@ -610,6 +610,10 @@ void fuelcen_update_all()
 		} else if ( Station[i].Type == SEGMENT_IS_CONTROLCEN )	{
 			//controlcen_proc( &Station[i] );
 	
+			if (Current_level_D1) {
+				void do_countdown_frame();
+				do_countdown_frame();
+			}
 		} else if ( (Station[i].MaxCapacity > 0) && (PlayerSegment!=&Segments[Station[i].segnum]) )	{
 			if ( Station[i].Capacity < Station[i].MaxCapacity )	{
  				Station[i].Capacity += AmountToreplenish;

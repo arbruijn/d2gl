@@ -2815,10 +2815,6 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 				return;
 
 			fuelcen_update_all();
-			if (Current_level_D1) {
-				void do_countdown_frame();
-				do_countdown_frame();
-			}
 
 			do_ai_frame_all();
 

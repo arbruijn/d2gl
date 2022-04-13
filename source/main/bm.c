@@ -287,7 +287,7 @@ void read_robot_info(CFILE *fp, int inNumRobotsToRead, int inOffset)
 
 		Robot_info[i].deathroll_sound = data_d1 ? SOUND_BOSS_SHARE_DIE : cfile_read_byte(fp);
 		Robot_info[i].glow = data_d1 ? 0 : cfile_read_byte(fp);
-		Robot_info[i].behavior = data_d1 ? AIB_NORMAL : cfile_read_byte(fp);
+		Robot_info[i].behavior = data_d1 ? i == 10 ? AIB_RUN_FROM : AIB_NORMAL : cfile_read_byte(fp);
 		Robot_info[i].aim = data_d1 ? 255 : cfile_read_byte(fp);
 
 		for (j = 0; j < MAX_GUNS + 1; j++) {

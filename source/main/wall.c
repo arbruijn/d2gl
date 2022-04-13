@@ -1396,7 +1396,8 @@ void remove_obsolete_stuck_objects(void)
 	if (Stuck_objects[objnum].wallnum != -1)
 		if ((Walls[Stuck_objects[objnum].wallnum].state != WALL_DOOR_CLOSED) || (Objects[Stuck_objects[objnum].objnum].signature != Stuck_objects[objnum].signature)) {
 			Num_stuck_objects--;
-			Objects[Stuck_objects[objnum].objnum].lifeleft = F1_0/8;
+			if (!Current_level_D1)
+				Objects[Stuck_objects[objnum].objnum].lifeleft = F1_0/8;
 			Stuck_objects[objnum].wallnum = -1;
 		}
 
@@ -1419,7 +1420,7 @@ void kill_stuck_objects(int wallnum)
 	for (i=0; i<MAX_STUCK_OBJECTS; i++)
 		if (Stuck_objects[i].wallnum == wallnum) {
 			if (Objects[Stuck_objects[i].objnum].type == OBJ_WEAPON) {
-				Objects[Stuck_objects[i].objnum].lifeleft = F1_0/8;
+				Objects[Stuck_objects[i].objnum].lifeleft = Current_level_D1 ? F1_0/4 : F1_0/8;
 			} else
 				mprintf((1, "Warning: Stuck object of type %i, expected to be of type %i, see wall.c\n", Objects[Stuck_objects[i].objnum].type, OBJ_WEAPON));
 				// Int3();	//	What?  This looks bad.  Object is not a weapon and it is stuck in a wall!

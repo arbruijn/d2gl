@@ -398,7 +398,9 @@ int do_powerup(object *obj)
 				if ((Game_mode & GM_MULTI) )
 					ammo -= VULCAN_AMMO_AMOUNT;	//don't let take all ammo
 
-			if (ammo > 0) {
+			if (!used && Current_level_D1) {
+				used = pick_up_vulcan_ammo();
+			} else if (ammo > 0) {
 				int ammo_used;
 				ammo_used = pick_up_ammo(CLASS_PRIMARY, VULCAN_INDEX, ammo);
 				obj->ctype.powerup_info.count -= ammo_used;

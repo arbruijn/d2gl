@@ -352,7 +352,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 
 			if (IS_CHILD(segp->children[snum]) && ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
 				int			this_seg = segp->children[snum];
-				//if (GameTime==0x01d3b800) printf("create_path openable %d %d c=%d v=%d d=%d\n", cur_seg, snum, this_seg, visited[this_seg], cur_depth+1);
+				if (GameTime==0x54f0000) printf("create_path openable %d %d c=%d v=%d d=%d\n", cur_seg, snum, this_seg, visited[this_seg], cur_depth+1);
 				if (visited[this_seg]) continue; // temporary? d2x-xl compat
 				Assert(this_seg != -1);
 				if (!Current_level_D1 && ((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {

@@ -365,7 +365,7 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 	if (!Current_level_D1)
 		Ai_local_info[objnum].mode = ai_behavior_to_mode(default_behavior);
 	else if (default_behavior == AIB_RUN_FROM)
-                Ai_local_info[objnum].mode = AIM_RUN_FROM_OBJECT;
+		Ai_local_info[objnum].mode = AIM_RUN_FROM_OBJECT;
 
 	return obj;
 }

@@ -328,7 +328,7 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
 DESCENT2_SRCS += aid1.c
-#DESCENT2_SRCS += terrain.c
+DESCENT2_SRCS += terrain.c
 
 #ifeq ($(TARGSYS),WIN32)
 DESCENT2WIN_SRCS += winferno.c descentw.c modem.c joydefsw.c windigi.c movie.c
@@ -807,7 +807,7 @@ ACFLAGS += -DNDOS -DREPRO_FIX
 # -DKEY_COMMAND=512 
 UCFLAGS += -DNASM
 UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
-#ACFLAGS += -DENDLEVEL
+ACFLAGS += -DENDLEVEL
 ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
 ACFLAGS += -DNETWORK=1 -DNPACK
 #ACFLAGS += -DD1SW -DSHAREWARE

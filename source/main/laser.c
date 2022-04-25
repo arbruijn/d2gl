@@ -173,9 +173,10 @@ int laser_are_related( int o1, int o2 )
 	if ( Objects[o2].type == OBJ_WEAPON  )
 		if ( (Objects[o2].ctype.laser_info.parent_num==o1) && (Objects[o2].ctype.laser_info.parent_signature==Objects[o1].signature) )
 			//	o2 is a weapon, o1 is the parent of 2, so if o2 is PROXIMITY_BOMB and o1 is player, they are related only if o1 < 2.0 seconds old
-			if ((Objects[o2].id == PHOENIX_ID && (GameTime > Objects[o2].ctype.laser_info.creation_time + F1_0/4)) || 
+			if (!Current_level_D1 &&
+				((Objects[o2].id == PHOENIX_ID && (GameTime > Objects[o2].ctype.laser_info.creation_time + F1_0/4)) || 
 			   (Objects[o2].id == GUIDEDMISS_ID && (GameTime > Objects[o2].ctype.laser_info.creation_time + F1_0*2)) || 
-				(((Objects[o2].id == PROXIMITY_ID) || (Objects[o2].id == SUPERPROX_ID)) && (GameTime > Objects[o2].ctype.laser_info.creation_time + F1_0*4))) {
+				(((Objects[o2].id == PROXIMITY_ID) || (Objects[o2].id == SUPERPROX_ID)) && (GameTime > Objects[o2].ctype.laser_info.creation_time + F1_0*4)))) {
 				return 0;
 			} else
 				return 1;

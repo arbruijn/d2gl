@@ -1,5 +1,5 @@
-#define VERBOSE
-#define debug_objnum 7
+//#define VERBOSE
+#define debug_objnum 17
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -2265,7 +2265,7 @@ static void teleport_boss(object *objp)
 	#ifndef NDEBUG
 	mprintf((0, "Boss teleported to segment %i\n", rand_segnum));
 	#endif
-	printf("Boss teleported to segment %i\n", rand_segnum);
+	//printf("Boss teleported to segment %i\n", rand_segnum);
 
 	//	After a teleport, boss can fire right away.
 	Ai_local_info[objp-Objects].next_fire = 0;
@@ -2358,6 +2358,14 @@ static fix	Prev_boss_shields = -1;
 //	Do special stuff for a boss.
 static void do_boss_stuff_d1(object *objp)
 {
+	#if 1
+	printf("%x boss pvis %d hit %x cloak %d start %x end %x last tele %x last gate %x sh %x\n",
+		GameTime,
+		0/*player_visibility*/, /*Boss_hit_time == -F1_0*10 ? 0 : Boss_hit_time,*/Boss_hit_this_frame,
+		objp->ctype.ai_info.CLOAKED, Boss_cloak_start_time, Boss_cloak_end_time,
+		Last_teleport_time, Last_gate_time, objp->shields);
+	#endif
+
     //  New code, fixes stupid bug which meant boss never gated in robots if > 32767 seconds played.
     if (Last_teleport_time > GameTime)
         Last_teleport_time = GameTime;
@@ -3444,10 +3452,10 @@ void do_ai_frame_d1(object *obj)
 			aip->CURRENT_GUN = 0;
 	}
 
-#ifdef VERBOSE
+	#ifdef debug_objnum
 	if (objnum==debug_objnum)
-		printf("obj %d ai mode %d cur %d goal %d plen %d shields %x\n", objnum, ailp->mode, aip->CURRENT_STATE, aip->GOAL_STATE, aip->path_length, obj->shields);
-#endif
+		printf("obj %d ai mode %d cur %d goal %d plen %d\n", objnum, ailp->mode, aip->CURRENT_STATE, aip->GOAL_STATE, aip->path_length, obj->shields);
+	#endif
 }
 
 //--mk, 121094 -- // ----------------------------------------------------------------------------------

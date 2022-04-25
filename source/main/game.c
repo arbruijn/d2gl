@@ -2814,6 +2814,7 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 
 			Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
+			printf("shields %x energy %x ammo %d\n", Players[Player_num].shields, Players[Player_num].energy, Players[Player_num].primary_ammo[1]);
 			object_move_all();
 			powerup_grab_cheat_all();
 

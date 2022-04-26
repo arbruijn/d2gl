@@ -794,6 +794,14 @@ void gl_line(ubyte color, g3s_point *p0, g3s_point *p1) {
     glUseProgram(0);
 }
 
+void gl_clip(int l, int t, int r, int b) {
+	glScissor(l, t, r, b);
+	glEnable(GL_SCISSOR_TEST);
+}
+
+void gl_clip_off() {
+	glDisable(GL_SCISSOR_TEST);
+}
 #else
 #include "gr.h"
 #include "3d.h"
@@ -820,4 +828,6 @@ void gl_set_screen_size(int x, int y) {}
 void gl_clear() {}
 void gl_line_2d() {}
 void gl_line(ubyte color, int nv, g3s_point **pointlist) {}
+void gl_clip(int l, int t, int r, int b) {}
+void gl_clip_off() {}
 #endif

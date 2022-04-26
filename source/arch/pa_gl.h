@@ -24,3 +24,5 @@ void gl_set_screen_size(int, int);
 void gl_clear();
 void gl_line_2d(ubyte color, int, int, int, int);
 void gl_line(ubyte color, g3s_point *p0, g3s_point *p1);
+void gl_clip(int, int, int, int);
+void gl_clip_off();

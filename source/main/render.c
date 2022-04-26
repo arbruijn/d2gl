@@ -47,6 +47,7 @@ static char rcsid[] = "$Id: render.c 2.42 1996/12/04 18:28:12 matt Exp $";
 #include "newmenu.h"
 #include "mem.h"
 #include "piggy.h"
+#include "pa_gl.h"
 
 #define	INITIAL_LOCAL_LIGHT	(F1_0/4)		// local light value in segment of occurence (of light emission)
 
@@ -1362,7 +1363,7 @@ int n_sort_items;
 //compare function for object sort. 
 int sort_func(const void *av,const void *bv)
 {
-	sort_item *a = av, *b = bv;
+	const sort_item *a = av, *b = bv;
 	fix delta_dist;
 	object *obj_a,*obj_b;
 
@@ -2046,6 +2047,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 		//if (!no_render_flag[nn])
 		if (segnum!=-1 && (_search_mode || visited[segnum]!=255)) {
+			int clipped;
 			//set global render window vars
 
 			if (window_check) {
@@ -2053,6 +2055,12 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 				Window_clip_top   = render_windows[nn].top;
 				Window_clip_right = render_windows[nn].right;
 				Window_clip_bot   = render_windows[nn].bot;
+				clipped = Window_clip_left || Window_clip_top ||
+					Window_clip_right != grd_curcanv->cv_bitmap.bm_w - 1 ||
+					Window_clip_top != grd_curcanv->cv_bitmap.bm_h - 1;
+				if (clipped)
+					gl_clip(Window_clip_left, grd_curcanv->cv_bitmap.bm_h - Window_clip_bot - 1,
+                        Window_clip_right - Window_clip_left + 1, Window_clip_bot - Window_clip_top + 1);
 			}
 
 			//mprintf((0," %d",segnum));
@@ -2061,6 +2069,8 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 			visited[segnum]=255;
 
 			if (window_check) {		//reset for objects
+				if (clipped)
+					gl_clip_off();
 				Window_clip_left  = Window_clip_top = 0;
 				Window_clip_right = grd_curcanv->cv_bitmap.bm_w-1;
 				Window_clip_bot   = grd_curcanv->cv_bitmap.bm_h-1;

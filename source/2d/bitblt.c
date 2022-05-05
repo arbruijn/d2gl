@@ -11,6 +11,7 @@ AND AGREES TO THE TERMS HEREIN AND ACCEPTS THE SAME BY USE OF THIS FILE.
 COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 */
 
+#include <string.h>
 #include "pa_enabl.h"                   //$$POLY_ACC
 #include "mem.h"
 #include "gr.h"
@@ -34,7 +35,7 @@ extern void gr_vesa_bitmap( grs_bitmap * source, grs_bitmap * dest, int x, int y
 // This code aligns edi so that the destination is aligned to a dword boundry before rep movsd
 void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels );
 
-#ifdef NASM
+#if defined(NASM) || !defined(__WATCOMC__)
 
 #define THRESHOLD	8
 
@@ -46,6 +47,9 @@ ubyte test_byteblit = 0;
 
 void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels )
 {
+#if 1
+	memcpy(dest, src, num_pixels);
+#else
 	int i;
 	uint n, r;
 	double *d, *s;
@@ -78,6 +82,7 @@ void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels )
 	d1 = (ubyte *)d;
 	for (i = 0; i < r; i++)
 		*d1++ = *s1++;
+#endif
 }
 
 #endif	//#ifdef MACINTOSH
@@ -85,7 +90,7 @@ void gr_linear_movsd(ubyte * src, ubyte * dest, int num_pixels )
 
 void gr_linear_rep_movsdm(ubyte * src, ubyte * dest, int num_pixels );
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 #pragma aux gr_linear_rep_movsdm parm [esi] [edi] [ecx] modify exact [ecx esi edi eax] = \
 "nextpixel:"					\
 	"mov	al,[esi]"			\
@@ -115,7 +120,7 @@ void gr_linear_rep_movsdm(ubyte * src, ubyte * dest, int num_pixels )
 
 void gr_linear_rep_movsdm_faded(ubyte * src, ubyte * dest, int num_pixels, ubyte fade_value );
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 #pragma aux gr_linear_rep_movsdm_faded parm [esi] [edi] [ecx] [ebx] modify exact [ecx esi edi eax ebx] = \
 "  xor eax, eax"	\
 "  mov ah, bl"  \
@@ -156,7 +161,7 @@ void gr_linear_rep_movsdm_faded(ubyte * src, ubyte * dest, int num_pixels, ubyte
 
 void gr_linear_rep_movsd_2x(ubyte * src, ubyte * dest, int num_dest_pixels );
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 
 #pragma aux gr_linear_rep_movsd_2x parm [esi] [edi] [ecx] modify exact [ecx esi edi eax ebx] = \
 	"shr	ecx, 1"				\
@@ -216,7 +221,7 @@ void gr_linear_rep_movsd_2x(ubyte *src, ubyte *dest, int num_pixels)
 
 void modex_copy_column(ubyte * src, ubyte * dest, int num_pixels, int src_rowsize, int dest_rowsize );
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 #pragma aux modex_copy_column parm [esi] [edi] [ecx] [ebx] [edx] modify exact [ecx esi edi] = \
 "nextpixel:"							\
 	"mov	al,[esi]"			\
@@ -239,7 +244,7 @@ void modex_copy_column(ubyte * src, ubyte * dest, int num_pixels, int src_rowsiz
 
 void modex_copy_column_m(ubyte * src, ubyte * dest, int num_pixels, int src_rowsize, int dest_rowsize );
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 
 #pragma aux modex_copy_column_m parm [esi] [edi] [ecx] [ebx] [edx] modify exact [ecx esi edi] = \
 "nextpixel:"							\
@@ -332,7 +337,7 @@ void gr_ubitmap00m( int x, int y, grs_bitmap *bm )
 //"aligned4:							"	\
 
 void modex_copy_scanline( ubyte * src, ubyte * dest, int npixels );
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 #pragma aux modex_copy_scanline parm [esi] [edi] [ecx] modify exact [ecx esi edi eax ebx edx] = \
 "		mov	ebx, ecx				"	\
 "		and	ebx, 11b				"	\
@@ -373,7 +378,7 @@ void modex_copy_scanline( ubyte * src, ubyte * dest, int npixels )
 
 void modex_copy_scanline_2x( ubyte * src, ubyte * dest, int npixels );
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 #pragma aux modex_copy_scanline_2x parm [esi] [edi] [ecx] modify exact [ecx esi edi eax ebx edx] = \
 "		mov	ebx, ecx				"	\
 "		and	ebx, 11b				"	\
@@ -873,7 +878,7 @@ void gr_bm_ubitblt00m(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap *
 
 extern void gr_lbitblt( grs_bitmap * source, grs_bitmap * dest, int height, int width );
 
-#ifdef NASM
+#if 1 //!defined(NASM) && defined(__WATCOMC__)
 
 // width == number of destination pixels
 void gr_linear_movsd_double(ubyte *src, ubyte *dest, int width)

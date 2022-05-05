@@ -38,7 +38,7 @@ static char rcsid[] = "$Id: terrain.c 2.1 1995/04/19 15:28:07 samir Exp $";
 #define GRID_SCALE	i2f(2*20)
 #define HEIGHT_SCALE	f1_0
 
-int grid_w,grid_h;
+int grid_w,grid_h,grid_size_mask;
 
 g3s_uvl uvl_list1[] = { {0,0,0}, {f1_0,0,0},  {0,f1_0,0} };
 g3s_uvl uvl_list2[] = { {f1_0,0,0}, {f1_0,f1_0,0},  {0,f1_0,0} };
@@ -46,8 +46,8 @@ g3s_uvl uvl_list2[] = { {f1_0,0,0}, {f1_0,f1_0,0},  {0,f1_0,0} };
 ubyte *height_array;
 ubyte *light_array;
 
-#define HEIGHT(_i,_j) (height_array[(_i)*grid_w+(_j)])
-#define LIGHT(_i,_j) light_array[(_i)*grid_w+(_j)]
+#define HEIGHT(_i,_j) (height_array[((_i)*grid_w+(_j))&grid_size_mask])
+#define LIGHT(_i,_j) light_array[((_i)*grid_w+(_j))&grid_size_mask]
 
 //!!#define HEIGHT(_i,_j)	height_array[(grid_h-1-j)*grid_w+(_i)]
 //!!#define LIGHT(_i,_j)		light_array[(grid_h-1-j)*grid_w+(_i)]
@@ -359,6 +359,7 @@ void load_terrain(char *filename)
 
 	grid_w = height_bitmap.bm_w;
 	grid_h = height_bitmap.bm_h;
+	grid_size_mask = grid_w * grid_h - 1;
 
 	Assert(grid_w <= GRID_MAX_SIZE);
 	Assert(grid_h <= GRID_MAX_SIZE);
@@ -450,6 +451,7 @@ void build_light_table()
 		atexit(free_light_table);		//first time
 
 	MALLOC(light_array,ubyte,grid_w*grid_h);
+	memset(light_array,0,grid_w*grid_h);
 
 	for (i=1;i<grid_w;i++)
 		for (j=1;j<grid_h;j++) {

@@ -1,3 +1,4 @@
+#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -169,7 +170,7 @@ int stop_count,start_count;
 int time_stopped,time_started;
 #endif
 
-#ifndef NASM
+#ifndef NASM2D
 ubyte * Game_cockpit_copy_code = NULL;
 #else
 ubyte Game_cockpit_copy_code = 0;
@@ -471,6 +472,9 @@ void init_cockpit()
     pa_clear_buffer(1, 0);
 #endif
 
+	if (Current_level_D1 && !FontHires && VR_screen_mode != SM_320x200C)
+		Cockpit_mode = CM_FULL_SCREEN;
+
 	//Initialize the on-screen canvases
 
    if (Newdemo_state==ND_STATE_RECORDING)
@@ -494,7 +498,7 @@ void init_cockpit()
  );
 	gr_set_curfont( GAME_FONT );
 
-#if !defined(NASM) && !defined(WINDOWS)
+#if !defined(NASM2D) && !defined(WINDOWS)
 	if (Game_cockpit_copy_code)
 		free(Game_cockpit_copy_code);
 	Game_cockpit_copy_code  = NULL;
@@ -516,7 +520,7 @@ void init_cockpit()
 	case CM_FULL_COCKPIT:
 	case CM_REAR_VIEW:		{
 		grs_bitmap *bm = &GameBitmaps[cockpit_bitmap[Cockpit_mode+(Current_display_mode?(Num_cockpits/2):0)].index];
-		#ifdef NASM
+		#ifdef NASM2D
 		cockpit_cur_bm = bm;
 		#endif
 
@@ -540,7 +544,7 @@ void init_cockpit()
 	);
 
 #ifndef WINDOWS
-	#ifdef NASM
+	#ifdef NASM2D
 		if ( !PAEnabled )
 			gr_ibitblt_create_mask( bm, minx, miny, maxx-minx+1, maxy-miny+1, VR_offscreen_buffer->cv_bitmap.bm_rowsize);
 		else
@@ -667,7 +671,7 @@ void game_init_render_sub_buffers( int x, int y, int w, int h )
 
 #endif
 	if (Scanline_double) {
-		#ifdef NASM
+		#ifdef NASM2D
 		if ( w & 0x3 )
 			w &= ~0x3;
 		gr_init_sub_canvas( &VR_render_sub_buffer[0], &VR_render_buffer[0], x, y, w/2, (h/2)+1);
@@ -1055,6 +1059,9 @@ WIN(static int saved_window_h);
 		FontHires = MenuHires = ((Current_display_mode != 0) && (Current_display_mode != 2));
 	#endif
 
+		#if 1
+		FontHires = 0;
+		#else
 		if ( VR_render_mode != VR_NONE )	{
 			// for 640x480 or higher, use hires font.
 			if ( grd_curscreen->sc_h > 400 )
@@ -1062,6 +1069,7 @@ WIN(static int saved_window_h);
 			else
 				FontHires = 0;
 		}
+		#endif
 
 		break;
 	#ifdef EDITOR
@@ -2377,7 +2385,7 @@ void close_game()
 
 	restore_effect_bitmap_icons();
 
-#if !defined(NASM) && !defined(WINDOWS)
+#if !defined(NASM2D) && !defined(WINDOWS)
 	if (Game_cockpit_copy_code)	{
 		free(Game_cockpit_copy_code);
 		Game_cockpit_copy_code = NULL;
@@ -2814,7 +2822,9 @@ void GameLoop(int RenderFlag, int ReadControlsFlag )
 
 			Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
+			#ifdef VERBOSE
 			printf("shields %x energy %x ammo %d\n", Players[Player_num].shields, Players[Player_num].energy, Players[Player_num].primary_ammo[1]);
+			#endif
 			object_move_all();
 			powerup_grab_cheat_all();
 

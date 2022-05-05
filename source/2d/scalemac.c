@@ -310,7 +310,7 @@ void scale_bitmap_c(grs_bitmap *source_bmp, grs_bitmap *dest_bmp, int x0, int y0
 
 void scale_row_asm_transparent( ubyte * sbits, ubyte * dbits, int width, fix u, fix du )
 {
-#if 0
+#if 1
 	int i;
 	ubyte c;
 
@@ -321,7 +321,7 @@ void scale_row_asm_transparent( ubyte * sbits, ubyte * dbits, int width, fix u, 
 		dbits++;
 		u += du;
 	}
-#endif
+#else
 	int i;
 	ubyte c;
 	ubyte *dbits_end = &dbits[width-1];
@@ -377,6 +377,7 @@ NonTransparent:
 			u += du;
 		}
 	}
+#endif
 }
 
 void scale_bitmap_c_rle(grs_bitmap *source_bmp, grs_bitmap *dest_bmp, int x0, int y0, int x1, int y1, fix u0, fix v0,  fix u1, fix v1, int orientation  )
@@ -440,6 +441,9 @@ void scale_bitmap(grs_bitmap *bp, grs_point *vertbuf, int orientation )
 
 	x0 = vertbuf[0].x; y0 = vertbuf[0].y;
 	x1 = vertbuf[2].x; y1 = vertbuf[2].y;
+
+	extern int ntmap_dbg;
+	if (ntmap_dbg) printf("scale %x %x %x %x\n", x0, y0, x1, y1);
 
 	xmin = 0; ymin = 0;
 	xmax = i2f(dbp->bm_w)-fl2f(.5); ymax = i2f(dbp->bm_h)-fl2f(.5);

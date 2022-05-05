@@ -638,7 +638,7 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 
 	vm_vec_add2(&pos, &rand_vec);
 
-	size = fixmul(size_scale, F1_0/2 + psrand()*4/2);
+	size = Current_level_D1 ? fixmul(size_scale, F1_0 + psrand()*4) : fixmul(size_scale, F1_0/2 + psrand()*4/2);
 
 	segnum = find_point_seg(&pos, objp->segnum);
 	if (segnum != -1) {

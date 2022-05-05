@@ -1,3 +1,3 @@
 #ifndef __WATCOMC__
-#define GL
+//#define GL
 #endif

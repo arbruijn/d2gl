@@ -580,16 +580,20 @@ INSTALL_TARGS = texmap.lib texmap.h
 # What libs to build
 LIBS = texmap
 
-TEXMAP_OBJS = 	ntmap.obj tmapflat.obj  
+#TEXMAP_OBJS = 	ntmap.obj tmapflat.obj  
 
 TEXMAPASM_OBJS +=	tmap_per.obj tmap_flt.obj tmapfade.obj tmap_ed.obj 
 TEXMAPASM_OBJS +=  tmap_pnn.obj tmap_pln.obj tmap_plt.obj tmap_pnt.obj
 TEXMAPASM_OBJS +=  tmap_qnn.obj tmap_qln.obj tmap_qlt.obj tmap_qnt.obj
 TEXMAPASM_OBJS +=  tmap_lnn.obj tmap_lln.obj tmap_llt.obj tmap_lnt.obj
 TEXMAPNASM_OBJS += scanline.obj
+TEXMAPD1_OBJS = ntmap.obj tmapflat.obj winclip.obj \
+	tmapfade.obj tmap_flt.obj tmap_inc.obj tmap_lin.obj tmap_ll.obj tmap_per.obj
+
 WATCOM_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPASM_OBJS))
 #TEXMAP_OBJS += $(TEXMAPASM_OBJS)
-UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
+#UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
+UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
 
 # What to clean
 CLEAN_TARGS = $(OBJDIR)\*.obj
@@ -805,7 +809,8 @@ ALL_WINOBJS = $(addprefix 2d/,$(GR_OBJS)) $(addprefix 3d/,$(3D_OBJS)) \
 ACFLAGS += -DNDOS -DREPRO_FIX
 #ACFLAGS += -DNASM
 # -DKEY_COMMAND=512 
-UCFLAGS += -DNASM
+#UCFLAGS += -DNASM
+UCFLAGS += -DNASM2D
 UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
 ACFLAGS += -DENDLEVEL
 ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
@@ -830,7 +835,7 @@ EMCFLAGS += -DSHAREWARE -DMACSW
 CFLAGS += -fwrapv
 CFLAGS += -m32
 LDFLAGS += -m32
-LDLIBS = -lSDL2 -lm -lGL
+LDLIBS = -lSDL2 -lSDL2_image -lm -lGL
 
 #USE_CLANG = 1
 CCC = clang
@@ -946,6 +951,9 @@ win: $(ALL_WINOBJS) fake/fakewin.obj
 
 %.w.o: %.asm
 	ml -c $(AFLAGS) /Iincludes /Ifixasm /Ivecmatasm /I2d /Fo$(subst /,\\,$@) $(subst /,\\,$<) 
+
+%.g.o: %.nas
+	nasm -Itexmapd1 -f elf -o $@ $^
 
 #EMFILES = descent2.hog groupa.pig descent.hog descent.pig descent.mn2 descent2.ham descent.256 .plr
 #EMFILES = d2demo.hog d2demo.pig d2demo.ham demo.plr

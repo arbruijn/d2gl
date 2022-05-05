@@ -1,4 +1,4 @@
-#define VERBOSE
+//#define VERBOSE
 #define XYZ(v) (v)->x,(v)->y,(v)->z
 
 #define NEW_FVI_STUFF 1
@@ -49,7 +49,7 @@ extern int Physics_cheat_flag;
 
 int oflow_check(fix a,fix b);
 
-#ifndef NASM
+#if !defined(NASM) && defined(__WATCOMC__)
 #pragma aux oflow_check parm [eax] [ebx] value [eax] modify exact [eax ebx edx] = \
    "cdq"				\
 	"xor eax,edx"	\

@@ -314,7 +314,7 @@ select_weapon(int weapon_num, int secondary_flag, int print_message, int wait_fo
 	}
 
 	if (print_message)
-		if (weapon_num == LASER_INDEX && !secondary_flag)
+		if (weapon_num == LASER_INDEX && !secondary_flag && !Current_level_D1)
 			HUD_init_message("%s Level %d %s", weapon_name, Players[Player_num].laser_level+1, TXT_SELECTED);
 		else
 			HUD_init_message("%s %s", weapon_name, TXT_SELECTED);

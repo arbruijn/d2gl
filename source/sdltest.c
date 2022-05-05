@@ -1,4 +1,5 @@
 //#include "sdl2/include/SDL.h"
+//#define MKPNGTIME 0
 #include "glconfig.h"
 #ifndef __WATCOMC__
 #ifdef EMSCRIPTEN
@@ -9,6 +10,7 @@
 #else
 #define SDL2
 #include "SDL2/SDL.h"
+#include "SDL2/SDL_image.h"
 #define GL_GLEXT_PROTOTYPES 1
 //#include <SDL2/SDL_opengles2.h>
 #include <SDL2/SDL_opengl.h>
@@ -40,6 +42,7 @@
 #include "vga.h"
 #include "weapon.h"
 #include "newdemo.h"
+#include "args.h"
 
 //#define SDL_Window SDL_Surface
 
@@ -67,12 +70,21 @@ void error_set(char *msg, ...) {
 
 extern void copy_screen_to_texture(uint32_t *texture);
 
+__attribute__((optimize("-O3"))) uint32_t fx_hasher(void *buf, int len) {
+	uint32_t v = 0, *p = buf;
+	while (len--)
+		v = 0x9E3779B9U * (((v << 5) | (v >> 27)) ^ *p++);
+	return v;
+}
+
 int last_time;
 int sdl_time_start;
 int time_speed = 1;
 int play_speed = 32;
-int play_show = 0;
+int play_show = 1;
 int record_demo = 0;
+int no_video = 0;
+int img_time = -1;
 
 FILE *log_file = NULL;
 int is_record = 1;
@@ -95,9 +107,12 @@ void frame_delay() {
     #endif
 }
 
+#if 0
 void maybe_swap_delay() {
-    if (is_play && !play_show)
+    if (no_video)
         return;
+	draw();
+	#if 0
     #ifndef __WATCOMC__        
     #ifdef SDL2
     SDL_GL_SwapWindow(window);
@@ -106,10 +121,12 @@ void maybe_swap_delay() {
     #endif
     #endif
     frame_delay();
+    #endif
 }
+#endif
 
 void draw() {
-    if (is_play && !play_show)
+    if (no_video)
         return;
     #ifndef __WATCOMC__
     #ifdef GL
@@ -177,7 +194,7 @@ static void *CreateTexture(int w, int h) {
 #endif	
 
 int sdl_init() {
-    if (is_play && !play_show) {
+    if (no_video) {
         gl_init();
         return 0;
     }
@@ -232,7 +249,7 @@ void video_set_res(int w, int h) {
         sdl_init();
     cur_w = w;
     cur_h = h;
-    if (is_play && !play_show)
+    if (no_video)
         return;
 #if defined(SDL2) && !defined(GL)
     if (texture != NULL)
@@ -559,18 +576,22 @@ int test_main2(int argc, char **argv) {
 	cfile_init("descent2.hog");
 	#endif
 	load_text();
+
+	strcat(TXT_CANT_OPEN_DOOR, ".");
+	TXT_W_SPREADFIRE_S = "Spreadfire";
+
 	Lighting_on = 1;
 
 	grd_fades_disabled = 1;
 	skip_endlevel = 1;
 	no_ambient_sounds = 1; // depends on loaded bitmaps for previous level
-        key_inkey_time_sync = 0;
+	key_inkey_time_sync = 0;
 
 	#define SM_320x200C 0
 	#define SM_640x480V 14
 	#define VR_NONE 0
 	#if 0
-	int screen_mode = !is_play || play_show ? SM_640x480V : SM_320x200C;
+	int screen_mode = !no_video ? SM_640x480V : SM_320x200C;
 	int screen_width = modes[screen_mode][0];
 	int screen_height = modes[screen_mode][1];
 	int vr_mode = VR_NONE;
@@ -578,7 +599,7 @@ int test_main2(int argc, char **argv) {
 	int use_double_buffer = 0;
 	call_reg5(game_init_render_buffers, screen_mode, screen_width, screen_height, 0, 0); //use_double_buffer, vr_mode, screen_compatible );
 	#endif
-	display_mode = 1; //!is_play || play_show ? 1 : 0;
+	display_mode = 1; // no_video ? 0 : 1
 	set_display_mode(display_mode);
 
 	no_render = is_play && !play_show;
@@ -637,7 +658,7 @@ int test_main2(int argc, char **argv) {
 	//Current_display_mode = display_mode;
 
 	init_player_stats_game();
-
+	gr_palette_set_gamma(0);
 
 	#if 0
 	if (argc <= 1) {
@@ -704,14 +725,18 @@ int test_main2(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+	int i;
     init_play_args(argc, argv);
+    InitArgs(argc, argv);
+    no_video = (is_play && !play_show) || FindArg("-novideo");
+    img_time = (i = FindArg("-imgtime")) ? strtol(Args[i + 1],NULL,16) : -1;
     if (start_play_record())
         return 1;
     #ifndef __WATCOMC__
     InitKeyMap();
     #endif
     #if 0
-    if (!is_play || play_show)
+    if (!no_video)
         if (sdl_init())
             return 1;
     #endif
@@ -889,10 +914,31 @@ int my_key_inkey_time(fix *time) {
 void game_render_frame();
 void my_game_render_frame() {
     //glClear(GL_DEPTH_BUFFER_BIT);
+    extern int ntmap_dbg;
+    ntmap_dbg = GameTime == img_time;
+
     game_render_frame();
     last_time += 65536/32;
-    maybe_swap_delay();
-    //draw();
+    draw();
+    #ifndef GL
+    extern char gr_screen_buffer[];
+    printf("screen=%x\n", fx_hasher(gr_screen_buffer, cur_w * cur_h >> 2));
+    #endif
+
+    if (GameTime != img_time)
+    	return;
+	FILE *f = fopen("out.bin", "wb"); fwrite(gr_screen_buffer, cur_w, cur_h, f); fclose(f);
+    static int count = 0;
+    char filename[32];
+    SDL_Surface *img = SDL_CreateRGBSurface(0, cur_w, cur_h, 32, 0, 0, 0, 0);
+    SDL_LockSurface(img);
+    copy_screen_to_texture(img->pixels);
+    SDL_UnlockSurface(img);
+    snprintf(filename, sizeof(filename), "out%04d.png", count++);
+    IMG_SavePNG(img, filename);
+    SDL_FreeSurface(img);
+    exit(1);
+
     //printf("%d\n", Players[0].shields / 65536);
     //printf("energy=%x\n", Players[0].energy);
     //printf("rendered time=%x count=%d\n", last_time, FrameCount);
@@ -944,12 +990,14 @@ void print_stat(FILE *f) {
     fprintf(f, "explosion_wait2=%x\n", explosion_wait2);
     #endif
     fprintf(f, "missile_gun=%d\n", Missile_gun);
-    pb = Primary_last_was_super;
-    fprintf(f, "primary_last_was_super=%d,%d,%d,%d,%d\n", pb[0], pb[1], pb[2], pb[3], pb[4]);
-    pb = Secondary_last_was_super;
-    fprintf(f, "secondary_last_was_super=%d,%d,%d,%d,%d\n", pb[0], pb[1], pb[2], pb[3], pb[4]);
-    fprintf(f, "time_flash_last_played=%x\n", Time_flash_last_played);
-    fprintf(f, "afterburner_charge=%x\n", Afterburner_charge);
+    if (!Current_level_D1) {
+	    pb = Primary_last_was_super;
+	    fprintf(f, "primary_last_was_super=%d,%d,%d,%d,%d\n", pb[0], pb[1], pb[2], pb[3], pb[4]);
+	    pb = Secondary_last_was_super;
+	    fprintf(f, "secondary_last_was_super=%d,%d,%d,%d,%d\n", pb[0], pb[1], pb[2], pb[3], pb[4]);
+	    fprintf(f, "time_flash_last_played=%x\n", Time_flash_last_played);
+	    fprintf(f, "afterburner_charge=%x\n", Afterburner_charge);
+	}
     
     p1 = line1; p2 = line2;
     for (i = 0; i < Highest_object_index; i++)
@@ -964,8 +1012,10 @@ void print_stat(FILE *f) {
         fprintf(f, "matcen_creator_obj=%s\n", line1);
         fprintf(f, "matcen_creator_num=%s\n", line2);
     }
-    fprintf(f, "primary_order=%s\n", fmt_ubyte_array(buf, sizeof(buf), PrimaryOrder, MAX_PRIMARY_WEAPONS + 1));
-    fprintf(f, "secondary_order=%s\n", fmt_ubyte_array(buf, sizeof(buf), SecondaryOrder, MAX_SECONDARY_WEAPONS + 1));
+    if (!Current_level_D1) {
+	    fprintf(f, "primary_order=%s\n", fmt_ubyte_array(buf, sizeof(buf), PrimaryOrder, MAX_PRIMARY_WEAPONS + 1));
+	    fprintf(f, "secondary_order=%s\n", fmt_ubyte_array(buf, sizeof(buf), SecondaryOrder, MAX_SECONDARY_WEAPONS + 1));
+	}
 }
 
 void reset_time();

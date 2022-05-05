@@ -143,6 +143,7 @@ typedef struct weapon_info {
 #define	SUPER_WEAPON				5
 
 #define	VULCAN_AMMO_SCALE		0xcc163	//(0x198300/2)		//multiply ammo by this before displaying
+#define	VULCAN_AMMO_SCALE_D1	(0x198300/2)		//multiply ammo by this before displaying
 
 #define	NUM_SMART_CHILDREN	6		//	Number of smart children created by default.
 

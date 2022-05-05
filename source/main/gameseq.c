@@ -950,6 +950,8 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	Current_level_num=level_num;
 
+	set_detail_level_parameters(Detail_level);		// might change between D1/D2
+
 //	load_palette_pig(Current_level_palette);		//load just the pig
 
 	load_palette(Current_level_palette,1,1);		//don't change screen

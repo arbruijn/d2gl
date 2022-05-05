@@ -97,11 +97,11 @@ uint32_t *get_screen() {
 }
 */
 
-void copy_screen_to_texture(uint32_t *texture) {
+__attribute__((optimize("-O3"))) void copy_screen_to_texture(uint32_t *texture) {
 	uint32_t pal[256], *dst;
 	extern ubyte gr_visible_pal[256 * 3];
 	int i;
-	ubyte *src, *srcend;
+	uint32_t *src, *srcend;
 
 	#define UP(x) ((((x) & 0x3f) << 2) | (((x) & 0x3f) >> 4))
 	for (i = 0; i < 256; i++)
@@ -115,9 +115,19 @@ void copy_screen_to_texture(uint32_t *texture) {
 			texture[j * SCR_W + i] = pal[gr_screen_buffer[(SCR_H - j - 1) * SCR_W + i]];
 	*/
 	dst = texture;
-	srcend = gr_screen_buffer + cur_w * cur_h;
-	for (src = gr_screen_buffer; src < srcend; src++, dst++)
-		*dst = pal[*src];
+	srcend = (uint32_t *)(gr_screen_buffer + cur_w * cur_h);
+	for (src = (uint32_t *)&gr_screen_buffer; src < srcend; src++, dst+=4) {
+		uint32_t x = *src;
+		if (x == (x & 0xff) * 0x01010101) {
+			uint32_t c = pal[x & 0xff];
+			dst[0] = dst[1] = dst[2] = dst[3] = c;
+		} else {
+			dst[0] = pal[x & 0xff];
+			dst[1] = pal[(x >> 8) & 0xff];
+			dst[2] = pal[(x >> 16) & 0xff];
+			dst[3] = pal[x >> 24];
+		}
+	}
 }
 
 #if EM_CC

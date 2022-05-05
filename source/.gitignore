@@ -59,3 +59,6 @@ descent2[cgtw]
 *.dat
 out
 lstok
+out*.png
+test
+out.bin

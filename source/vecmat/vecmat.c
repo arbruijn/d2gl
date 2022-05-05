@@ -111,9 +111,9 @@ vms_vector *vm_vec_sub2(vms_vector *dest,vms_vector *src)
 //dest can equal either source
 vms_vector *vm_vec_avg(vms_vector *dest,vms_vector *src0,vms_vector *src1)
 {
-	dest->x = (src0->x + src1->x)/2;
-	dest->y = (src0->y + src1->y)/2;
-	dest->z = (src0->z + src1->z)/2;
+	dest->x = (src0->x + src1->x)>>1;
+	dest->y = (src0->y + src1->y)>>1;
+	dest->z = (src0->z + src1->z)>>1;
 
 	return dest;
 }
@@ -123,9 +123,9 @@ vms_vector *vm_vec_avg(vms_vector *dest,vms_vector *src0,vms_vector *src1)
 //dest can equal any source
 vms_vector *vm_vec_avg4(vms_vector *dest,vms_vector *src0,vms_vector *src1,vms_vector *src2,vms_vector *src3)
 {
-	dest->x = (src0->x + src1->x + src2->x + src3->x)/4;
-	dest->y = (src0->y + src1->y + src2->y + src3->y)/4;
-	dest->z = (src0->z + src1->z + src2->z + src3->z)/4;
+	dest->x = (src0->x + src1->x + src2->x + src3->x)>>2;
+	dest->y = (src0->y + src1->y + src2->y + src3->y)>>2;
+	dest->z = (src0->z + src1->z + src2->z + src3->z)>>2;
 
 	return dest;
 }
@@ -472,9 +472,9 @@ void check_vec(vms_vector *v)
 				check <<= 2;
 			}
 
-			v->x >>= cnt;
-			v->y >>= cnt;
-			v->z >>= cnt;
+			v->x <<= cnt;
+			v->y <<= cnt;
+			v->z <<= cnt;
 		}
 }
 

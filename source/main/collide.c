@@ -1256,7 +1256,8 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 		if ( Weapon_info[weapon->id].damage_radius )
 			explode_badass_weapon(weapon,collision_point);
 		else
-			object_create_explosion( controlcen->segnum, collision_point, controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
+			object_create_explosion( controlcen->segnum, collision_point,
+				Current_level_D1 ? ((controlcen->size/3)*3)/4 : controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
 
 		digi_link_sound_to_pos( SOUND_CONTROL_CENTER_HIT, controlcen->segnum, 0, collision_point, 0, F1_0 );
 

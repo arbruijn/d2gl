@@ -418,8 +418,8 @@ void verify_object( object * obj, int fileinfo_version )	{
 
 	if (obj->type == OBJ_HOSTAGE) {
 
-		//@@if (obj->id > N_hostage_types)
-		//@@	obj->id = 0;
+		if (Current_level_D1) // obj->id > N_hostage_types)
+			obj->id = 0;
 
 		obj->render_type = RT_HOSTAGE;
 		obj->control_type = CT_POWERUP;

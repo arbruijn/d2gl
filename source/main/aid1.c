@@ -1,5 +1,6 @@
 //#define VERBOSE
 //#define debug_objnum 17
+//#define VERBOSE_BOSS
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -2358,7 +2359,7 @@ static fix	Prev_boss_shields = -1;
 //	Do special stuff for a boss.
 static void do_boss_stuff_d1(object *objp)
 {
-	#if 1
+	#ifdef VERBOSE_BOSS
 	printf("%x boss pvis %d hit %x cloak %d start %x end %x last tele %x last gate %x sh %x\n",
 		GameTime,
 		0/*player_visibility*/, /*Boss_hit_time == -F1_0*10 ? 0 : Boss_hit_time,*/Boss_hit_this_frame,

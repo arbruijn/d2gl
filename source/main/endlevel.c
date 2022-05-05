@@ -1148,6 +1148,9 @@ endlevel_render_mine(fix eye_offset)
 {
 	int start_seg_num;
 
+	if (Current_level_D1)
+		start_lighting_frame(Viewer);
+
 	Viewer_eye = Viewer->pos;
 
 	if (Viewer->type == OBJ_PLAYER )

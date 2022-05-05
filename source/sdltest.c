@@ -579,6 +579,7 @@ int test_main2(int argc, char **argv) {
 
 	strcat(TXT_CANT_OPEN_DOOR, ".");
 	TXT_W_SPREADFIRE_S = "Spreadfire";
+	TXT_SMART = "Smart";
 
 	Lighting_on = 1;
 

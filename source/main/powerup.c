@@ -487,6 +487,8 @@ int do_powerup(object *obj)
 			break;
 		case	POW_VULCAN_AMMO:
 			used = pick_up_vulcan_ammo();
+            if (Current_level_D1 && !used && !(Game_mode & GM_MULTI) ) // ??? needed to emulate dup msg
+                used = pick_up_vulcan_ammo();
 			break;
 		case	POW_HOMING_AMMO_1:
 			used=pick_up_secondary(HOMING_INDEX,1);

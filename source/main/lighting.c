@@ -618,7 +618,8 @@ int reset_lighting_hack;
 
 void start_lighting_frame(object *viewer)
 {
-	reset_lighting_hack = (viewer != old_viewer);
+	if (old_viewer || !Current_level_D1)
+		reset_lighting_hack = (viewer != old_viewer);
 
 	old_viewer = viewer;
 }

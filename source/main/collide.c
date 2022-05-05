@@ -596,7 +596,8 @@ int check_effect_blowup(segment *seg,int side,vms_vector *pnt, object *blower, i
 				//note: this must get called before the texture changes, 
 				//because we use the light value of the texture to change
 				//the static light in the segment
-				subtract_light(seg-Segments,side);
+				if (!Current_level_D1)
+					subtract_light(seg-Segments,side);
 
 				if (Newdemo_state == ND_STATE_RECORDING)
 					newdemo_record_effect_blowup( seg-Segments, side, pnt);
@@ -1267,7 +1268,8 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 
 		maybe_kill_weapon(weapon,controlcen);
 	} else {	//	If robot weapon hits control center, blow it up, make it go away, but do no damage to control center.
-		object_create_explosion( controlcen->segnum, collision_point, controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
+		object_create_explosion( controlcen->segnum, collision_point,
+			Current_level_D1 ? ((controlcen->size/3)*3)/4 : controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
 		maybe_kill_weapon(weapon,controlcen);
 	}
 

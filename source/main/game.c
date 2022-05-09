@@ -1,4 +1,4 @@
-#define VERBOSE
+//#define VERBOSE
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1059,9 +1059,9 @@ WIN(static int saved_window_h);
 		FontHires = MenuHires = ((Current_display_mode != 0) && (Current_display_mode != 2));
 	#endif
 
-		#if 1
-		FontHires = 0;
-		#else
+		if (Current_level_D1)
+			FontHires = 0;
+		else
 		if ( VR_render_mode != VR_NONE )	{
 			// for 640x480 or higher, use hires font.
 			if ( grd_curscreen->sc_h > 400 )
@@ -1069,7 +1069,6 @@ WIN(static int saved_window_h);
 			else
 				FontHires = 0;
 		}
-		#endif
 
 		break;
 	#ifdef EDITOR
@@ -1162,6 +1161,8 @@ void start_time()
 
 MAC(extern ubyte joydefs_calibrating;)
 
+void sdl_time_sync();
+
 void game_flush_inputs()
 {
 	int dx,dy;
@@ -1173,7 +1174,6 @@ void game_flush_inputs()
 	#endif
 		mouse_get_delta( &dx, &dy );	// Read mouse
 	memset(&Controls,0,sizeof(control_info));
-	void sdl_time_sync();
 	sdl_time_sync();
 }
 

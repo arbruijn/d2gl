@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "gr.h"
 #include "grdef.h"
 #include "error.h"
@@ -437,12 +438,12 @@ void scale_bitmap(grs_bitmap *bp, grs_point *vertbuf, int orientation )
 	fix xmin, xmax, ymin, ymax;
 	int dx0, dy0, dx1, dy1;
 	int dtemp;
+	extern int ntmap_dbg;
 	// Set initial variables....
 
 	x0 = vertbuf[0].x; y0 = vertbuf[0].y;
 	x1 = vertbuf[2].x; y1 = vertbuf[2].y;
 
-	extern int ntmap_dbg;
 	if (ntmap_dbg) printf("scale %x %x %x %x\n", x0, y0, x1, y1);
 
 	xmin = 0; ymin = 0;

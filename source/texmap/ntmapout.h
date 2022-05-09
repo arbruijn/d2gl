@@ -72,7 +72,7 @@
 
 	// Set amount to change x coordinate for each advance to next scanline.
 	dy = f2i(t->verts[vlb].y2d) - f2i(t->verts[vlt].y2d);
-	if (dy < FIX_RECIP_TABLE_SIZE)
+	if (dy >= 0 && dy < FIX_RECIP_TABLE_SIZE)
 		recip_dyl = fix_recip[dy];
 	else
 		recip_dyl = F1_0/dy;
@@ -80,7 +80,7 @@
 	dx_dy_left = compute_dx_dy(t,vlt,vlb, recip_dyl);
 
 	dy = f2i(t->verts[vrb].y2d) - f2i(t->verts[vrt].y2d);
-	if (dy < FIX_RECIP_TABLE_SIZE)
+	if (dy >= 0 && dy < FIX_RECIP_TABLE_SIZE)
 		recip_dyr = fix_recip[dy];
 	else
 		recip_dyr = F1_0/dy;
@@ -137,7 +137,7 @@
 			next_break_left = f2i(v3d[vlb].y2d);
 
 			dy = f2i(t->verts[vlb].y2d) - f2i(t->verts[vlt].y2d);
-			if (dy < FIX_RECIP_TABLE_SIZE)
+			if (dy >= 0 && dy < FIX_RECIP_TABLE_SIZE)
 				recip_dy = fix_recip[dy];
 			else
 				recip_dy = F1_0/dy;
@@ -177,7 +177,7 @@
 			next_break_right = f2i(v3d[vrb].y2d);
 
 			dy = f2i(t->verts[vrb].y2d) - f2i(t->verts[vrt].y2d);
-			if (dy < FIX_RECIP_TABLE_SIZE)
+			if (dy >= 0 && dy < FIX_RECIP_TABLE_SIZE)
 				recip_dy = fix_recip[dy];
 			else
 				recip_dy = F1_0/dy;
@@ -235,9 +235,15 @@ draw_scanline:
 #endif
 
 #if LINEAR == 0
+				#ifndef NASM
+				fx_z = zleft;
+				fx_dz_dx = fixmul(zright - zleft,recip_dx);
+				fx_z_right = zright;
+				#else
 				fx_z = zleft >> Z_SHIFTER;
 				fx_dz_dx = fixmul(zright - zleft,recip_dx) >> Z_SHIFTER;
 				fx_z_right = zright >> Z_SHIFTER;
+				#endif
 #endif
 
 

@@ -31,13 +31,15 @@
 
 #include "fix.h"
 #include "effects.h"
-#include "deslog.h"
+#include "deslog.c"
 #include "3d.h"
 #include "gr.h"
 #include "playsave.h"
 #include "mission.h"
 #include "cfile.h"
+#ifdef GL
 #include "pa_gl.h"
+#endif
 #include "gamepal.h"
 #include "vga.h"
 #include "weapon.h"
@@ -70,7 +72,10 @@ void error_set(char *msg, ...) {
 
 extern void copy_screen_to_texture(uint32_t *texture);
 
-__attribute__((optimize("-O3"))) uint32_t fx_hasher(void *buf, int len) {
+#ifndef __WATCOMC__
+__attribute__((optimize("-O3")))
+#endif
+uint32_t fx_hasher(void *buf, int len) {
 	uint32_t v = 0, *p = buf;
 	while (len--)
 		v = 0x9E3779B9U * (((v << 5) | (v >> 27)) ^ *p++);
@@ -85,6 +90,7 @@ int play_show = 1;
 int record_demo = 0;
 int no_video = 0;
 int img_time = -1;
+int d1;
 
 FILE *log_file = NULL;
 int is_record = 1;
@@ -195,7 +201,7 @@ static void *CreateTexture(int w, int h) {
 
 int sdl_init() {
     if (no_video) {
-        gl_init();
+        //gl_init();
         return 0;
     }
 
@@ -238,7 +244,9 @@ int sdl_init() {
     #endif
     #endif
 
+    #ifdef GL
     gl_init();
+    #endif
 
     return 0;
 }
@@ -265,14 +273,17 @@ int EventLoop(int sync) {
     int keep_running = 1;
     #ifndef __WATCOMC__
         if (sync) {
+        	#ifdef GL
             #ifdef SDL2
             SDL_GL_SwapWindow(window);
             #else
             SDL_GL_SwapBuffers();
             #endif
             glClear(GL_COLOR_BUFFER_BIT);
+            #endif
             SDL_Delay(10);
         }
+        
 	// while (keep_running)
 	//{
 	/*
@@ -336,7 +347,7 @@ int EventLoop(int sync) {
     return keep_running;
 }
 
-#include "types.h"
+//#include "types.h"
 #include "text.h"
 #include "mono.h"
 #include "inferno.h"
@@ -510,7 +521,7 @@ void load_stat(FILE *f, int have_level) {
 }
 
 extern int Buddy_last_seen_player, Buddy_last_player_path_created;
-extern int Escort_last_path_created;
+extern fix Escort_last_path_created;
 void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     int i;
 
@@ -565,9 +576,17 @@ extern int Guided_in_big_window;
 extern int no_render;
 extern int no_read_player_file;
 
+#ifdef __WATCOMC__
+int mprotect(void *, int, int);
+#define PROT_READ  1
+#define PROT_WRITE 2
+#define PROT_EXEC  4
+void scale_do_cc_scanline();
+#endif
+
 int test_main2(int argc, char **argv) {
-	int d1 = 1;
 	int display_mode, ret;
+	d1 = FindArg("-d1");
 	//init_data_files();
 	
 	#ifdef SHAREWARE
@@ -577,9 +596,11 @@ int test_main2(int argc, char **argv) {
 	#endif
 	load_text();
 
-	strcat(TXT_CANT_OPEN_DOOR, ".");
-	TXT_W_SPREADFIRE_S = "Spreadfire";
-	TXT_SMART = "Smart";
+	if (d1) {
+	 	strcat(TXT_CANT_OPEN_DOOR, ".");
+	 	TXT_W_SPREADFIRE_S = "Spreadfire";
+		TXT_SMART = "Smart";
+	}
 
 	Lighting_on = 1;
 
@@ -587,6 +608,11 @@ int test_main2(int argc, char **argv) {
 	skip_endlevel = 1;
 	no_ambient_sounds = 1; // depends on loaded bitmaps for previous level
 	key_inkey_time_sync = 0;
+
+	#ifdef __WATCOMC__
+	if (mprotect((void *)((int)&scale_do_cc_scanline & ~4095), 8192, PROT_READ | PROT_WRITE | PROT_EXEC))
+		abort();
+	#endif
 
 	#define SM_320x200C 0
 	#define SM_640x480V 14
@@ -654,6 +680,7 @@ int test_main2(int argc, char **argv) {
 	Missile_view_enabled = 0;
 	Difficulty_level = 0;
 	Guided_in_big_window = 1;
+	Auto_leveling_on = 0;
 	write_player_file();
 	//extern int Current_display_mode;
 	//Current_display_mode = display_mode;
@@ -916,19 +943,24 @@ void game_render_frame();
 void my_game_render_frame() {
     //glClear(GL_DEPTH_BUFFER_BIT);
     extern int ntmap_dbg;
+    extern char gr_screen_buffer[];
+    //FILE *f;
+
     ntmap_dbg = GameTime == img_time;
 
     game_render_frame();
     last_time += 65536/32;
     draw();
     #ifndef GL
-    extern char gr_screen_buffer[];
     printf("screen=%x\n", fx_hasher(gr_screen_buffer, cur_w * cur_h >> 2));
     #endif
 
     if (GameTime != img_time)
     	return;
-	FILE *f = fopen("out.bin", "wb"); fwrite(gr_screen_buffer, cur_w, cur_h, f); fclose(f);
+	//f = fopen("out.bin", "wb"); fwrite(gr_screen_buffer, cur_w, cur_h, f); fclose(f);
+	#ifdef __WATCOMC__
+	pcx_write_bitmap("out.pcx", &grd_curcanv->cv_bitmap, gr_palette);
+	#else
     static int count = 0;
     char filename[32];
     SDL_Surface *img = SDL_CreateRGBSurface(0, cur_w, cur_h, 32, 0, 0, 0, 0);
@@ -938,6 +970,7 @@ void my_game_render_frame() {
     snprintf(filename, sizeof(filename), "out%04d.png", count++);
     IMG_SavePNG(img, filename);
     SDL_FreeSurface(img);
+    #endif
     exit(1);
 
     //printf("%d\n", Players[0].shields / 65536);
@@ -951,6 +984,7 @@ int psrand_pal() {
 }
 #endif
 
+extern int Current_level_D1;
 
 void print_stat(FILE *f) {
     ushort *ps;
@@ -987,8 +1021,10 @@ void print_stat(FILE *f) {
     fprintf(f, "secondary_weapon=%d\n", Secondary_weapon);
     fprintf(f, "laser_offset=%x\n", Laser_offset);
     #ifdef ENDLEVEL
-    fprintf(f, "explosion_wait1=%x\n", explosion_wait1);
-    fprintf(f, "explosion_wait2=%x\n", explosion_wait2);
+    if (d1) {
+	    fprintf(f, "explosion_wait1=%x\n", explosion_wait1);
+	    fprintf(f, "explosion_wait2=%x\n", explosion_wait2);
+	}
     #endif
     fprintf(f, "missile_gun=%d\n", Missile_gun);
     if (!Current_level_D1) {

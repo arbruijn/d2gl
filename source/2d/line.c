@@ -272,7 +272,7 @@ int gr_uline(fix _a1, fix _b1, fix _a2, fix _b2)
 	switch(TYPE)
 	{
 	case BM_LINEAR:
-#ifndef NASM
+#ifndef NASM2D
 		gr_linear_line( a1, b1, a2, b2 );
 #else
 		gr_universal_uline( a1, b1, a2, b2 );

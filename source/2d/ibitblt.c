@@ -16,7 +16,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 static char rcsid[] = "$Id: ibitblt.c 1.16 1996/12/19 16:51:38 matt Exp $";
 #pragma on (unreferenced)
 
-#ifndef NASM
+#ifndef NASM2D
 
 
 #include <conio.h>

@@ -147,7 +147,7 @@ void do_controlcen_dead_frame(void)
 
 void do_countdown_frame()
 {
-	fix	old_time;
+	fix	old_time, timer_ofs;
 	int	fc, div_scale;
 
 	if (!Control_center_destroyed)	return;
@@ -179,7 +179,7 @@ void do_countdown_frame()
 
 	old_time = Countdown_timer;
 	Countdown_timer -= RealFrameTime;
-	fix timer_ofs = Current_level_D1 ? F1_0 : F1_0*7/8;
+	timer_ofs = Current_level_D1 ? F1_0 : F1_0*7/8;
 	Countdown_seconds_left = f2i(Countdown_timer + timer_ofs);
 
 	if ( (old_time > COUNTDOWN_VOICE_TIME ) && (Countdown_timer <= COUNTDOWN_VOICE_TIME) )	{

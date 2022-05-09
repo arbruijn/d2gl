@@ -121,6 +121,7 @@ typedef struct box {
 #endif
 
 void gr_bm_bitblt(int w, int h, int dx, int dy, int sx, int sy, grs_bitmap * src, grs_bitmap * dest);
+void gr_sync_display();
 
 //if filename passed is NULL, show normal credits
 void credits_show(char *credits_filename)
@@ -417,7 +418,6 @@ PA_DFX (for (i=0; i<ROW_SPACING; i += (MenuHires?2:1) )	{)
 //@@		);
 
 //			mprintf( ( 0, "Fr = %d", (timer_get_fixed_seconds() - last_time) ));
-			void gr_sync_display();
 			while( timer_get_fixed_seconds() < last_time+time_delay ) gr_sync_display();
 			last_time = timer_get_fixed_seconds();
 		

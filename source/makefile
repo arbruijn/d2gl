@@ -328,7 +328,7 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
 DESCENT2_SRCS += aid1.c
-DESCENT2_SRCS += terrain.c
+#DESCENT2_SRCS += terrain.c
 
 #ifeq ($(TARGSYS),WIN32)
 DESCENT2WIN_SRCS += winferno.c descentw.c modem.c joydefsw.c windigi.c movie.c
@@ -581,19 +581,19 @@ INSTALL_TARGS = texmap.lib texmap.h
 LIBS = texmap
 
 #TEXMAP_OBJS = 	ntmap.obj tmapflat.obj  
-
+TEXMAPASM_OBJS += ntmap.obj tmapflat.obj
 TEXMAPASM_OBJS +=	tmap_per.obj tmap_flt.obj tmapfade.obj tmap_ed.obj 
 TEXMAPASM_OBJS +=  tmap_pnn.obj tmap_pln.obj tmap_plt.obj tmap_pnt.obj
 TEXMAPASM_OBJS +=  tmap_qnn.obj tmap_qln.obj tmap_qlt.obj tmap_qnt.obj
 TEXMAPASM_OBJS +=  tmap_lnn.obj tmap_lln.obj tmap_llt.obj tmap_lnt.obj
-TEXMAPNASM_OBJS += scanline.obj
+TEXMAPNASM_OBJS += ntmap.obj tmapflat.obj scanline.obj
 TEXMAPD1_OBJS = ntmap.obj tmapflat.obj winclip.obj \
 	tmapfade.obj tmap_flt.obj tmap_inc.obj tmap_lin.obj tmap_ll.obj tmap_per.obj
 
 WATCOM_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPASM_OBJS))
 #TEXMAP_OBJS += $(TEXMAPASM_OBJS)
-#UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
-UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
+UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
+#UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
 
 # What to clean
 CLEAN_TARGS = $(OBJDIR)\*.obj
@@ -812,7 +812,7 @@ ACFLAGS += -DNDOS -DREPRO_FIX
 #UCFLAGS += -DNASM
 UCFLAGS += -DNASM2D
 UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
-ACFLAGS += -DENDLEVEL
+#ACFLAGS += -DENDLEVEL
 ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
 ACFLAGS += -DNETWORK=1 -DNPACK
 #ACFLAGS += -DD1SW -DSHAREWARE
@@ -825,7 +825,8 @@ WCFLAGS += -Ifixasm -Ivecmatasm -I3dasm -Iarch/watcom
 ACFLAGS += -I../../desrun/deslog
 CFLAGS += $(ACFLAGS) $(UCFLAGS)
 CFLAGS += -Wno-implicit-int -Wno-unused-result -Wno-missing-braces -Wno-multichar
-CFLAGS += -O0 -ggdb -fno-pie -fcf-protection=none 
+CFLAGS += -O0 -ggdb -fno-pie -fcf-protection=none  -fno-pic
+#LDFLAGS += -static
 CFLAGS += -fno-stack-protector
 #CFLAGS += -fpack-struct
 EMCFLAGS += $(ACFLAGS) $(UCFLAGS) -Wno-implicit-function-declaration -ferror-limit=100 -s USE_SDL=1
@@ -835,7 +836,9 @@ EMCFLAGS += -DSHAREWARE -DMACSW
 CFLAGS += -fwrapv
 CFLAGS += -m32
 LDFLAGS += -m32
-LDLIBS = -lSDL2 -lSDL2_image -lm -lGL
+LDLIBS += -lSDL2 -lSDL2_image -lm
+#LDLIBS += -lGL
+#LDLIBS += -ldl -ltiff 
 
 #USE_CLANG = 1
 CCC = clang
@@ -863,19 +866,19 @@ CCT = tcc
 CFLAGST += $(CFLAGS) -I/usr/include/SDL2
 LDFLAGST += $(LDFLAGS) -L/usr/lib/i386-linux-gnu/pulseaudio
 
-OW2=1
+#OW2=1
 ifdef OW2
 export WATCOM = $(HOME)/binwin/ow2
 WPS = /
 CCW = $(WATCOM)/binl/wcc386
 export INCLUDE = $(WATCOM)/h
 else
-export WATCOM = $(HOME)/.wine/drive_c/WATCOM
+export WATCOM = $(HOME)/.wine6/drive_c/WATCOM
 WPS = \\
 CCW = wcc386
 export INCLUDE = $(HOME)/binwin/watcom/h
 endif
-CCLDW = PATH="$(WATCOM)/binl:$(PATH)" $(HOME)/.wine/drive_c/WATCOM/binl/wcl386
+CCLDW = PATH="$(WATCOM)/binl:$(PATH)" $(HOME)/.wine6/drive_c/WATCOM/binl/wcl386
 CFLAGSW += -zp1 -d2 -ox -oe -ot -on -oa -s -u__NT__ $(subst /,$(WPS),$(ACFLAGS) $(WCFLAGS))
 #CFLAGSW += -zp1 -d2 -s -u__NT__ $(subst /,$(WPS),$(ACFLAGS) $(WCFLAGS))
 LDFLAGSW += -d2 -fm
@@ -891,7 +894,7 @@ GAME2_OBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 
 REPRO_OBJ = $(patsubst %.obj,%.o,$(ALL_DOSOBJS)) \
 	testiface.o sdltest.o pa_gl.o sdlkeymap.o psrand.o stubs.o mydigi.o key.o \
-	myipx.o myvga.o cfile_ext.o deslog.o
+	myipx.o myvga.o cfile_ext.o
 REPROU_OBJ = $(REPRO_OBJ) $(UNIX_OBJ)
 
 deslog.g.o: ../../desrun/deslog/deslog.c

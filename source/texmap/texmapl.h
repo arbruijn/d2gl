@@ -53,6 +53,7 @@ extern fix compute_dv_dy_lin(g3ds_tmap *t,int vlt,int vlb, fix recip_dy);
 extern	fix	fx_u,fx_v,fx_z,fx_du_dx,fx_dv_dx,fx_dz_dx;
 extern	fix	fx_dl_dx,fx_l;
 extern	int	fx_r,fx_g,fx_b,fx_dr_dx,fx_dg_dx,fx_db_dx;
+extern	fix fx_u_right,fx_v_right,fx_z_right;
 
 extern	int	bytes_per_row;
 extern	intptr_t	write_buffer;
@@ -77,3 +78,12 @@ extern fix fix_recip[];
 
 
 #define FIX_RECIP_TABLE_SIZE	321
+
+#ifdef NASM
+#define DIVIDE_SIG_BITS		17
+#else
+#define DIVIDE_SIG_BITS		12
+#endif
+#define Z_SHIFTER 			(30-DIVIDE_SIG_BITS)
+#define DIVIDE_TABLE_SIZE	(1<<DIVIDE_SIG_BITS)
+extern fix divide_table[DIVIDE_TABLE_SIZE];

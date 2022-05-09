@@ -625,6 +625,8 @@ void texture_map_flat_faded(g3ds_tmap *t)
 // fix	DivNum = F1_0*12;
 
 extern void draw_tmap_flat(grs_bitmap *bp,int nverts,g3s_point **vertbuf);
+int ntmap_dbg;
+extern g3s_point Segment_points[];
 
 // -------------------------------------------------------------------------------------
 // Interface from Matt's data structures to Mike's texture mapper.
@@ -710,6 +712,8 @@ void draw_tmap(grs_bitmap *bp,int nverts,g3s_point **vertbuf)
 		// Lighting stuff:
 		if (lighting_mode)
 			tvp->l = vp->p3_l * NUM_LIGHTING_LEVELS;
+
+		if (ntmap_dbg)printf("%d %x,%x %x %x,%x %x %d\n", i, tvp->x2d, tvp->y2d, tvp->z, tvp->u, tvp->v, tvp->l, vp>Segment_points+1000||vp<Segment_points?0:vp-Segment_points);
 	}
 
 #if defined(POLY_ACC)

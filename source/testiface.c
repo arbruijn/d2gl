@@ -97,7 +97,10 @@ uint32_t *get_screen() {
 }
 */
 
-__attribute__((optimize("-O3"))) void copy_screen_to_texture(uint32_t *texture) {
+#ifndef __WATCOMC__
+__attribute__((optimize("-O3")))
+#endif
+void copy_screen_to_texture(uint32_t *texture) {
 	uint32_t pal[256], *dst;
 	extern ubyte gr_visible_pal[256 * 3];
 	int i;
@@ -538,8 +541,8 @@ void mprintf_at(int n, int row, int col, char * format, ...){va_list vp; va_star
 int PAEnabled;
 
 #ifdef __WATCOMC__
-int Current_level_D1;
-int data_d1;
+//int Current_level_D1;
+//int data_d1;
 void key_putkey(int k) {}
 int GetCd() { return 0; }
 void *com_port;

@@ -1,10 +1,15 @@
 #define VERBOSE
 //#define RAND_RET
+#ifndef _FIX_H
 #include "psrand.h"
+#endif
 #include <stdio.h>
 
 unsigned int d_rand_seed = 1;
-extern int GameTime;
+#ifndef _FIX_H
+typedef int fix;
+#endif
+extern fix GameTime;
 
 int psrand(void) {
 	#ifdef VERBOSE

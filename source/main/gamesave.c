@@ -55,6 +55,7 @@ char gamesave_rcsid[] = "$Id: gamesave.c 2.72 1996/12/19 11:28:57 jason Exp $";
 #include "gamepal.h"
 #include "laser.h"
 #include "byteswap.h"
+#include "objrw.h"
 
 #ifdef MACINTOSH
 #include "strutil.h"		// because my compiler doesn't have strupr
@@ -976,7 +977,7 @@ load_game_data(CFILE *LoadFile)
 	game_fileinfo.player_sizeof		=	sizeof(player);
  	game_fileinfo.object_offset		=	-1;
 	game_fileinfo.object_howmany		=	0;
-	game_fileinfo.object_sizeof		=	sizeof(object);  
+	game_fileinfo.object_sizeof		=	OBJ_RW_SIZE;
 	game_fileinfo.walls_offset			=	-1;
 	game_fileinfo.walls_howmany		=	0;
 	game_fileinfo.walls_sizeof			=	sizeof(wall);  
@@ -1959,7 +1960,7 @@ int save_game_data(FILE * SaveFile)
 	game_fileinfo.player_sizeof		=	sizeof(player);
 	game_fileinfo.object_offset		=	-1;
 	game_fileinfo.object_howmany		=	Highest_object_index+1;
-	game_fileinfo.object_sizeof		=	sizeof(object);
+	game_fileinfo.object_sizeof		=	OBJ_RW_SIZE;
 	game_fileinfo.walls_offset			=	-1;
 	game_fileinfo.walls_howmany		=	Num_walls;
 	game_fileinfo.walls_sizeof			=	sizeof(wall);

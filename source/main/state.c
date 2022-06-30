@@ -75,6 +75,7 @@ char state_rcsid[] = "$Id: state.c 2.95 1997/01/24 18:35:39 jeremy Exp $";
 #include "controls.h"
 #include "laser.h"
 #include "multibot.h"
+#include "objrw.h"
 
 #if defined(POLY_ACC)
 #include "poly_acc.h"
@@ -778,7 +779,12 @@ int state_save_all_sub(char *filename, char *desc, int between_levels)
 	//Save object info
 		i = Highest_object_index+1;
 		fwrite( &i, sizeof(int), 1, fp );
-		fwrite( Objects, sizeof(object)*i, 1, fp );
+		//fwrite( Objects, sizeof(object)*i, 1, fp );
+		for (j = 0; j < i; j++) {
+			char buf[OBJ_RW_SIZE];
+			object_to_object_rw(&Objects[j], buf);
+			fwrite( buf, sizeof(buf), 1, fp );
+		}
 		
 	//Save wall info
 		i = Num_walls;
@@ -1204,7 +1210,12 @@ int state_restore_all_sub(char *filename, int multi, int secret_restore)
 		//Read objects, and pop 'em into their respective segments.
 		fread( &i, sizeof(int), 1, fp );
 		Highest_object_index = i-1;
-		fread( Objects, sizeof(object)*i, 1, fp );
+		//fread( Objects, sizeof(object)*i, 1, fp );
+		for (j = 0; j < i; j++) {
+			char buf[OBJ_RW_SIZE];
+			fread( buf, sizeof(buf), 1, fp);
+			object_rw_to_object(buf, &Objects[j]);
+		}
 	
 		Object_next_signature = 0;
 		for (i=0; i<=Highest_object_index; i++ )	{

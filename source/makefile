@@ -327,7 +327,7 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	3dmax.c
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
-DESCENT2_SRCS += aid1.c
+DESCENT2_SRCS += aid1.c objrw.c
 #DESCENT2_SRCS += terrain.c
 
 #ifeq ($(TARGSYS),WIN32)

@@ -638,7 +638,7 @@ void gr_ibitblt(grs_bitmap *src_bmp, grs_bitmap *dest_bmp, ubyte pixel_double)
 
 // variable setup
 
-	if ( PAEnabled )
+	if ( PAEnabled || !scanline )
 		return;
 
 	sw = src_bmp->bm_w;

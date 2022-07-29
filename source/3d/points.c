@@ -86,11 +86,24 @@ ubyte g3_rotate_point(g3s_point *dest,vms_vector *src)
 //returns true if div is ok, else false
 int checkmuldiv(fix *r,fix a,fix b,fix c)
 {
-	quad q,qt;
+	quad q;
 
 	fixquadinit(&q);
 	fixmulaccum(&q,a,b);
 
+	/*
+	fix c2 = c >> 1;
+	fix qh = q.large >> 32;
+	if (qh >= c2 && (!(c & 1) || qh != c2))
+		return 0;
+	*/
+	if ((unsigned int)abs(q.large >> 31) >= (unsigned int)c)
+		return 0;
+
+	*r = q.large / c;
+	return 1;
+
+	/*
 	qt = q;
 	if (qt.high < 0)
 		fixquadnegate(&qt);
@@ -105,12 +118,13 @@ int checkmuldiv(fix *r,fix a,fix b,fix c)
 		*r = fixdivquadlong(q.low,q.high,c);
 		return 1;
 	}
+	*/
 }
 
 //projects a point
 void g3_project_point(g3s_point *p)
 {
-#if 0 //ndef __powerc
+#if 1 //ndef __powerc
 	fix tx,ty;
 
 	if (p->p3_flags & PF_PROJECTED || p->p3_codes & CC_BEHIND)

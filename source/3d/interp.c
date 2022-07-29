@@ -309,7 +309,7 @@ bool g3_draw_polygon_model(void *model_ptr,grs_bitmap **model_bitmaps,vms_angvec
 					if (glow_num < 0) {			//no glow
 
 						light = -vm_vec_dot(&View_matrix.fvec,vp(p+16));
-						light = f1_0/4 + (light*3)/4;
+						light = f1_0/4 + ((light*3)>>2);
 						light = fixmul(light,model_light);
 					}
 					else {				//yes glow
@@ -476,7 +476,7 @@ bool g3_draw_morphing_model(void *model_ptr,grs_bitmap **model_bitmaps,vms_angve
 				if (glow_num < 0) {			//no glow
 
 					light = -vm_vec_dot(&View_matrix.fvec,vp(p+16));
-					light = f1_0/4 + (light*3)/4;
+					light = f1_0/4 + ((light*3)>>2);
 					light = fixmul(light,model_light);
 				}
 				else {				//yes glow

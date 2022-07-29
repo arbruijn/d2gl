@@ -505,7 +505,7 @@ bool g3_draw_morphing_model(void *model_ptr,grs_bitmap **model_bitmaps,vms_angve
 					morph_uvls[2].v = uvl_list[i].v;
 					i++;
 
-					g3_check_and_draw_tmap(3,point_list,uvl_list,model_bitmaps[w(p+28)],NULL,NULL);
+					g3_check_and_draw_tmap(3,point_list,morph_uvls,model_bitmaps[w(p+28)],NULL,NULL);
 
 					point_list[1] = point_list[2];
 					morph_uvls[1].u = morph_uvls[2].u;

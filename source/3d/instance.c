@@ -64,14 +64,15 @@ void g3_start_instance_matrix(vms_vector *pos,vms_matrix *orient)
 
 	//step 1: subtract object position from view position
 
-	vm_vec_sub(&tempv,&View_position,pos);
+	vm_vec_sub2(&View_position,pos);
 
 
 	if (orient) {
 
 		//step 2: rotate view vector through object matrix
 
-		vm_vec_rotate(&View_position,&tempv,orient);
+		vm_vec_rotate(&tempv,&View_position,orient);
+		View_position = tempv;
 
 		//step 3: rotate object matrix through view_matrix (vm = ob * vm)
 

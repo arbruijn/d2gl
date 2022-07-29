@@ -65,7 +65,7 @@ void do_powerup_frame(object *obj)
 	vclip_info *vci = &obj->rtype.vclip_info;
 	vclip *vc = &Vclip[vci->vclip_num];
 
-	fudge = (FrameTime * ((obj-Objects)&3)) >> 4;
+	fudge = Current_level_D1 ? 0 : (FrameTime * ((obj-Objects)&3)) >> 4;
 	
 	vci->frametime -= FrameTime+fudge;
 	
@@ -73,7 +73,7 @@ void do_powerup_frame(object *obj)
 
 		vci->frametime += vc->frame_time;
 		
-		if ((obj-Objects)&1)
+		if (((obj-Objects)&1) && !Current_level_D1)
 			vci->framenum--;
 		else
 			vci->framenum++;
@@ -487,6 +487,8 @@ int do_powerup(object *obj)
 			break;
 		case	POW_VULCAN_AMMO:
 			used = pick_up_vulcan_ammo();
+            if (Current_level_D1 && !used && !(Game_mode & GM_MULTI) ) // ??? needed to emulate dup msg
+                used = pick_up_vulcan_ammo();
 			break;
 		case	POW_HOMING_AMMO_1:
 			used=pick_up_secondary(HOMING_INDEX,1);

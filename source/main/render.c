@@ -281,9 +281,10 @@ void flash_frame()
 //	hideously hacked in headlight system.
 //	vp is a pointer to vertex ids.
 //	tmap1, tmap2 are texture map ids.  tmap2 is the pasty one.
-void render_face(int segnum, int sidenum, int nv, short *vp, int tmap1, int tmap2, uvl *uvlp, int wid_flags)
+void render_face(int segnum, int sidenum, int nv, short *vp, int tmap1, int tmap2, uvl *uvlp, int wid_flags,
+	vms_vector *norm)
 {
-	// -- Using new headlight system...fix			face_light;
+	fix			face_light;
 	grs_bitmap	*bm;
 	fix			reflect;
 	uvl			uvl_copy[8];
@@ -339,6 +340,7 @@ void render_face(int segnum, int sidenum, int nv, short *vp, int tmap1, int tmap
 	//reflect = fl2f((1.0-TmapInfo[p->tmap_num].reflect));
 
 	reflect = Face_reflectivity;		// f1_0;	//until we figure this stuff out...
+	face_light = fixmul(-vm_vec_dot(&Viewer->orient.fvec,norm), reflect);
 
 	//set light values for each vertex & build pointlist
 	{
@@ -358,7 +360,8 @@ void render_face(int segnum, int sidenum, int nv, short *vp, int tmap1, int tmap
 			uvl_copy[i].l += Dynamic_light[vp[i]];
 
 			//add in light from player's headlight
-			// -- Using new headlight system...uvl_copy[i].l += compute_headlight_light(&Segment_points[vp[i]].p3_vec,face_light);
+			if (Current_level_D1)  // D2 Using new headlight system...
+				uvl_copy[i].l += compute_headlight_light(&Segment_points[vp[i]].p3_vec,face_light);
 
 			//saturate at max value
 			if (uvl_copy[i].l > MAX_LIGHT)
@@ -457,11 +460,18 @@ void render_side(segment *segp, int sidenum)
 		normals[1] = segp->sides[sidenum].normals[1];
 	#endif
 
+	if (Current_level_D1)
+		if (sidep->type == SIDE_IS_TRI_13)
+			vm_vec_normalized_dir(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][1]]]);
+		else
+			vm_vec_normalized_dir(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
+
 	//	========== Mark: Here is the change...beginning here: ==========
 
 	if (sidep->type == SIDE_IS_QUAD) {
 
-		vm_vec_sub(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
+		if (!Current_level_D1)
+			vm_vec_sub(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
 
 		// -- Old, slow way --	//	Regardless of whether this side is comprised of a single quad, or two triangles, we need to know one normal, so
 		// -- Old, slow way --	//	deal with it, get the dot product.
@@ -514,7 +524,7 @@ void render_side(segment *segp, int sidenum)
 // -- flare creates point -- }
 
 		if (v_dot_n0 >= 0) {
-			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
+			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags, &normals[0]);
 			#ifdef EDITOR
 			check_face(segp-Segments, sidenum, 0, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 			#endif
@@ -522,10 +532,11 @@ void render_side(segment *segp, int sidenum)
 	} else {
 		//	Regardless of whether this side is comprised of a single quad, or two triangles, we need to know one normal, so
 		//	deal with it, get the dot product.
-		if (sidep->type == SIDE_IS_TRI_13)
-			vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][1]]]);
-		else
-			vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
+		if (!Current_level_D1)
+			if (sidep->type == SIDE_IS_TRI_13)
+				vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][1]]]);
+			else
+				vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
 
 		get_side_verts(vertnum_list,segp-Segments,sidenum);
 
@@ -556,7 +567,7 @@ void render_side(segment *segp, int sidenum)
 			if (n0_dot_n1 < Min_n0_n1_dot)
 				goto im_so_ashamed;
 
-			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
+			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags, &normals[0]);
 			#ifdef EDITOR
 			check_face(segp-Segments, sidenum, 0, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 			#endif
@@ -564,7 +575,7 @@ void render_side(segment *segp, int sidenum)
 im_so_ashamed: ;
 			if (sidep->type == SIDE_IS_TRI_02) {
 				if (v_dot_n0 >= 0) {
-					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
+					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags, &normals[0]);
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 0, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 					#endif
@@ -573,14 +584,14 @@ im_so_ashamed: ;
 				if (v_dot_n1 >= 0) {
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[2];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[1] = vertnum_list[2];	vertnum_list[2] = vertnum_list[3];	// want to render from vertices 0, 2, 3 on side
-					render_face(segp-Segments, sidenum, 3, &vertnum_list[0], sidep->tmap_num, sidep->tmap_num2, temp_uvls, wid_flags);
+					render_face(segp-Segments, sidenum, 3, &vertnum_list[0], sidep->tmap_num, sidep->tmap_num2, temp_uvls, wid_flags, &normals[1]);
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 1, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 					#endif
 				}
 			} else if (sidep->type ==  SIDE_IS_TRI_13) {
 				if (v_dot_n1 >= 0) {
-					render_face(segp-Segments, sidenum, 3, &vertnum_list[1], sidep->tmap_num, sidep->tmap_num2, &sidep->uvls[1], wid_flags);	// rendering 1,2,3, so just skip 0
+					render_face(segp-Segments, sidenum, 3, &vertnum_list[1], sidep->tmap_num, sidep->tmap_num2, &sidep->uvls[1], wid_flags, &normals[1]);	// rendering 1,2,3, so just skip 0
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 1, 3, &vertnum_list[1], sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 					#endif
@@ -589,7 +600,7 @@ im_so_ashamed: ;
 				if (v_dot_n0 >= 0) {
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[1];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[2] = vertnum_list[3];		// want to render from vertices 0,1,3
-					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, temp_uvls, wid_flags);
+					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, temp_uvls, wid_flags, &normals[0]);
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 0, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 					#endif
@@ -1427,7 +1438,7 @@ void build_object_lists(int n_segs)
 
 						for (sn=0,sf=1;sn<6;sn++,sf<<=1)
 							if (m.sidemask & sf) {
-								segment *seg = &Segments[new_segnum];
+								segment *seg = &Segments[Current_level_D1 ? segnum : new_segnum];
 		
 								if (WALL_IS_DOORWAY(seg,sn) & WID_FLY_FLAG) {		//can explosion migrate through
 									int child = seg->children[sn];
@@ -1444,7 +1455,7 @@ void build_object_lists(int n_segs)
 							}
 					}
 	
-				} while (0);	//while (did_migrate);
+				} while (did_migrate && Current_level_D1);
 
 				add_obj_to_seglist(objnum,list_pos);
 	
@@ -1583,7 +1594,7 @@ void render_frame(fix eye_offset, int window_num)
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);
-		FrameCount++;
+		//FrameCount++;
 		return;
 	}
 

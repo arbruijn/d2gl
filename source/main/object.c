@@ -369,13 +369,16 @@ draw_cloaked_object(object *obj,fix light,fix *glow,fix cloak_start_time,fix clo
 
 	if (cloak_delta_time < Cloak_fadein_duration/2) {
 
-		light_scale = fixdiv(Cloak_fadein_duration/2 - cloak_delta_time,Cloak_fadein_duration/2);
+		light_scale = Cloak_fadein_duration/2 - cloak_delta_time;
+		if (!Current_level_D1)
+			light_scale = fixdiv(light_scale,Cloak_fadein_duration/2);
 		fading = 1;
 
 	}
 	else if (cloak_delta_time < Cloak_fadein_duration) {
+		fix val = cloak_delta_time - Cloak_fadein_duration/2;
 
-		cloak_value = f2i(fixdiv(cloak_delta_time - Cloak_fadein_duration/2,Cloak_fadein_duration/2) * CLOAKED_FADE_LEVEL);
+		cloak_value = f2i((Current_level_D1 ? val : fixdiv(val,Cloak_fadein_duration/2)) * CLOAKED_FADE_LEVEL);
 
 	} else if (GameTime < cloak_end_time-Cloak_fadeout_duration) {
 		static int cloak_delta=0,cloak_dir=1;
@@ -398,12 +401,15 @@ draw_cloaked_object(object *obj,fix light,fix *glow,fix cloak_start_time,fix clo
 		cloak_value = CLOAKED_FADE_LEVEL - cloak_delta;
 	
 	} else if (GameTime < cloak_end_time-Cloak_fadeout_duration/2) {
+		fix val = total_cloaked_time - Cloak_fadeout_duration/2 - cloak_delta_time;
 
-		cloak_value = f2i(fixdiv(total_cloaked_time - Cloak_fadeout_duration/2 - cloak_delta_time,Cloak_fadeout_duration/2) * CLOAKED_FADE_LEVEL);
+		cloak_value = f2i((Current_level_D1 ? val : fixdiv(val,Cloak_fadeout_duration/2)) * CLOAKED_FADE_LEVEL);
 
 	} else {
 
-		light_scale = fixdiv(Cloak_fadeout_duration/2 - (total_cloaked_time - cloak_delta_time),Cloak_fadeout_duration/2);
+		light_scale = Cloak_fadeout_duration/2 - (total_cloaked_time - cloak_delta_time);
+		if (!Current_level_D1)
+			light_scale = fixdiv(light_scale,Cloak_fadeout_duration/2);
 		fading = 1;
 	}
 
@@ -634,7 +640,7 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 
 	vm_vec_add2(&pos, &rand_vec);
 
-	size = fixmul(size_scale, F1_0/2 + psrand()*4/2);
+	size = Current_level_D1 ? fixmul(size_scale, F1_0 + psrand()*4) : fixmul(size_scale, F1_0/2 + psrand()*4/2);
 
 	segnum = find_point_seg(&pos, objp->segnum);
 	if (segnum != -1) {

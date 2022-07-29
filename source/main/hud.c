@@ -272,7 +272,9 @@ void HUD_render_message_frame()
 
 			gr_set_curfont( SMALL_FONT );
 
-			if ( (Cockpit_mode == CM_FULL_SCREEN) || (Cockpit_mode == CM_LETTERBOX) ) {
+			if (Current_level_D1 && !FontHires) {
+				y = 3;
+			} else if ( (Cockpit_mode == CM_FULL_SCREEN) || (Cockpit_mode == CM_LETTERBOX) ) {
 				if (Game_window_w == max_window_w)
 					y = SMALL_FONT->ft_h/2;
 				else

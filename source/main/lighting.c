@@ -138,7 +138,7 @@ void apply_light(fix obj_intensity, int obj_seg, vms_vector *obj_pos, int n_rend
 				fix			dist;
 
 				vertnum = vp[vv];
-				if ((vertnum ^ FrameCount) & 1) {
+				if ((vertnum ^ FrameCount) & 1 || Current_level_D1) {
 					vertpos = &Vertices[vertnum];
 					dist = vm_vec_dist_quick(obj_pos, vertpos);
 					dist = fixmul(dist/4, dist/4);
@@ -179,14 +179,14 @@ void apply_light(fix obj_intensity, int obj_seg, vms_vector *obj_pos, int n_rend
 					}
 				}
 			// -- for (vv=FrameCount&1; vv<n_render_vertices; vv+=2) {
-			for (vv=0; vv<n_render_vertices; vv++) {
+			for (vv=Current_level_D1?FrameCount&1:0; vv<n_render_vertices; vv+=Current_level_D1+1) {
 				int			vertnum;
 				vms_vector	*vertpos;
 				fix			dist;
 				int			apply_light;
 
 				vertnum = render_vertices[vv];
-				if ((vertnum ^ FrameCount) & 1) {
+				if (Current_level_D1 || (vertnum ^ FrameCount) & 1) {
 					vertpos = &Vertices[vertnum];
 					dist = vm_vec_dist_quick(obj_pos, vertpos);
 					apply_light = 0;
@@ -276,6 +276,8 @@ fix compute_light_intensity(int objnum)
          
 	switch (objtype) {
 		case OBJ_PLAYER:
+			 if (Current_level_D1)
+				return 0;
 			 if (Players[obj->id].flags & PLAYER_FLAGS_HEADLIGHT_ON) {
 				if (Num_headlights < MAX_HEADLIGHTS)
 					Headlights[Num_headlights++] = obj;
@@ -307,7 +309,7 @@ fix compute_light_intensity(int objnum)
 				 return 0;
 			break;
 		case OBJ_ROBOT:
-			return F1_0*Robot_info[obj->id].lightcast;
+			return Current_level_D1 ? F1_0/2 : F1_0*Robot_info[obj->id].lightcast;
 			break;
 		case OBJ_WEAPON: {
 			fix tval = Weapon_info[obj->id].light;
@@ -397,14 +399,18 @@ void set_dynamic_light(void)
 	}
 
 	// -- for (vertnum=FrameCount&1; vertnum<n_render_vertices; vertnum+=2) {
-	for (vv=0; vv<n_render_vertices; vv++) {
-		int	vertnum;
+	if (Current_level_D1)
+		for (vv=FrameCount&1; vv<n_render_vertices; vv+=2)
+			Dynamic_light[render_vertices[vv]] = 0;
+ 	else
+		for (vv=0; vv<n_render_vertices; vv++) {
+			int	vertnum;
 
-		vertnum = render_vertices[vv];
-		Assert(vertnum >= 0 && vertnum <= Highest_vertex_index);
-		if ((vertnum ^ FrameCount) & 1)
-			Dynamic_light[vertnum] = 0;
-	}
+			vertnum = render_vertices[vv];
+			Assert(vertnum >= 0 && vertnum <= Highest_vertex_index);
+			if ((vertnum ^ FrameCount) & 1)
+				Dynamic_light[vertnum] = 0;
+		}
 
 	cast_muzzle_flash_light(n_render_vertices, render_vertices);
 
@@ -435,6 +441,9 @@ void set_dynamic_light(void)
 			objnum = obj->next;
 		}
 	}
+
+	if (Current_level_D1)
+		return;
 
 	//	Now, process all lights from last frame which haven't been processed this frame.
 	for (objnum=0; objnum<=Highest_object_index; objnum++) {
@@ -477,8 +486,13 @@ void toggle_headlight_active()
 
 fix	Beam_brightness = (F1_0/2);	//global saying how bright the light beam is
 
+#if 0
 #define MAX_DIST_LOG	6							//log(MAX_DIST-expressed-as-integer)
 #define MAX_DIST		(f1_0<<MAX_DIST_LOG)	//no light beyond this dist
+#else
+#define MAX_DIST_LOG	5							//log(MAX_DIST-expressed-as-integer)
+#define MAX_DIST		(f1_0<<(MAX_DIST_LOG+1))	//no light beyond this dist
+#endif
 
 fix compute_headlight_light_on_object(object *objp)
 {
@@ -514,58 +528,60 @@ fix compute_headlight_light_on_object(object *objp)
 }
 
 
-// -- Unused -- //Compute the lighting from the headlight for a given vertex on a face.
-// -- Unused -- //Takes:
-// -- Unused -- //  point - the 3d coords of the point
-// -- Unused -- //  face_light - a scale factor derived from the surface normal of the face
-// -- Unused -- //If no surface normal effect is wanted, pass F1_0 for face_light
-// -- Unused -- fix compute_headlight_light(vms_vector *point,fix face_light)
-// -- Unused -- {
-// -- Unused -- 	fix light;
-// -- Unused -- 	int use_beam = 0;		//flag for beam effect
-// -- Unused -- 
-// -- Unused -- 	light = Beam_brightness;
-// -- Unused -- 
-// -- Unused -- 	if ((Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT) && (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON) && Viewer==&Objects[Players[Player_num].objnum] && Players[Player_num].energy > 0) {
-// -- Unused -- 		light *= HEADLIGHT_BOOST_SCALE;
-// -- Unused -- 		use_beam = 1;	//give us beam effect
-// -- Unused -- 	}
-// -- Unused -- 
-// -- Unused -- 	if (light) {				//if no beam, don't bother with the rest of this
-// -- Unused -- 		fix point_dist;
-// -- Unused -- 
-// -- Unused -- 		point_dist = vm_vec_mag_quick(point);
-// -- Unused -- 
-// -- Unused -- 		if (point_dist >= MAX_DIST)
-// -- Unused -- 
-// -- Unused -- 			light = 0;
-// -- Unused -- 
-// -- Unused -- 		else {
-// -- Unused -- 			fix dist_scale,face_scale;
-// -- Unused -- 
-// -- Unused -- 			dist_scale = (MAX_DIST - point_dist) >> MAX_DIST_LOG;
-// -- Unused -- 			light = fixmul(light,dist_scale);
-// -- Unused -- 
-// -- Unused -- 			if (face_light < 0)
-// -- Unused -- 				face_light = 0;
-// -- Unused -- 
-// -- Unused -- 			face_scale = f1_0/4 + face_light/2;
-// -- Unused -- 			light = fixmul(light,face_scale);
-// -- Unused -- 
-// -- Unused -- 			if (use_beam) {
-// -- Unused -- 				fix beam_scale;
-// -- Unused -- 
-// -- Unused -- 				if (face_light > f1_0*3/4 && point->z > i2f(12)) {
-// -- Unused -- 					beam_scale = fixdiv(point->z,point_dist);
-// -- Unused -- 					beam_scale = fixmul(beam_scale,beam_scale);	//square it
-// -- Unused -- 					light = fixmul(light,beam_scale);
-// -- Unused -- 				}
-// -- Unused -- 			}
-// -- Unused -- 		}
-// -- Unused -- 	}
-// -- Unused -- 
-// -- Unused -- 	return light;
-// -- Unused -- }
+//Used for D1:
+//Compute the lighting from the headlight for a given vertex on a face.
+//Takes:
+//  point - the 3d coords of the point
+//  face_light - a scale factor derived from the surface normal of the face
+//If no surface normal effect is wanted, pass F1_0 for face_light
+fix compute_headlight_light(vms_vector *point,fix face_light)
+{
+	fix light;
+	int use_beam = 0;		//flag for beam effect
+
+	light = Beam_brightness;
+
+	if ((Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT) && (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON) && Viewer==&Objects[Players[Player_num].objnum] && Players[Player_num].energy > 0) {
+		light *= HEADLIGHT_BOOST_SCALE;
+		use_beam = 1;	//give us beam effect
+	}
+
+	if (light) {				//if no beam, don't bother with the rest of this
+		fix point_dist;
+
+		point_dist = vm_vec_mag_quick(point);
+
+		if (point_dist >= MAX_DIST)
+
+			light = 0;
+
+		else {
+			fix dist_scale,face_scale;
+
+			dist_scale = (MAX_DIST - point_dist) >> MAX_DIST_LOG;
+			//light = fixmul(light,dist_scale);
+
+			if (face_light < 0)
+				face_light = 0;
+
+			face_scale = f1_0/4 + face_light/2;
+
+			if (use_beam) {
+				fix beam_scale;
+
+				if (face_light > f1_0*3/4 && point->z > i2f(12)) {
+					beam_scale = fixdiv(point->z,point_dist);
+					beam_scale = fixmul(beam_scale,beam_scale);	//square it
+					light = fixmul(light,beam_scale);
+				}
+			}
+
+			light = fixmul(light,fixmul(dist_scale, face_scale));
+		}
+	}
+
+	return light;
+}
 
 //compute the average dynamic light in a segment.  Takes the segment number
 fix compute_seg_dynamic_light(int segnum)
@@ -594,6 +610,7 @@ fix compute_seg_dynamic_light(int segnum)
 
 fix object_light[MAX_OBJECTS];
 int object_sig[MAX_OBJECTS];
+ubyte object_id[MAX_OBJECTS];
 object *old_viewer;
 int reset_lighting_hack;
 
@@ -601,7 +618,8 @@ int reset_lighting_hack;
 
 void start_lighting_frame(object *viewer)
 {
-	reset_lighting_hack = (viewer != old_viewer);
+	if (old_viewer || !Current_level_D1)
+		reset_lighting_hack = (viewer != old_viewer);
 
 	old_viewer = viewer;
 }
@@ -629,7 +647,8 @@ fix compute_object_light(object *obj,vms_vector *rotated_pnt)
 
 	//Now, maybe return different value to smooth transitions
 
-	if (!reset_lighting_hack && object_sig[objnum] == obj->signature) {
+	if (!reset_lighting_hack &&
+		(Current_level_D1 ? object_id[objnum] == obj->id : object_sig[objnum] == obj->signature)) {
 		fix delta_light,frame_delta;
 
 		delta_light = light - object_light[objnum];
@@ -651,6 +670,7 @@ fix compute_object_light(object *obj,vms_vector *rotated_pnt)
 	else {		//new object, initialize
 
 		object_sig[objnum] = obj->signature;
+		object_id[objnum] = obj->id;
 		object_light[objnum] = light;
 	}
 
@@ -658,8 +678,10 @@ fix compute_object_light(object *obj,vms_vector *rotated_pnt)
 
 	//Next, add in headlight on this object
 
-	// -- Matt code: light += compute_headlight_light(rotated_pnt,f1_0);
-	light += compute_headlight_light_on_object(obj);
+	if (Current_level_D1)
+		light += compute_headlight_light(rotated_pnt,f1_0);
+	else
+		light += compute_headlight_light_on_object(obj);
   
 	//Finally, add in dynamic light for this segment
 

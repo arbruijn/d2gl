@@ -77,7 +77,7 @@ void draw_weapon_vclip(object *obj)
 	if (modtime == ONE_FRAME_TIME)
 		modtime = psrand();
 
-	if (obj->id == PROXIMITY_ID) {		//make prox bombs spin out of sync
+	if (obj->id == PROXIMITY_ID && !Current_level_D1) {		//make prox bombs spin out of sync
 		int objnum = obj-Objects;
 
 		modtime += (modtime * (objnum&7)) / 16;	//add variance to spin rate

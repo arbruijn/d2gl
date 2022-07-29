@@ -136,7 +136,8 @@ void do_controlcen_dead_frame(void)
 {
 	if ((Dead_controlcen_object_num != -1) && (Countdown_seconds_left > 0))
 		if (psrand() < FrameTime*4)
-			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0, 1);
+			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num],
+				Current_level_D1 ? F1_0*3 : F1_0, 1);
 
 	if (Control_center_destroyed && !Endlevel_sequence && !Current_level_D1) // D1 after object_move_all
 		do_countdown_frame();
@@ -146,7 +147,7 @@ void do_controlcen_dead_frame(void)
 
 void do_countdown_frame()
 {
-	fix	old_time;
+	fix	old_time, timer_ofs;
 	int	fc, div_scale;
 
 	if (!Control_center_destroyed)	return;
@@ -178,12 +179,13 @@ void do_countdown_frame()
 
 	old_time = Countdown_timer;
 	Countdown_timer -= RealFrameTime;
-	Countdown_seconds_left = f2i(Countdown_timer + F1_0*7/8);
+	timer_ofs = Current_level_D1 ? F1_0 : F1_0*7/8;
+	Countdown_seconds_left = f2i(Countdown_timer + timer_ofs);
 
 	if ( (old_time > COUNTDOWN_VOICE_TIME ) && (Countdown_timer <= COUNTDOWN_VOICE_TIME) )	{
 		digi_play_sample( SOUND_COUNTDOWN_13_SECS, F3_0 );
 	}
-	if ( f2i(old_time + F1_0*7/8) != Countdown_seconds_left )	{
+	if ( f2i(old_time + timer_ofs) != Countdown_seconds_left )	{
 		if ( (Countdown_seconds_left>=0) && (Countdown_seconds_left<10) ) 
 			digi_play_sample( SOUND_COUNTDOWN_0_SECS+Countdown_seconds_left, F3_0 );
 		if ( Countdown_seconds_left==Total_countdown_time-1)
@@ -494,6 +496,11 @@ void init_controlcen_for_level(void)
 	Control_center_next_fire_time = 0;
 	
 	Dead_controlcen_object_num = -1;
+
+	if (Current_level_D1 && cntrlcen_objnum != -1) { // reactor now has id 0, fake old obj id for lighting
+		extern ubyte object_id[];
+		object_id[cntrlcen_objnum] = 1;
+	}
 }
 
 void special_reactor_stuff(void)

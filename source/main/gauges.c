@@ -305,8 +305,8 @@ extern int Current_display_mode;
 #define LHX(x)		((x)*(Current_display_mode?2:1))
 #define LHY(y)		((y)*(Current_display_mode?2.4:1))
 #else
-#define LHX(x)		((x)*(MenuHires?2:1))
-#define LHY(y)		((y)*(MenuHires?2.4:1))
+#define LHX(x)		((x)*(FontHires?2:1))
+#define LHY(y)		((y)*(FontHires?2.4:1))
 #endif
 
 static int score_display[2];
@@ -1014,12 +1014,13 @@ void hud_show_score_added()
 
 	score_time -= FrameTime;
 	if (score_time > 0) {
-		color = f2i(score_time * 20) + 12;
+		color = f2i(score_time * 20) + (Current_level_D1 ? 10 : 12);
 
 		if (color < 10) color = 12;
-		if (color > 31) color = 30;
+		if (color > 31) color = 30 + Current_level_D1;
 
-		color = color - (color % 4);	//	Only allowing colors 12,16,20,24,28 speeds up gr_getcolor, improves caching
+		if (!Current_level_D1)
+			color = color - (color % 4);	//	Only allowing colors 12,16,20,24,28 speeds up gr_getcolor, improves caching
 
 		if (Cheats_enabled)
 			sprintf(score_str, "%s", TXT_CHEATER);
@@ -1028,7 +1029,7 @@ void hud_show_score_added()
 
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(gr_getcolor(0, color, 0),-1 );
-		gr_printf(grd_curcanv->cv_w-w-LHX(2+10), Line_spacing+4, score_str);
+		gr_printf(grd_curcanv->cv_w-w-LHX(2+10), Current_level_D1 && !FontHires ? 10 : Line_spacing+4, score_str);
 	} else {
 		score_time = 0;
 		score_display[0] = 0;
@@ -1276,7 +1277,7 @@ void hud_show_homing_warning(void)
 void hud_show_keys(void)
 {
 	int y = 3*Line_spacing;
-	int dx = GAME_FONT->ft_w+GAME_FONT->ft_w/2;
+	int dx = Current_level_D1 && !FontHires ? 8 : GAME_FONT->ft_w+GAME_FONT->ft_w/2;
 
 	if (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) {
 		PAGE_IN_GAUGE( KEY_ICON_BLUE );
@@ -1419,6 +1420,9 @@ void show_bomb_count(int x,int y,int bg_color,int always_show)
 	int bomb,count,countx;
 	char txt[5],*t;
 
+	if (Current_level_D1)
+		return;
+
 	bomb = which_bomb();
 	count = Players[Player_num].secondary_ammo[bomb];
 
@@ -1519,8 +1523,10 @@ void hud_show_weapons(void)
 
 		case VULCAN_INDEX:		
 		case GAUSS_INDEX:			
-			sprintf(weapon_str, "%s: %i", weapon_name, f2i((unsigned) Players[Player_num].primary_ammo[VULCAN_INDEX] * (unsigned) VULCAN_AMMO_SCALE)); 
-			convert_1s(weapon_str);
+			sprintf(weapon_str, "%s: %i", weapon_name, f2i((unsigned) Players[Player_num].primary_ammo[VULCAN_INDEX] *
+				(Current_level_D1 ? VULCAN_AMMO_SCALE_D1 : VULCAN_AMMO_SCALE))); 
+			if (!Current_level_D1)
+				convert_1s(weapon_str);
 			break;
 
 		case SPREADFIRE_INDEX:
@@ -1648,7 +1654,7 @@ void hud_show_lives()
 		PAGE_IN_GAUGE( GAUGE_LIVES );
 		bm = &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ];
 		gr_ubitmapm(10,3,bm);
-		gr_printf(10+bm->bm_w+bm->bm_w/2, 4, "x %d", Players[Player_num].lives-1);
+		gr_printf(10+bm->bm_w+bm->bm_w/2, Current_level_D1 && !FontHires ? 3 : 4, "x %d", Players[Player_num].lives-1);
 	}
 
 }
@@ -3270,7 +3276,7 @@ void draw_hud()
 	if (Scanline_double)		// I should be shot for this ugly hack....
 		FontHires = 1;
 #endif
-	Line_spacing = GAME_FONT->ft_h + GAME_FONT->ft_h/4;
+	Line_spacing = Current_level_D1 && !FontHires ? 8 : GAME_FONT->ft_h + GAME_FONT->ft_h/4;
 #ifdef MACINTOSH
 	if (Scanline_double)
 		FontHires = 0;

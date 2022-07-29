@@ -287,8 +287,11 @@ void render_countdown_gauge()
 		if (Player_is_dead)
 			y += SMALL_FONT->ft_h*2;
 
-		//if (!((Cockpit_mode == CM_STATUS_BAR) && (Game_window_y >= 19)))
-		//	y += 5;
+		if (Current_level_D1 && !FontHires) {
+			y = 20;
+			if (!((Cockpit_mode == CM_STATUS_BAR) && (Game_window_y >= 19)))
+				y += 5;
+		}
 		gr_printf(0x8000, y, "T-%d s", Countdown_seconds_left );
 	}
 }

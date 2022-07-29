@@ -587,6 +587,9 @@ TEXMAP_OBJS +=  tmap_lnn.obj tmap_lln.obj tmap_llt.obj tmap_lnt.obj
 else
 TEXMAP_OBJS += scanline.obj
 endif
+TEXMAPD1_OBJS = ntmap.obj tmapflat.obj winclip.obj \
+	tmapfade.obj tmap_flt.obj tmap_inc.obj tmap_lin.obj tmap_ll.obj tmap_per.obj
+#UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
 
 # What to clean
 CLEAN_TARGS = $(OBJDIR)\*.obj
@@ -856,6 +859,9 @@ clean:
 
 %.em.o: %.c
 	emcc $(EMCFLAGS) -O3 -c -o $@ $^ 
+
+%.g.o: %.nas
+	nasm -Itexmapd1 -f elf -o $@ $^
 
 #EMFILES = descent2.hog groupa.pig descent.hog descent.pig descent.mn2 descent2.ham descent.256 .plr
 #EMFILES = d2demo.hog d2demo.pig d2demo.ham demo.plr

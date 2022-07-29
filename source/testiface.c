@@ -404,7 +404,7 @@ int PlayMovie(const char *filename, int allow_abort) { return -1; }
 int PlayMovies(int num_files, const char *filename[], int graphmode, int allow_abort) { return -1; }
 int InitRobotMovie (char *filename) { return -1; }
 void DeInitRobotMovie(void) {}
-int init_movies() { return -1; }
+void init_movies() { }
 int init_subtitles(char *filename) { return -1; }
 void close_subtitles() {}
 

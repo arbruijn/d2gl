@@ -1124,7 +1124,7 @@ try_again:;
 //do we have the robot movies available
 int robot_movies=0;	//0 means none, 1 means lowres, 2 means hires
 
-init_movie(char *filename,int libnum,int is_robots,int required)
+void init_movie(char *filename,int libnum,int is_robots,int required)
 {
 	int high_res;
 

@@ -472,9 +472,9 @@ void check_vec(vms_vector *v)
 				check <<= 2;
 			}
 
-			v->x >>= cnt;
-			v->y >>= cnt;
-			v->z >>= cnt;
+			v->x <<= cnt;
+			v->y <<= cnt;
+			v->z <<= cnt;
 		}
 }
 

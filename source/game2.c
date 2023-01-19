@@ -77,7 +77,7 @@ void draw() {
     EventLoop(0);
 	#ifdef EM_CC
 	emscripten_sleep(1);
-	#endif    
+	#endif
     long now;
     long timeout = lastTicks + 1000/60;
 #if 0 //EM_CC
@@ -278,8 +278,8 @@ int minit() { return -1; }
 #endif
 short vga_init() { return 0; }
 int joy_init() { return 1; }
-void mouse_show_cursor() { SDL_ShowCursor(SDL_ENABLE); printf("show_cursor\n"); }
-void mouse_hide_cursor() { SDL_ShowCursor(SDL_DISABLE); printf("hide_cursor\n"); }
+void mouse_show_cursor() { SDL_ShowCursor(SDL_ENABLE); } //printf("show_cursor\n"); }
+void mouse_hide_cursor() { SDL_ShowCursor(SDL_DISABLE); } //printf("hide_cursor\n"); }
 
 void mouse_get_pos(int *x, int *y) { SDL_GetMouseState(x, y); printf("pos %d,%d\n", *x, *y); }
 

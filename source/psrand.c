@@ -1,4 +1,4 @@
-#define VERBOSE
+//#define VERBOSE
 //#define RAND_RET
 #ifndef _FIX_H
 #include "psrand.h"

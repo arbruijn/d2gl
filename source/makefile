@@ -582,7 +582,7 @@ LIBS = texmap
 
 #TEXMAP_OBJS = 	ntmap.obj tmapflat.obj  
 TEXMAPASM_OBJS += ntmap.obj tmapflat.obj
-TEXMAPASM_OBJS +=	tmap_per.obj tmap_flt.obj tmapfade.obj tmap_ed.obj 
+TEXMAPASM_OBJS +=	tmap_per.obj tmap_flt.obj tmapfade.obj tmap_ed.obj
 TEXMAPASM_OBJS +=  tmap_pnn.obj tmap_pln.obj tmap_plt.obj tmap_pnt.obj
 TEXMAPASM_OBJS +=  tmap_qnn.obj tmap_qln.obj tmap_qlt.obj tmap_qnt.obj
 TEXMAPASM_OBJS +=  tmap_lnn.obj tmap_lln.obj tmap_llt.obj tmap_lnt.obj
@@ -813,7 +813,7 @@ ACFLAGS += -DNDOS -DREPRO_FIX
 UCFLAGS += -DNASM2D
 UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
 #ACFLAGS += -DENDLEVEL
-ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
+#ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
 ACFLAGS += -DNETWORK=1 -DNPACK
 #ACFLAGS += -DD1SW -DSHAREWARE
 #ACFLAGS += -DSHAREWARE -DMACSW

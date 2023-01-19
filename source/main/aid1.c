@@ -1552,7 +1552,7 @@ static void make_random_vector(vms_vector *vec)
 }
 #endif
 
-#ifndef NDEBUG
+#if 0 //ndef NDEBUG
 #undef mprintf
 #include <stdarg.h>
 static void mmprintf(int n, const char *msg, ...) { va_list vp;va_start(vp,msg);vprintf(msg, vp);va_end(vp); }
@@ -1669,10 +1669,10 @@ static void do_ai_robot_hit(object *objp, int type)
 #endif
 
 #ifndef NDEBUG
-int	Do_ai_flag=1;
-int	Cvv_test=0;
-int	Cvv_last_time[MAX_OBJECTS];
-int	Gun_point_hack=0;
+//static int	Do_ai_flag=1;
+static int	Cvv_test=0;
+static int	Cvv_last_time[MAX_OBJECTS];
+static int	Gun_point_hack=0;
 #endif
 
 #define	CHASE_TIME_LENGTH		(F1_0*8)

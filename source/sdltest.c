@@ -273,7 +273,7 @@ int EventLoop(int sync) {
     int keep_running = 1;
     #ifndef __WATCOMC__
         if (sync) {
-        	#ifdef GL
+            #ifdef GL
             #ifdef SDL2
             SDL_GL_SwapWindow(window);
             #else
@@ -283,7 +283,7 @@ int EventLoop(int sync) {
             #endif
             SDL_Delay(10);
         }
-        
+
 	// while (keep_running)
 	//{
 	/*
@@ -528,7 +528,7 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     level = arg_level;
     if (is_play) {
         if (level == end_level) {
-        	printf("got end_level\n");
+		    printf("got end_level\n");
             exit(0);
 		}
         load_stat(log_file, skipped_levels);
@@ -537,7 +537,7 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
 
     // clear AI globals
     for (i = 0; i < MAX_OBJECTS; i++)
-    	Objects[i].control_type = 0; // prevent init_ai_objects
+	    Objects[i].control_type = 0; // prevent init_ai_objects
     memset(pAi_local_info, 0, sizeof(Ai_local_info)); //184 * 350);
     memset(pAi_cloak_info, 0, 8 * 16);
     *pLast_gate_time = *pLast_teleport_time = *pBoss_cloak_end_time = 0;
@@ -551,7 +551,7 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     Escort_last_path_created = 0;
 
     Last_fired_upon_player_pos.x = Last_fired_upon_player_pos.y = Last_fired_upon_player_pos.z = 0;
-    
+
     Spreadfire_toggle = 0;
     Helix_orientation = 0;
 
@@ -821,7 +821,7 @@ void my_controls_read_all() {
     if (is_record) {
         int key, li, i;
         char *p;
-    
+
         controls_read_all();
         if (!log_file)
             return;
@@ -956,7 +956,7 @@ void my_game_render_frame() {
     #endif
 
     if (GameTime != img_time)
-    	return;
+        return;
 	//f = fopen("out.bin", "wb"); fwrite(gr_screen_buffer, cur_w, cur_h, f); fclose(f);
 	#ifdef __WATCOMC__
 	pcx_write_bitmap("out.pcx", &grd_curcanv->cv_bitmap, gr_palette);
@@ -1035,7 +1035,7 @@ void print_stat(FILE *f) {
 	    fprintf(f, "time_flash_last_played=%x\n", Time_flash_last_played);
 	    fprintf(f, "afterburner_charge=%x\n", Afterburner_charge);
 	}
-    
+
     p1 = line1; p2 = line2;
     for (i = 0; i < Highest_object_index; i++)
         if (Objects[i].type == OBJ_ROBOT && Objects[i].matcen_creator & 0x80) {
@@ -1067,10 +1067,10 @@ void my_reset_time() {
     set_screen_mode(SCREEN_GAME);
     gr_palette_load(gr_palette);
     sdl_time_sync();
-    
+
     if (record_demo && Newdemo_state == ND_STATE_NORMAL) {
-    	extern int Newdemo_no_rename;
-    	Newdemo_no_rename = 1;
+        extern int Newdemo_no_rename;
+        Newdemo_no_rename = 1;
 	    newdemo_start_recording();
 	    atexit(newdemo_stop_recording);
 	}

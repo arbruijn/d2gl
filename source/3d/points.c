@@ -102,7 +102,7 @@ int checkmuldiv(fix *r,fix a,fix b,fix c)
 
 	*r = q.large / c;
 	return 1;
-	
+
 	/*
 	qt = q;
 	if (qt.high < 0)

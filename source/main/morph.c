@@ -233,7 +233,7 @@ void do_morph_frame(object *obj)
 		printf("%d.%d ",md->submodel_active[i], md->n_morphing_points[i]);
 	printf("times0 = ");
 	for (i=0;i<md->n_morphing_points[0];i++)
-    	printf("%x ",md->morph_times[i]);
+		printf("%x ",md->morph_times[i]);
 	printf("\n");
 	#endif
 

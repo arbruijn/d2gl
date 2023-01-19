@@ -182,7 +182,7 @@ void c_tmap_scanline_per()
 
 	num_left_over = (loop_count + 1) & ((1 << nbits) - 1);
 	num_outer = (loop_count + 1) >> nbits;
-	
+
 	l = fx_l;
 	dldx = fx_dl_dx;
 
@@ -192,7 +192,7 @@ void c_tmap_scanline_per()
 		z += fx_dz_dx << nbits;
 
 		zi = divide_table[(z >> Z_SHIFTER) & (DIVIDE_TABLE_SIZE - 1)];
-		
+
 		u1 = fixmul(u, zi);
 		v1 = fixmul(v, zi);
 

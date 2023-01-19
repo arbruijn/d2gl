@@ -1305,7 +1305,6 @@ void wall_frame_process()
 			do_door_close(i);
 		else if (w->state == WALL_DOOR_WAITING) {
 			d->time += FrameTime;
-			//printf("door %d time %x\n", i, d->time);
 
 			//set flags to fix occatsional netgame problem where door is
 			//waiting to close but open flag isn't set

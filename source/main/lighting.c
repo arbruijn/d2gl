@@ -277,7 +277,7 @@ fix compute_light_intensity(int objnum)
 	switch (objtype) {
 		case OBJ_PLAYER:
 			 if (Current_level_D1)
-			 	return 0;
+				return 0;
 			 if (Players[obj->id].flags & PLAYER_FLAGS_HEADLIGHT_ON) {
 				if (Num_headlights < MAX_HEADLIGHTS)
 					Headlights[Num_headlights++] = obj;
@@ -400,12 +400,12 @@ void set_dynamic_light(void)
 
 	// -- for (vertnum=FrameCount&1; vertnum<n_render_vertices; vertnum+=2) {
 	if (Current_level_D1)
-	    for (vv=FrameCount&1; vv<n_render_vertices; vv+=2)
-    	    Dynamic_light[render_vertices[vv]] = 0;
+		for (vv=FrameCount&1; vv<n_render_vertices; vv+=2)
+			Dynamic_light[render_vertices[vv]] = 0;
  	else
 		for (vv=0; vv<n_render_vertices; vv++) {
 			int	vertnum;
-			
+
 			vertnum = render_vertices[vv];
 			Assert(vertnum >= 0 && vertnum <= Highest_vertex_index);
 			if ((vertnum ^ FrameCount) & 1)

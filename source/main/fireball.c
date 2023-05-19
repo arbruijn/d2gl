@@ -64,6 +64,8 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 	int objnum;
 	object *obj;
 
+	if (objp && objp->type != OBJ_WEAPON && objp->type != OBJ_PLAYER) Error("unexpected object_create_explosion_sub objp type %d", objp->type);
+
 	objnum = obj_create( OBJ_FIREBALL,vclip_type,segnum,position,&vmd_identity_matrix,size,
 					CT_EXPLOSION,MT_NONE,RT_FIREBALL);
 

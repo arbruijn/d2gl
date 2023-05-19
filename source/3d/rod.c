@@ -39,6 +39,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "globvars.h"
 #include "fix.h"
 
+extern int g3_no_draw;
+
 grs_point blob_vertices[4];
 g3s_point rod_points[4];
 g3s_point *rod_point_list[] = {&rod_points[0],&rod_points[1],&rod_points[2],&rod_points[3]};
@@ -150,6 +152,8 @@ bool g3_draw_bitmap(vms_vector *pos,fix width,fix height,grs_bitmap *bm, int ori
 #ifndef __powerc
 	g3s_point pnt;
 	fix t,w,h;
+
+	if (g3_no_draw) return 0;
 
 	if (g3_rotate_point(&pnt,pos) & CC_BEHIND)
 		return 1;

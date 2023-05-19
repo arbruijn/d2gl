@@ -371,7 +371,7 @@ void start_endlevel_sequence()
 
 void  do_endlevel_frame() { if(Endlevel_sequence==EL_END){Endlevel_sequence=EL_OFF;PlayerFinishedLevel(0);return;} Int3();}
 void stop_endlevel_sequence() {Int3();}
-void render_endlevel_frame(fix eye_offset) {Int3();}
+void render_endlevel_frame(fix eye_offset) {if(Endlevel_sequence!=EL_END)Int3();}
 
 #else
 

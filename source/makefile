@@ -328,7 +328,7 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
 DESCENT2_SRCS += aid1.c objrw.c
-#DESCENT2_SRCS += terrain.c
+DESCENT2_SRCS += terrain.c
 
 #ifeq ($(TARGSYS),WIN32)
 DESCENT2WIN_SRCS += winferno.c descentw.c modem.c joydefsw.c windigi.c movie.c
@@ -592,8 +592,8 @@ TEXMAPD1_OBJS = ntmap.obj tmapflat.obj winclip.obj \
 
 WATCOM_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPASM_OBJS))
 #TEXMAP_OBJS += $(TEXMAPASM_OBJS)
-UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
-#UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
+#UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
+UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
 
 # What to clean
 CLEAN_TARGS = $(OBJDIR)\*.obj
@@ -812,8 +812,8 @@ ACFLAGS += -DNDOS -DREPRO_FIX
 #UCFLAGS += -DNASM
 UCFLAGS += -DNASM2D
 UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
-#ACFLAGS += -DENDLEVEL
-#ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
+ACFLAGS += -DENDLEVEL
+ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
 ACFLAGS += -DNETWORK=1 -DNPACK
 #ACFLAGS += -DD1SW -DSHAREWARE
 #ACFLAGS += -DSHAREWARE -DMACSW
@@ -825,7 +825,7 @@ WCFLAGS += -Ifixasm -Ivecmatasm -I3dasm -Iarch/watcom
 ACFLAGS += -I../../desrun/deslog
 CFLAGS += $(ACFLAGS) $(UCFLAGS)
 CFLAGS += -Wno-implicit-int -Wno-unused-result -Wno-missing-braces -Wno-multichar
-CFLAGS += -O0 -ggdb -fno-pie -fcf-protection=none  -fno-pic
+CFLAGS += -O3 -ggdb -fno-pie -fcf-protection=none  -fno-pic
 #LDFLAGS += -static
 CFLAGS += -fno-stack-protector
 #CFLAGS += -fpack-struct

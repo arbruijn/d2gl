@@ -90,6 +90,7 @@ int play_show = 1;
 int record_demo = 0;
 int no_video = 0;
 int img_time = -1;
+int log_screen = 0;
 int d1;
 
 FILE *log_file = NULL;
@@ -97,6 +98,7 @@ int is_record = 1;
 int is_play = 0;
 int is_continue = 0;
 int last_time_menu;
+extern int g3_no_draw;
 
 void frame_delay() {
     #ifndef __WATCOMC__
@@ -409,6 +411,10 @@ extern ubyte PrimaryOrder[];
 extern ubyte SecondaryOrder[];
 extern int Spreadfire_toggle;
 extern int Helix_orientation;
+extern byte Lighting_objects[MAX_OBJECTS];
+extern fix Dynamic_light[MAX_VERTICES];
+extern fix object_light[MAX_OBJECTS];
+extern ubyte object_id[MAX_OBJECTS];
 
 int level = 1;
 int skipped_levels = 0;
@@ -561,6 +567,11 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
         Effects[i].frame_count = 0;
     #endif
 
+    memset(Lighting_objects, 0, sizeof(Lighting_objects));
+    memset(Dynamic_light, 0, sizeof(Dynamic_light));
+    memset(object_light, 0, sizeof(object_light));
+    memset(object_id, 0, sizeof(object_id));
+
     call_reg3(StartNewLevelSub, level, flag, secret);
 }
 
@@ -603,6 +614,7 @@ int test_main2(int argc, char **argv) {
 	}
 
 	Lighting_on = 1;
+	g3_no_draw = (no_video && !log_screen); // || (slow_time != -1); //is_play && !play_show;
 
 	grd_fades_disabled = 1;
 	skip_endlevel = 1;
@@ -758,6 +770,7 @@ int main(int argc, char **argv) {
     InitArgs(argc, argv);
     no_video = (is_play && !play_show) || FindArg("-novideo");
     img_time = (i = FindArg("-imgtime")) ? strtol(Args[i + 1],NULL,16) : -1;
+    log_screen = FindArg("-logscreen");
     if (start_play_record())
         return 1;
     #ifndef __WATCOMC__
@@ -947,12 +960,15 @@ void my_game_render_frame() {
     //FILE *f;
 
     ntmap_dbg = GameTime == img_time;
+    if (ntmap_dbg)
+    	g3_no_draw = 0;
 
     game_render_frame();
     last_time += 65536/32;
     draw();
     #ifndef GL
-    printf("screen=%x\n", fx_hasher(gr_screen_buffer, cur_w * cur_h >> 2));
+    if (log_screen || GameTime == img_time)
+	    printf("screen=%x %x\n", GameTime, fx_hasher(gr_screen_buffer, cur_w * cur_h >> 2));
     #endif
 
     if (GameTime != img_time)

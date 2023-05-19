@@ -57,6 +57,8 @@ void (*tmap_drawer_ptr)(grs_bitmap *bm,int nv,g3s_point **vertlist) = draw_tmap;
 void (*flat_drawer_ptr)(int nv,int *vertlist) = gr_upoly_tmap;
 int (*line_drawer_ptr)(fix x0,fix y0,fix x1,fix y1) = gr_line;
 
+int g3_no_draw = 0;
+
 //specifies 2d drawing routines to use instead of defaults.  Passing
 //NULL for either or both restores defaults
 void g3_set_special_render(void (*tmap_drawer)(),void (*flat_drawer)(),int (*line_drawer)())
@@ -231,6 +233,8 @@ bool g3_draw_poly(int nv,g3s_point **pointlist)
 	g3s_point **bufptr;
 	g3s_codes cc;
 
+	if (g3_no_draw) return 0;
+
 	cc.or = 0; cc.and = 0xff;
 
 	bufptr = Vbuf0;
@@ -283,6 +287,8 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,grs_bitmap *bm)
 	int i;
 	g3s_point **bufptr;
 	g3s_codes cc;
+
+	if (g3_no_draw) return 0;
 
 	cc.or = 0; cc.and = 0xff;
 

@@ -963,6 +963,7 @@ void my_game_render_frame() {
     if (ntmap_dbg)
     	g3_no_draw = 0;
 
+    memset(gr_screen_buffer, 0, cur_w * cur_h);
     game_render_frame();
     last_time += 65536/32;
     draw();
@@ -1025,9 +1026,15 @@ void print_stat(FILE *f) {
     fprintf(f, "primary_flags=%x\n", Player->primary_weapon_flags);
     fprintf(f, "secondary_flags=%x\n", Player->secondary_weapon_flags);
     ps = Player->primary_ammo;
-    fprintf(f, "primary_ammo=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4], ps[5], ps[6], ps[7], ps[8], ps[9]);
+    if (Current_level_D1)
+	    fprintf(f, "primary_ammo=%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4]);
+    else
+	    fprintf(f, "primary_ammo=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4], ps[5], ps[6], ps[7], ps[8], ps[9]);
     ps = Player->secondary_ammo;
-    fprintf(f, "secondary_ammo=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4], ps[5], ps[6], ps[7], ps[8], ps[9]);
+    if (Current_level_D1)
+	    fprintf(f, "secondary_ammo=%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4]);
+	else
+	    fprintf(f, "secondary_ammo=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", ps[0], ps[1], ps[2], ps[3], ps[4], ps[5], ps[6], ps[7], ps[8], ps[9]);
     fprintf(f, "score=%d\n", Player->score);
     fprintf(f, "time_total=%x\n", Player->time_total);
     fprintf(f, "num_kills_total=%d\n", Player->num_kills_total);

@@ -294,7 +294,7 @@ void render_face(int segnum, int sidenum, int nv, short *vp, int tmap1, int tmap
 
 	Assert(nv <= 8);
 
-	//if (segnum != 1 || sidenum != 0) return;
+	//if (segnum != 368 || sidenum != 0) return;
 
 	for (i=0; i<nv; i++) {
 		uvl_copy[i] = uvlp[i];

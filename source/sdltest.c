@@ -415,6 +415,7 @@ extern byte Lighting_objects[MAX_OBJECTS];
 extern fix Dynamic_light[MAX_VERTICES];
 extern fix object_light[MAX_OBJECTS];
 extern ubyte object_id[MAX_OBJECTS];
+extern object *old_viewer;
 
 int level = 1;
 int skipped_levels = 0;
@@ -571,6 +572,7 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     memset(Dynamic_light, 0, sizeof(Dynamic_light));
     memset(object_light, 0, sizeof(object_light));
     memset(object_id, 0, sizeof(object_id));
+    old_viewer = NULL;
 
     call_reg3(StartNewLevelSub, level, flag, secret);
 }

@@ -183,7 +183,7 @@ int	Max_linear_depth;
 int	Max_flat_depth;
 
 extern int Window_clip_left, Window_clip_bot, Window_clip_right, Window_clip_top;
-//extern fix GameTime;
+extern fix GameTime;
 
 // These variables are the interface to assembler.  They get set for each texture map, which is a real waste of time.
 //	They should be set only when they change, which is generally when the window bounds change.  And, even still, it's
@@ -512,7 +512,7 @@ void ntmap_scanline_lighted(grs_bitmap *srcb, int y, fix xleft, fix xright, fix 
 	fx_dz_dx = dz_dx;
 	fx_y = y;
 	pixptr = srcb->bm_data;
-	//if (GameTime==0x2de2800)printf("x %d..%d y %d uv %x,%x z %x\n", fx_xleft, fx_xright, fx_y, fx_u, fx_v, fx_z);
+	//if (GameTime==0x2de3000)printf("x %d..%d y %d uv %x,%x z %x\n", fx_xleft, fx_xright, fx_y, fx_u, fx_v, fx_z);
 
 	switch (Lighting_enabled) {
 		case 0:
@@ -688,7 +688,7 @@ if (Do_vertical_scan) {
 				recip_dy = F1_0/dy;
 
 			dx_dy_left = compute_dx_dy(t,vlt,vlb, recip_dy);
-			//if (GameTime==0x2de2800) printf("y %d dy %d recip %x dx_dy_l %x\n", y, dy, recip_dy, dx_dy_left);
+			//if (GameTime==0x2de3000) printf("y %d dy %d recip %x dx_dy_l %x\n", y, dy, recip_dy, dx_dy_left);
 
 			xleft = v3d[vlt].x2d;
 			zleft = v3d[vlt].z;
@@ -720,7 +720,7 @@ if (Do_vertical_scan) {
 
 			dy = f2i(t->verts[vrb].y2d) - f2i(t->verts[vrt].y2d);
 			if (dy < FIX_RECIP_TABLE_SIZE)
-				recip_dy = fix_recip[dy];
+				recip_dy = dy >= 0 ? fix_recip[dy] : 0;
 			else
 				recip_dy = F1_0/dy;
 

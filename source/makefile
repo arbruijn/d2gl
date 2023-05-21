@@ -1,3 +1,4 @@
+D1=1
 #NASM=1
 #
 # $Source: f:/miner/source/2d/rcs/makefile $
@@ -328,7 +329,9 @@ DESCENT2_SRCS =  game.c gamerend.c gamecntl.c gauges.c mglobal.c \
 	#demo.c garage.c radar.c coindev.c serial.c hash.c args.c 
 
 DESCENT2_SRCS += aid1.c objrw.c
+ifdef D1
 DESCENT2_SRCS += terrain.c
+endif
 
 #ifeq ($(TARGSYS),WIN32)
 DESCENT2WIN_SRCS += winferno.c descentw.c modem.c joydefsw.c windigi.c movie.c
@@ -592,8 +595,11 @@ TEXMAPD1_OBJS = ntmap.obj tmapflat.obj winclip.obj \
 
 WATCOM_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPASM_OBJS))
 #TEXMAP_OBJS += $(TEXMAPASM_OBJS)
-#UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
+ifdef D1
 UNIX_OBJ += $(patsubst %.obj,texmapd1/%.o,$(TEXMAPD1_OBJS)) ldt.o
+else
+UNIX_OBJ += $(patsubst %.obj,texmap/%.o,$(TEXMAPNASM_OBJS))
+endif
 
 # What to clean
 CLEAN_TARGS = $(OBJDIR)\*.obj
@@ -812,7 +818,9 @@ ACFLAGS += -DNDOS -DREPRO_FIX
 #UCFLAGS += -DNASM
 UCFLAGS += -DNASM2D
 UCFLAGS += -Dfar="" -D_far="" -Dnear="" -Dcdecl=""
+ifdef D1
 ACFLAGS += -DENDLEVEL
+endif
 ACFLAGS += -DNMONO=1 -DNDEBUG=1 -DRELEASE=1
 ACFLAGS += -DNETWORK=1 -DNPACK
 #ACFLAGS += -DD1SW -DSHAREWARE

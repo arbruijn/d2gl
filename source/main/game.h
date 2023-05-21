@@ -113,7 +113,7 @@ extern int Game_double_buffer;			//double buffering?
 #else					//if not debugging, these are constants
 
 #define Slew_on 				0		//no slewing in real game
-#define Game_double_buffer	0		//always double buffer in real game
+#define Game_double_buffer	1		//always double buffer in real game
 
 
 #endif

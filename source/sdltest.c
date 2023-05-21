@@ -414,6 +414,7 @@ extern int Helix_orientation;
 extern byte Lighting_objects[MAX_OBJECTS];
 extern fix Dynamic_light[MAX_VERTICES];
 extern fix object_light[MAX_OBJECTS];
+extern int object_sig[MAX_OBJECTS];
 extern ubyte object_id[MAX_OBJECTS];
 extern object *old_viewer;
 
@@ -572,6 +573,7 @@ void my_StartNewLevelSub(int arg_level, int flag, int secret) {
     memset(Dynamic_light, 0, sizeof(Dynamic_light));
     memset(object_light, 0, sizeof(object_light));
     memset(object_id, 0, sizeof(object_id));
+    memset(object_sig, 0, sizeof(object_sig));
     old_viewer = NULL;
 
     call_reg3(StartNewLevelSub, level, flag, secret);
@@ -965,7 +967,7 @@ void my_game_render_frame() {
     if (ntmap_dbg)
     	g3_no_draw = 0;
 
-    memset(gr_screen_buffer, 0, cur_w * cur_h);
+    //memset(gr_screen_buffer, 0, cur_w * cur_h);
     game_render_frame();
     last_time += 65536/32;
     draw();

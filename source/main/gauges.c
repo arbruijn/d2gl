@@ -3636,7 +3636,7 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 
 	WINDOS(
 		dd_gr_init_sub_canvas(&window_canv, &dd_VR_render_buffer[0],window_x,window_y,w,h),
-		gr_init_sub_canvas(&window_canv,&VR_render_buffer[0],window_x,window_y,w,h)
+		gr_init_sub_canvas(&window_canv,Game_double_buffer?&VR_render_buffer[0]:&VR_screen_pages[0],window_x,window_y,w,h)
 	);
 	}
 	else {

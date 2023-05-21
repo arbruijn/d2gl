@@ -136,7 +136,7 @@ static char rcsid[] = "$Id: ntmap.c 1.52 1995/03/14 15:13:06 john Exp $";
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
-#ifdef DOS
+#ifndef NDOS
 #include <conio.h>
 #endif
 #include <stdlib.h>
@@ -222,6 +222,7 @@ ubyte * tmap_flat_cthru_table;
 ubyte tmap_flat_color;
 ubyte tmap_flat_shade_value;
 
+int ntmap_dbg;
 
 
 // -------------------------------------------------------------------------------------
@@ -512,7 +513,7 @@ void ntmap_scanline_lighted(grs_bitmap *srcb, int y, fix xleft, fix xright, fix 
 	fx_dz_dx = dz_dx;
 	fx_y = y;
 	pixptr = srcb->bm_data;
-	//if (GameTime==0x2de3000)printf("x %d..%d y %d uv %x,%x z %x\n", fx_xleft, fx_xright, fx_y, fx_u, fx_v, fx_z);
+	if (ntmap_dbg)printf("x %d..%d y %d uv %x,%x z %x\n", fx_xleft, fx_xright, fx_y, fx_u, fx_v, fx_z);
 
 	switch (Lighting_enabled) {
 		case 0:
@@ -621,7 +622,7 @@ if (Do_vertical_scan) {
 	// Set amount to change x coordinate for each advance to next scanline.
 	dy = f2i(t->verts[vlb].y2d) - f2i(t->verts[vlt].y2d);
 	if (dy < FIX_RECIP_TABLE_SIZE)
-		recip_dyl = fix_recip[dy];
+		recip_dyl = dy >= 0 ? fix_recip[dy] : 0;
 	else
 		recip_dyl = F1_0/dy;
 
@@ -632,7 +633,7 @@ if (Do_vertical_scan) {
 
 	dy = f2i(t->verts[vrb].y2d) - f2i(t->verts[vrt].y2d);
 	if (dy < FIX_RECIP_TABLE_SIZE)
-		recip_dyr = fix_recip[dy];
+		recip_dyr = dy >= 0 ? fix_recip[dy] : 0;
 	else
 		recip_dyr = F1_0/dy;
 
@@ -688,7 +689,7 @@ if (Do_vertical_scan) {
 				recip_dy = F1_0/dy;
 
 			dx_dy_left = compute_dx_dy(t,vlt,vlb, recip_dy);
-			//if (GameTime==0x2de3000) printf("y %d dy %d recip %x dx_dy_l %x\n", y, dy, recip_dy, dx_dy_left);
+			if (ntmap_dbg) printf("y %d dy %d recip %x dx_dy_l %x\n", y, dy, recip_dy, dx_dy_left);
 
 			xleft = v3d[vlt].x2d;
 			zleft = v3d[vlt].z;
@@ -884,13 +885,13 @@ void ntexture_map_lighted_linear(grs_bitmap *srcb, g3ds_tmap *t)
 
 	dy = f2i(t->verts[vlb].y2d) - f2i(t->verts[vlt].y2d);
 	if (dy < FIX_RECIP_TABLE_SIZE)
-		recip_dyl = fix_recip[dy];
+		recip_dyl = dy >= 0 ? fix_recip[dy] : 0;
 	else
 		recip_dyl = F1_0/dy;
 
 	dy = f2i(t->verts[vrb].y2d) - f2i(t->verts[vrt].y2d);
 	if (dy < FIX_RECIP_TABLE_SIZE)
-		recip_dyr = fix_recip[dy];
+		recip_dyr = dy >= 0 ? fix_recip[dy] : 0;
 	else
 		recip_dyr = F1_0/dy;
 
@@ -943,7 +944,7 @@ void ntexture_map_lighted_linear(grs_bitmap *srcb, g3ds_tmap *t)
 
 			dy = f2i(t->verts[vlb].y2d) - f2i(t->verts[vlt].y2d);
 			if (dy < FIX_RECIP_TABLE_SIZE)
-				recip_dy = fix_recip[dy];
+				recip_dy = dy >= 0 ? fix_recip[dy] : 0;
 			else
 				recip_dy = F1_0/dy;
 
@@ -975,7 +976,7 @@ void ntexture_map_lighted_linear(grs_bitmap *srcb, g3ds_tmap *t)
 
 			dy = f2i(t->verts[vrb].y2d) - f2i(t->verts[vrt].y2d);
 			if (dy < FIX_RECIP_TABLE_SIZE)
-				recip_dy = fix_recip[dy];
+				recip_dy = dy >= 0 ? fix_recip[dy] : 0;
 			else
 				recip_dy = F1_0/dy;
 
@@ -1035,7 +1036,6 @@ int gr_bitmap_assign_selector(grs_bitmap *bmp)
 }
 #endif
 
-int ntmap_dbg;
 
 // -------------------------------------------------------------------------------------
 // Interface from Matt's data structures to Mike's texture mapper.

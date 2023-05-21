@@ -1609,7 +1609,8 @@ void render_frame(fix eye_offset, int window_num)
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);
-		//FrameCount++;
+		if (!Current_level_D1)
+			FrameCount++;
 		return;
 	}
 
@@ -1750,6 +1751,7 @@ build_segment_list(int start_seg_num, int window_num)
 	//build list
 
 	for (l=0;l<Render_depth;l++) {
+		int reprocess = 0;
 
 		//while (scnt < ecnt) {
 		for (scnt=0;scnt < ecnt;scnt++) {
@@ -1898,6 +1900,7 @@ build_segment_list(int start_seg_num, int window_num)
 										Render_list[lcnt] = -1;
 										render_windows[rp] = *new_w;		//get updated window
 										processed[rp] = 0;		//force reprocess
+										reprocess = 1;
 										goto no_add;
 									}
 									else
@@ -1937,6 +1940,9 @@ no_add:
 				}
 			}
 		}
+
+		//if (lcnt == ecnt && !reprocess)
+		//	break;
 
 		scnt = ecnt;
 		ecnt = lcnt;

@@ -36,7 +36,7 @@ static char rcsid[] = "$Id: scanline.c 1.2 1995/02/20 18:23:39 john Exp $";
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
-#ifdef DOS
+#ifndef NDOS
 #include <conio.h>
 #endif
 #include <stdlib.h>

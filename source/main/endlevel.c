@@ -363,8 +363,8 @@ void start_endlevel_sequence()
 	//else
 	//	gr_palette_fade_out(gr_palette, 32, 0);
 
-	//PlayerFinishedLevel(0);		//done with level
 	Endlevel_sequence = EL_END;
+	//PlayerFinishedLevel(0);		//done with level
 }
 
 #ifndef ENDLEVEL

@@ -1,7 +1,7 @@
 //#define VERBOSE
 //#define PRINT_AWARE
 //#define PRINT_DO_FRAME
-//#define debug_objnum 80
+//#define debug_objnum 82
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -442,7 +442,9 @@ _exit_cheat:
 	dist_to_player = vm_vec_dist_quick(&Believed_player_pos, &obj->pos);
 
 	#ifdef PRINT_DO_FRAME
-	if(Robot_info[obj->id].companion)printf("do_ai_frame obj %d awa=%d pvis=%d beh=%x mode=%d g=%d cs=%d gs=%d\n", objnum, ailp->player_awareness_type, previous_visibility, aip->behavior, ailp->mode, aip->CURRENT_GUN, aip->CURRENT_STATE, aip->GOAL_STATE);
+	//if(Robot_info[obj->id].companion)
+	printf("do_ai_frame obj %d awa=%d pvis=%d beh=%x mode=%d g=%d cs=%d gs=%d\n", objnum,
+		ailp->player_awareness_type, previous_visibility, aip->behavior, ailp->mode, aip->CURRENT_GUN, aip->CURRENT_STATE, aip->GOAL_STATE);
 	#endif
 
 //	if (robptr->companion)

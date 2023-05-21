@@ -1941,8 +1941,8 @@ no_add:
 			}
 		}
 
-		//if (lcnt == ecnt && !reprocess)
-		//	break;
+		if (lcnt == ecnt && !reprocess)
+			break;
 
 		scnt = ecnt;
 		ecnt = lcnt;
